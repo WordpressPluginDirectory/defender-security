@@ -329,16 +329,16 @@ trait IP {
 	/**
 	 * Get user IP.
 	 *
-	 * @return string
+	 * @return array
 	 */
-	public function get_user_ip(): string {
+	public function get_user_ip(): array {
 		/**
 		 * @var \WP_Defender\Component\Http\Remote_Address
 		 */
 		$remote_addr = wd_di()->get( \WP_Defender\Component\Http\Remote_Address::class );
-		$ip = $remote_addr->get_ip_address();
+		$ips = (array) $remote_addr->get_ip_address();
 
-		return (string) apply_filters( 'defender_user_ip', $ip );
+		return $this->filter_user_ips( $ips );
 	}
 
 	/**
@@ -362,5 +362,30 @@ trait IP {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Filter user IPs.
+	 *
+	 * This function takes an array of user IPs, applies the 'defender_user_ip'
+	 * filter to each IP, and returns a unique array of filtered values.
+	 *
+	 * @param array $ips An array of user IPs.
+	 *
+	 * @since 4.4.2
+	 * @return array An array of unique, filtered user IPs.
+	 */
+	public function filter_user_ips( array $ips ): array {
+		$ips_filtered = [];
+		foreach ( $ips as $ip ) {
+			/**
+			 * Filters the user IP.
+			 *
+			 * @param string $ip The user IP.
+			 */
+			$ips_filtered[] = apply_filters( 'defender_user_ip', $ip );
+		}
+
+		return array_unique( $ips_filtered );
 	}
 }

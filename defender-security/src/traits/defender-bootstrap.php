@@ -33,6 +33,7 @@ use WP_Defender\Controller\Password_Reset;
 use WP_Defender\Controller\Webauthn;
 use WP_Defender\Controller\Quarantine;
 use WP_Defender\Controller\Data_Tracking;
+use WP_Defender\Controller\General_Notice;
 
 /**
  * Traits to handle common (pro & free) bootstrap functionalities.
@@ -350,6 +351,7 @@ SQL;
 			wd_di()->get( Quarantine::class );
 		}
 		wd_di()->get( Data_Tracking::class );
+		wd_di()->get( General_Notice::class );
 	}
 
 	/**
@@ -488,6 +490,16 @@ SQL;
 			$misc = $data_tracking->get_tracking_modal();
 		}
 		$misc['high_contrast'] = defender_high_contrast();
+		/**
+		 * @var General_Notice
+		 */
+		$general_notice = wd_di()->get( General_Notice::class );
+		if ( $general_notice->show_notice() ) {
+			$misc['general_notice'] = $general_notice->get_notice_data();
+			$misc['general_notice']['status'] = 'show';
+		} else {
+			$misc['general_notice']['status'] = 'hide';
+		}
 
 		wp_localize_script(
 			'def-vue',

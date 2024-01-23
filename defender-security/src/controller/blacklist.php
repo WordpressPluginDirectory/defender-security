@@ -100,15 +100,20 @@ class Blacklist extends Controller {
 			$countries_with_continents_list = [];
 		}
 
+		$current_country = [];
+		foreach( $user_ip as $ip ) {
+			$current_country[] = $this->get_current_country( $ip );
+		}
+
 		return array_merge(
 			[
 				'model' => $arr_model,
 				'misc' => [
-					'user_ip' => $user_ip,
+					'user_ip' => implode( ',', $user_ip ),
 					'is_geodb_downloaded' => $exist_geodb,
 					'blacklist_countries' => $blacklist_countries,
 					'whitelist_countries' => $whitelist_countries,
-					'current_country' => $this->get_current_country( $user_ip ),
+					'current_country' => $current_country,
 					'no_ips' => '' === $arr_model['ip_blacklist'] && '' === $arr_model['ip_whitelist'],
 					'countries_with_continents_list' => $countries_with_continents_list,
 				],
@@ -214,11 +219,11 @@ class Blacklist extends Controller {
 				unlink( $tmp );
 			}
 
-			$country = $this->get_current_country( $this->get_user_ip() );
-			$current_country = '';
-			if ( ! empty( $country ) && ! empty( $country['iso'] ) ) {
-				$current_country = $country['iso'];
-				$this->model = $this->service->add_default_whitelisted_country( $this->model, $country['iso'] );
+			foreach ( $this->get_user_ip() as $ip ) {
+				$country = $this->get_current_country( $ip );
+				if ( ! empty( $country ) && ! empty( $country['iso'] ) ) {
+					$this->model = $this->service->add_default_whitelisted_country( $this->model, $country['iso'] );
+				}
 			}
 			$this->model->maxmind_license_key = $license_key;
 			$this->model->save();
@@ -229,7 +234,6 @@ class Blacklist extends Controller {
 					'defender-security'
 				),
 				'is_geodb_downloaded' => $this->service->is_geodb_downloaded(),
-				'current_country' => $current_country,
 			] );
 		} else {
 			$this->log( 'Error from MaxMind: ' . $tmp->get_error_message() );

@@ -59,28 +59,6 @@ class Firewall extends Component {
 	}
 
 	/**
-	 * Queue hooks when this class init.
-	 */
-	public function add_hooks() {
-		add_filter( 'defender_ip_lockout_assets', [ &$this, 'output_scripts_data' ] );
-	}
-
-	/**
-	 * @param array $data
-	 *
-	 * @return array
-	 */
-	public function output_scripts_data( $data ): array {
-		$model = new Model_Firewall();
-		$data['settings'] = [
-			'storage_days' => $model->storage_days ?? 30,
-			'class' => Model_Firewall::class,
-		];
-
-		return $data;
-	}
-
-	/**
 	 * Cron for delete old log.
 	 */
 	public function firewall_clean_up_logs() {
@@ -236,5 +214,43 @@ class Firewall extends Component {
 			);
 
 		} while ( $affected_rows === $limit );
+	}
+
+	/**
+	 * Gather IP(s) from headers.
+	 *
+	 * @since 4.4.2
+	 *
+	 * @return array
+	 */
+	public function gather_ips(): array {
+		$ip_headers = [
+			'HTTP_CLIENT_IP',
+			'HTTP_X_REAL_IP',
+			'HTTP_X_FORWARDED_FOR',
+			'HTTP_X_FORWARDED',
+			'HTTP_X_CLUSTER_CLIENT_IP',
+			'HTTP_FORWARDED_FOR',
+			'HTTP_FORWARDED',
+			'HTTP_CF_CONNECTING_IP',
+			'REMOTE_ADDR',
+		];
+
+		$client_ips = [];
+		foreach ( $ip_headers as $header ) {
+			if ( ! empty( $_SERVER[ $header ] ) ) {
+				// Handle multiple IP addresses
+				$ips = array_map( 'trim', explode( ',', $_SERVER[ $header ] ) );
+
+				foreach( $ips as $ip ) {
+					if ( $this->validate_ip( $ip ) ) {
+						$client_ips[] = $ip;
+					}
+				}
+			}
+		}
+		$client_ips = array_unique( $client_ips );
+
+		return $this->filter_user_ips( $client_ips );
 	}
 }

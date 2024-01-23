@@ -92,7 +92,7 @@ class User_Agent_Lockout extends Setting {
 	 */
 	public function get_lockout_list( $type = 'blocklist', $lower = true ): array {
 		$data = ( 'blocklist' === $type ) ? $this->blacklist : $this->whitelist;
-		$arr = is_array( $data ) ? $data : array_filter( explode( PHP_EOL, $data ) );
+		$arr = is_array( $data ) ? $data : array_filter( preg_split( "/\r\n|\n|\r/", $data ) );
 		$arr = array_map( 'trim', $arr );
 		if ( $lower ) {
 			$arr = array_map( 'strtolower', $arr );

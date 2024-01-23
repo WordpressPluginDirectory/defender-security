@@ -354,6 +354,9 @@ class Upgrader {
 		if ( version_compare( $db_version, '4.2.0', '<' ) ) {
 			$this->upgrade_4_2_0();
 		}
+		if ( version_compare( $db_version, '4.4.2', '<' ) ) {
+			$this->upgrade_4_4_2();
+		}
 		// This is not a new installation. Make a mark.
 		defender_no_fresh_install();
 		// Don't run any function below this line.
@@ -1530,5 +1533,15 @@ Your temporary password is {{passcode}}. To finish logging in, copy and paste th
 	private function upgrade_4_2_0(): void {
 		// Add the Tracking modal.
 		update_site_option( \WP_Defender\Controller\Data_Tracking::TRACKING_SLUG, true );
+	}
+
+	/**
+	 * Upgrade to 4.4.2.
+	 *
+	 * @return void
+	 */
+	private function upgrade_4_4_2(): void {
+		// Add the IP detection notice.
+		update_site_option( \WP_Defender\Controller\General_Notice::IP_DETECTION_SLUG, true );
 	}
 }

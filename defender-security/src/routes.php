@@ -106,6 +106,9 @@ function defender_init_routes() {
 			'close_track_modal' => 'close_track_modal',
 			'save_track_modal' => 'save_track_modal',
 		],
+		'general_notice' => [
+			'close_ip_detection_notice' => 'close_ip_detection_notice',
+		],
 	];
 
 	if ( class_exists( 'WP_Defender\Controller\Quarantine' ) ) {

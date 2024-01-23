@@ -26,7 +26,7 @@ class Notfound_Lockout extends Component {
 	 * Queue hooks when this class init.
 	 */
 	public function add_hooks() {
-		add_action( 'template_redirect', [ &$this, 'process_404_detect' ] );
+		add_action( 'template_redirect', [ &$this, 'process_404_detect_multiple' ] );
 	}
 
 	/**
@@ -139,22 +139,13 @@ class Notfound_Lockout extends Component {
 		return false;
 	}
 
-	public function process_404_detect() {
-		if ( ! is_404() ) {
-			return;
-		}
-
-		$ip = $this->get_user_ip();
+	public function process_404_detect( string $ip ): void {
 		// Check if this from google,
 		if ( $this->is_google_ua() && $this->is_google_ip( $ip ) ) {
 			return;
 		}
 		// or bing.
 		if ( $this->is_bing_ua() && $this->is_bing_ip( $ip ) ) {
-			return;
-		}
-
-		if ( false === $this->model->detect_logged && is_user_logged_in() ) {
 			return;
 		}
 
@@ -361,6 +352,29 @@ class Notfound_Lockout extends Component {
 		$model->save();
 		if ( Lockout_Log::LOCKOUT_404 === $model->type ) {
 			do_action( 'defender_notify', 'firewall-notification', $model );
+		}
+	}
+
+	/**
+	 * Process 404 detection for multiple IPs.
+	 *
+	 * @since 4.4.2
+	 * @return void
+	 */
+	public function process_404_detect_multiple(): void {
+		if ( ! is_404() ) {
+			return;
+		}
+
+		if ( false === $this->model->detect_logged && is_user_logged_in() ) {
+			return;
+		}
+
+		$service = wd_di()->get( Blacklist_Lockout::class );
+		foreach ( $this->get_user_ip() as $ip ) {
+			if ( ! $service->is_ip_whitelisted( $ip ) ) {
+				$this->process_404_detect( $ip );
+			}
 		}
 	}
 }

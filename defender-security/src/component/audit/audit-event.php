@@ -363,21 +363,31 @@ abstract class Audit_Event extends Component {
 		if ( false == $text ) {
 			return false;
 		}
-		$settings = new Audit_Logging();
+
 		// Build data.
-		$post = [
-			'timestamp' => time(),
-			'event_type' => $hook_data['event_type'],
-			'action_type' => $action ?? $hook_data['action_type'],
-			'site_url' => network_site_url(),
-			'user_id' => $user_id,
-			'context' => $context,
-			'ip' => $this->get_user_ip(),
-			'msg' => strip_tags( $text ),
-			'blog_id' => get_current_blog_id(),
-			'ttl' => strtotime( '+ ' . $settings->storage_days ),
-		];
-		Array_Cache::append( 'logs', $post, 'audit' );
+		$settings = new Audit_Logging();
+		$time = time();
+		$event_type = $hook_data['event_type'];
+		$action_type = $action ?? $hook_data['action_type'];
+		$site_url = network_site_url();
+		$msg = strip_tags($text);
+		$blog_id = get_current_blog_id();
+		$ttl = strtotime('+ ' . $settings->storage_days);
+		foreach ( $this->get_user_ip() as $ip ) {
+			$post = [
+				'timestamp' => $time,
+				'event_type' => $event_type,
+				'action_type' => $action_type,
+				'site_url' => $site_url,
+				'user_id' => $user_id,
+				'context' => $context,
+				'ip' => $ip,
+				'msg' => $msg,
+				'blog_id' => $blog_id,
+				'ttl' => $ttl,
+			];
+			Array_Cache::append('logs', $post, 'audit');
+		}
 	}
 
 	/**

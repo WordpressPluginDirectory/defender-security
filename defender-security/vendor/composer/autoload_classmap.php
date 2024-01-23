@@ -146,6 +146,7 @@ return array(
     'WP_Defender\\Controller\\Data_Tracking' => $baseDir . '/src/controller/data-tracking.php',
     'WP_Defender\\Controller\\Firewall' => $baseDir . '/src/controller/firewall.php',
     'WP_Defender\\Controller\\Firewall_Logs' => $baseDir . '/src/controller/firewall-logs.php',
+    'WP_Defender\\Controller\\General_Notice' => $baseDir . '/src/controller/general-notice.php',
     'WP_Defender\\Controller\\Global_Ip' => $baseDir . '/src/controller/global-ip.php',
     'WP_Defender\\Controller\\HUB' => $baseDir . '/src/controller/hub.php',
     'WP_Defender\\Controller\\Login_Lockout' => $baseDir . '/src/controller/login-lockout.php',

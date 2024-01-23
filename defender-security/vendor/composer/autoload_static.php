@@ -451,6 +451,7 @@ class ComposerStaticInitf0eb055c08a2deead8b913944120dc0a
         'WP_Defender\\Controller\\Data_Tracking' => __DIR__ . '/../..' . '/src/controller/data-tracking.php',
         'WP_Defender\\Controller\\Firewall' => __DIR__ . '/../..' . '/src/controller/firewall.php',
         'WP_Defender\\Controller\\Firewall_Logs' => __DIR__ . '/../..' . '/src/controller/firewall-logs.php',
+        'WP_Defender\\Controller\\General_Notice' => __DIR__ . '/../..' . '/src/controller/general-notice.php',
         'WP_Defender\\Controller\\Global_Ip' => __DIR__ . '/../..' . '/src/controller/global-ip.php',
         'WP_Defender\\Controller\\HUB' => __DIR__ . '/../..' . '/src/controller/hub.php',
         'WP_Defender\\Controller\\Login_Lockout' => __DIR__ . '/../..' . '/src/controller/login-lockout.php',

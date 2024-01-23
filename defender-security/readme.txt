@@ -1,13 +1,13 @@
 === Defender Security - Malware Scanner, Login Security & Firewall ===
 Plugin Name: Defender Security - Malware Scanner, Login Security & Firewall
-Version: 4.4.1
+Version: 4.4.2
 Author: WPMU DEV
 Author URI: https://wpmudev.com/
 Contributors: WPMUDEV
 Tags: security, security plugin, firewall, malware, malware scanner, antivirus, ip blocking, login security, brute force attacks, limit login attempts, custom login url, activity log, audit logs, block hackers, two-factor authentication, 2fa, hack, captcha, webauthn, authentication, fido2, fingerprint, face verification, yubikey, USB keys, woocommerce
 Requires at least: 5.2
 Tested up to: 6.4.2
-Stable tag: 4.4.1
+Stable tag: 4.4.2
 Requires PHP: 7.4
 License: GPL v2 - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 
@@ -268,6 +268,10 @@ Please open a new thread in Defender’s [support forum](https://wordpress.org/s
 4. Done!
 
 == Changelog ==
+
+= 4.4.2 ( 2024-01-22 ) =
+
+- Enhance: Recommended IP Detection method with improved accuracy, site security, and harder-to-bypass IP banning
 
 = 4.4.1 ( 2023-12-19 ) =
 

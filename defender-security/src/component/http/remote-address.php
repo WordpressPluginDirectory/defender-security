@@ -62,27 +62,31 @@ class Remote_Address {
 		}
 	}
 
-	public function get_ip_address(): string {
+	public function get_ip_address() {
 		return $this->instance()->get_ip_address();
 	}
 
 	/**
-	 * Return HTTP IP header value if it presents else failed message.
+	 * Return HTTP IP header(s) value if it presents else failed message.
 	 *
 	 * @param string $http_ip_header_key HTTP header key/name.
 	 *
-	 * @return string Header value or failure message.
+	 * @return string Header(s) value or failure message.
 	 */
 	public function get_http_ip_header_value( string $http_ip_header_key ): string {
+		$ip_array = [];
 		if ( empty( $http_ip_header_key ) ) {
-			$http_ip_header_key = wd_di()->get( Classic_Remote_Address::class )->get_ip_header();
+			$ip_array = wd_di()->get( Classic_Remote_Address::class )->get_ip_header();
+		} else if ( isset( $_SERVER[ $http_ip_header_key ] ) ) {
+			$ip_array[] = $_SERVER[ $http_ip_header_key ];
 		}
 
-		return $_SERVER[ $http_ip_header_key ] ??
-		sprintf( /* translators: %s - HTTP IP header */
-			__( '%s header missing in $_SERVER global variable.', 'defender-security' ),
-			$http_ip_header_key
-		);
+		return ! empty( $ip_array ) ?
+			implode( ', ', $ip_array ) :
+			sprintf( /* translators: %s - HTTP IP header */
+				__( '%s header missing in $_SERVER global variable.', 'defender-security' ),
+				$http_ip_header_key
+			);
 	}
 
 }

@@ -25,6 +25,11 @@ class Login_Lockout extends \WP_Defender\Component {
 	protected $model;
 
 	/**
+	 * @var Blacklist_Lockout
+	 */
+	protected $service;
+
+	/**
 	 * @var string
 	 */
 	protected $banned_username_message;
@@ -37,6 +42,7 @@ class Login_Lockout extends \WP_Defender\Component {
 	public function __construct() {
 		// Todo: maybe add model and ip-params?
 		$this->model = wd_di()->get( \WP_Defender\Model\Setting\Login_Lockout::class );
+		$this->service = wd_di()->get( Blacklist_Lockout::class );
 		$this->banned_username_message = __(
 			'You have been locked out by the administrator for attempting to login with a banned username.',
 			'defender-security'
@@ -56,7 +62,6 @@ class Login_Lockout extends \WP_Defender\Component {
 			add_action( 'wp_login_failed', [ &$this, 'process_fail_attempt_compatibility' ], 10 );
 		}
 
-
 		add_filter( 'authenticate', [ &$this, 'show_attempt_left' ], 9999, 2 );
 		add_action( 'wp_login', [ &$this, 'clear_login_attempt' ] );
 		add_action( 'wd_2fa_lockout', [ &$this, 'two_factor_lockout' ], 10, 3 );
@@ -68,11 +73,13 @@ class Login_Lockout extends \WP_Defender\Component {
 	 */
 	public function clear_login_attempt() {
 		// Record this.
-		$model = Lockout_Ip::get( $this->ip );
-		if ( is_object( $model ) ) {
-			$model->meta = [];
-			$model->attempt = 0;
-			$model->save();
+		foreach ( $this->ip as $ip ) {
+			$model = Lockout_Ip::get( $ip );
+			if ( is_object( $model ) ) {
+				$model->meta = [];
+				$model->attempt = 0;
+				$model->save();
+			}
 		}
 	}
 
@@ -106,7 +113,6 @@ class Login_Lockout extends \WP_Defender\Component {
 				true
 			)
 		) {
-			$model = Lockout_Ip::get( $this->ip );
 			// The case#2 of a non-existent user who has a banned username.
 			if ( in_array( $username, $this->model->get_blacklisted_username(), true ) ) {
 				$msg = $this->banned_username_message;
@@ -115,7 +121,7 @@ class Login_Lockout extends \WP_Defender\Component {
 				return $user;
 			}
 			// This hook is before the @process_fail_attempt, so we will need to add 1 into the attempt count.
-			$attempt = $model->attempt;
+			$attempt = $this->get_max_attempt();
 			++ $attempt;
 			if ( $attempt < $this->model->attempt ) {
 				$user->add(
@@ -184,61 +190,66 @@ class Login_Lockout extends \WP_Defender\Component {
 		if ( empty( $username ) ) {
 			return;
 		}
-		$ip = $this->ip;
-		// Record this.
-		$model = Lockout_Ip::get( $ip );
-		$model = $this->record_fail_attempt( $ip, $model );
-		// Avoid duplicate logs.
-		if ( 'def_login_banned_user' !== $error->get_error_code() ) {
-			$this->log_event( $ip, $username, self::SCENARIO_LOGIN_FAIL );
-		}
-		// Now check, if it is in a banned username.
-		$ls = $this->model;
-		if ( in_array( $username, $ls->get_blacklisted_username(), true ) ) {
-			$model->lockout_message = $this->banned_username_message;
-			$model->status = Lockout_Ip::STATUS_BLOCKED;
-			$model->save();
-			$this->log_event( $ip, $username, self::SCENARIO_BAN );
 
-			do_action( 'wd_login_lockout', $model, self::SCENARIO_BAN );
-			do_action( 'wd_blacklist_this_ip', $ip );
-
-			return;
-		}
-		// So if we can lock.
-		$window = strtotime( '-' . $ls->timeframe . 'seconds' );
-
-		$model = $this->check_meta_data( $model );
-		// We will get the latest till oldest, limit by attempt.
-		$checks = array_slice( $model->meta['login'], $ls->attempt * - 1 );
-
-		if ( count( $checks ) < $ls->attempt ) {
-			// Do nothing.
-			return;
-		}
-		// if the last time is larger.
-		$check = min( $checks );
-		if ( $check >= $window ) {
-			if ( 'permanent' === $ls->lockout_type ) {
-				$model->attempt = 0;
-				$model->meta['login'] = [];
-				$model->save();
-
-				do_action( 'wd_blacklist_this_ip', $ip );
-			} else {
-				// Lockable.
-				$model->status = Lockout_Ip::STATUS_BLOCKED;
-				$model->lock_time = time();
-
-				$this->create_blocked_lockout(
-					$model,
-					$ls->lockout_message,
-					strtotime( '+' . $ls->duration . ' ' . $ls->duration_unit )
-				);
+		foreach ( $this->ip as $ip ) {
+			if ( $this->service->is_ip_whitelisted( $ip ) ) {
+				continue;
 			}
-			// Need to create a log.
-			$this->log_event( $ip, $username, self::SCENARIO_LOGIN_LOCKOUT );
-			do_action( 'wd_login_lockout', $model, self::SCENARIO_LOGIN_LOCKOUT );
+			// Record this.
+			$model = Lockout_Ip::get( $ip );
+			$model = $this->record_fail_attempt( $ip, $model );
+			// Avoid duplicate logs.
+			if ( 'def_login_banned_user' !== $error->get_error_code() ) {
+				$this->log_event( $ip, $username, self::SCENARIO_LOGIN_FAIL );
+			}
+			// Now check, if it is in a banned username.
+			$ls = $this->model;
+			if ( in_array( $username, $ls->get_blacklisted_username(), true ) ) {
+				$model->lockout_message = $this->banned_username_message;
+				$model->status = Lockout_Ip::STATUS_BLOCKED;
+				$model->save();
+				$this->log_event( $ip, $username, self::SCENARIO_BAN );
+
+				do_action( 'wd_login_lockout', $model, self::SCENARIO_BAN );
+				do_action( 'wd_blacklist_this_ip', $ip );
+
+				continue;
+			}
+			// So if we can lock.
+			$window = strtotime( '-' . $ls->timeframe . 'seconds' );
+
+			$model = $this->check_meta_data( $model );
+			// We will get the latest till oldest, limit by attempt.
+			$checks = array_slice( $model->meta['login'], $ls->attempt * -1 );
+
+			if ( count( $checks ) < $ls->attempt ) {
+				// Do nothing.
+				continue;
+			}
+			// if the last time is larger.
+			$check = min( $checks );
+			if ( $check >= $window ) {
+				if ( 'permanent' === $ls->lockout_type ) {
+					$model->attempt = 0;
+					$model->meta['login'] = [];
+					$model->save();
+
+					do_action( 'wd_blacklist_this_ip', $ip );
+				} else {
+					// Lockable.
+					$model->status = Lockout_Ip::STATUS_BLOCKED;
+					$model->lock_time = time();
+
+					$this->create_blocked_lockout(
+						$model,
+						$ls->lockout_message,
+						strtotime( '+' . $ls->duration . ' ' . $ls->duration_unit )
+					);
+				}
+				// Need to create a log.
+				$this->log_event( $ip, $username, self::SCENARIO_LOGIN_LOCKOUT );
+				do_action( 'wd_login_lockout', $model, self::SCENARIO_LOGIN_LOCKOUT );
+			}
 		}
 	}
 
@@ -255,19 +266,24 @@ class Login_Lockout extends \WP_Defender\Component {
 	 */
 	public function two_factor_lockout( $user_id, $message, $time_limit ) {
 		// Prepare a record for Lockout_IP.
-		$model = Lockout_Ip::get( $this->ip );
-		$model->status = Lockout_Ip::STATUS_BLOCKED;
 		$start_time = time();
-		$model->lock_time = $start_time;
-		$model = $this->check_meta_data( $model );
-		$model->meta['login'][] = $start_time;
+		$user = get_user_by( 'id', $user_id );
 		$def_values = $this->model->get_default_values();
 
-		$this->create_blocked_lockout( $model, $def_values['message'], $start_time + $time_limit );
+		$ips = array_filter( $this->ip, function( $ip ) {
+			return ! $this->service->is_ip_whitelisted( $ip );
+		});
+		$models = Lockout_Ip::get_bulk( '', $ips );
+		foreach ( $models as $model ) {
+			$model->status = Lockout_Ip::STATUS_BLOCKED;
+			$model->lock_time = $start_time;
+			$model = $this->check_meta_data( $model );
+			$model->meta['login'][] = $start_time;
 
-		$user = get_user_by( 'id', $user_id );
-		$this->log_event( $this->ip, $user->user_login ?? '', self::SCENARIO_LOGIN_LOCKOUT, $message );
-		// No need to add the current IP to blocklisted.
+			$this->create_blocked_lockout( $model, $def_values['message'], $start_time + $time_limit );
+			$this->log_event( $model->ip, $user->user_login ?? '', self::SCENARIO_LOGIN_LOCKOUT, $message );
+			// No need to add the current IP to blocklisted.
+		}
 	}
 
 	/**
@@ -347,5 +363,24 @@ class Login_Lockout extends \WP_Defender\Component {
 		if ( Lockout_Log::AUTH_LOCK === $model->type ) {
 			do_action( 'defender_notify', 'firewall-notification', $model );
 		}
+	}
+
+	/**
+	 * Get the max attempt from the list of IPs.
+	 *
+	 * @since 4.4.2
+	 * @return int
+	 */
+	public function get_max_attempt(): int {
+		$attempt = 0;
+		$models = Lockout_Ip::get_bulk( '', $this->ip );
+
+		foreach ( $models as $model ) {
+			if ( isset( $model->attempt ) && $attempt < $model->attempt ) {
+				$attempt = $model->attempt;
+			}
+		}
+
+		return $attempt;
 	}
 }

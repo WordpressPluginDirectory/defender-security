@@ -40,7 +40,7 @@ class Login_Lockout extends Event {
 		$this->service = wd_di()->get( \WP_Defender\Component\Login_Lockout::class );
 		$service = wd_di()->get( Blacklist_Lockout::class );
 		$ip = $this->get_user_ip();
-		if ( $this->model->enabled && ! $service->is_ip_whitelisted( $ip ) ) {
+		if ( $this->model->enabled && ! $service->are_ips_whitelisted( $ip ) ) {
 			$this->service->add_hooks();
 		}
 	}

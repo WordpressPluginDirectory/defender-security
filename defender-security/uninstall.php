@@ -117,6 +117,7 @@ if ( $uninstall_settings && $uninstall_data ) {
 	\WP_Defender\Component\Feature_Modal::delete_modal_key();
 	\WP_Defender\Controller\Data_Tracking::delete_modal_key();
 	\WP_Defender\Component\Rate::clean_up();
+	\WP_Defender\Controller\General_Notice::delete_slugs();
 }
 // Remains from old versions.
 delete_site_option( 'wd_audit_cached' );

@@ -526,6 +526,14 @@ class Two_Fa extends Component {
 		 */
 		$firewall_component = wd_di()->get( \WP_Defender\Component\Firewall::class );
 
+		$skip_priority_lockout_checks = true;
+		foreach ( $this->get_user_ip() as $ip ) {
+			if ( ! $firewall_component->skip_priority_lockout_checks( $ip ) ) {
+				$skip_priority_lockout_checks = false;
+				break;
+			}
+		}
+
 		/**
 		 * Required rules:
 		 * hook returns true (since v3.3.0),
@@ -535,7 +543,7 @@ class Two_Fa extends Component {
 		if (
 			apply_filters( 'wd_2fa_enable_attempts', true )
 			&& $login_settings->enabled
-			&& ! $firewall_component->skip_priority_lockout_checks( $this->get_user_ip() )
+			&& ! $$skip_priority_lockout_checks
 		) {
 			$line = get_user_meta( $user_id, 'wd_2fa_attempt_' . $slug, true );
 			// Fresh start or there's a record.

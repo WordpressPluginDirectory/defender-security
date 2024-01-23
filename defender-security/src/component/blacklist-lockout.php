@@ -13,51 +13,6 @@ class Blacklist_Lockout extends Component {
 	use \WP_Defender\Traits\IP;
 
 	/**
-	 * Queue hooks when this class init.
-	 */
-	public function add_hooks() {
-		add_filter( 'defender_ip_lockout_assets', [ &$this, 'output_scripts_data' ] );
-	}
-
-	/**
-	 * @param array $data
-	 *
-	 * @return mixed
-	 * @throws \MaxMind\Db\Reader\InvalidDatabaseException
-	 */
-	public function output_scripts_data( $data ) {
-		$model = new Model_Blacklist_Lockout();
-		$user_ip = $this->get_user_ip();
-		$exist_geodb = $this->is_geodb_downloaded();
-		// If MaxMind GeoIP DB is downloaded then display the required data.
-		if ( $exist_geodb ) {
-			$current_country = $this->get_current_country( $user_ip );
-			$current_country = $current_country['iso'] ?? false;
-			$country_list = $this->countries_list();
-			$blacklist_countries = array_merge( [ 'all' => __( 'Block all', 'defender-security' ) ], $country_list );
-			$whitelist_countries = array_merge( [ 'all' => __( 'Allow all', 'defender-security' ) ], $country_list );
-		} else {
-			$current_country = false;
-			$blacklist_countries = [];
-			$whitelist_countries = [];
-		}
-		$data['blacklist'] = [
-			'model'   => $model->export(),
-			'summary' => [ 'day' => 0 ],
-			'misc' => [
-				'geo_db_downloaded' => $exist_geodb,
-				'current_country' => $current_country,
-				'blacklist_countries' => $blacklist_countries,
-				'whitelist_countries' => $whitelist_countries,
-				'user_ip' => $user_ip,
-			],
-			'class' => Model_Blacklist_Lockout::class,
-		];
-
-		return $data;
-	}
-
-	/**
 	 * @param string $ip
 	 *
 	 * @return bool
@@ -249,12 +204,18 @@ class Blacklist_Lockout extends Component {
 				}
 
 				if ( empty( $model->country_whitelist ) ) {
-					$country = $this->get_current_country( $this->get_user_ip() );
-					if ( false === $country ) {
-						return false;
+					$is_country = false;
+					foreach ( $this->get_user_ip() as $ip ) {
+						$country = $this->get_current_country( $ip );
+
+						if ( ! empty( $country['iso'] ) ) {
+							$model = $this->add_default_whitelisted_country( $model, $country['iso'] );
+							$is_country = true;
+						}
 					}
-					if ( ! empty( $country['iso'] ) ) {
-						$model = $this->add_default_whitelisted_country( $model, $country['iso'] );
+
+					if ( false === $is_country ) {
+						return false;
 					}
 				}
 				$model->save();
@@ -350,10 +311,27 @@ class Blacklist_Lockout extends Component {
 	 * @return bool
 	 */
 	public function is_blc_ip_whitelisted(): bool {
-		return in_array(
-			$this->get_user_ip(),
-			$this->get_blc_ip_whitelisted(),
-			true
-		);
+		$ips = $this->get_user_ip();
+		$blc_ips = $this->get_blc_ip_whitelisted();
+		$diff = array_diff( $ips, $blc_ips );
+		return empty( $diff );
+	}
+
+	/**
+	 * Are IPs Whitelisted?
+	 *
+	 * @param array $ips
+	 *
+	 * @since 4.4.2
+	 * @return bool
+	 */
+	public function are_ips_whitelisted( array $ips ): bool {
+		foreach ( $ips as $ip ) {
+			if ( ! $this->is_ip_whitelisted( $ip ) ) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 }

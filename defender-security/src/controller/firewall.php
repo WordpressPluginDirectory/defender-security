@@ -52,10 +52,9 @@ class Firewall extends Event {
 		);
 		$this->model = wd_di()->get( \WP_Defender\Model\Setting\Firewall::class );
 		$this->service = wd_di()->get( \WP_Defender\Component\Firewall::class );
-		$ip = $this->get_user_ip();
 		$this->register_routes();
 		$this->maybe_show_demo_lockout();
-		$this->maybe_lockout( $ip );
+		$this->maybe_lockout_gathered_ips();
 		// Todo: pass $ip as argument to Login_Lockout/Nf_Lockout.
 		wd_di()->get( Login_Lockout::class );
 		wd_di()->get( Nf_Lockout::class );
@@ -313,11 +312,11 @@ class Firewall extends Event {
 	}
 
 	/**
-	 * We wil check and prevent the access if the current IP is blacklist, or get temporary banned.
+	 * We will check and prevent the access if the current IP is blacklist, or get temporary banned.
 	 *
 	 * @param string $ip
 	 *
-	 * @return null|void
+	 * @return null|void|string
 	 */
 	public function maybe_lockout( $ip ) {
 		do_action( 'wd_before_lockout', $ip );
@@ -339,7 +338,7 @@ class Firewall extends Event {
 			$user_agent = $service_ua->sanitize_user_agent();
 			if ( $service_ua->is_bad_post( $user_agent ) ) {
 				$service_ua->block_user_agent_or_ip( $user_agent, $ip, User_Agent_Component::REASON_BAD_POST );
-				$this->actions_for_blocked( $service_ua->get_message() );
+				return $service_ua->get_message();
 			}
 			if ( ! empty( $user_agent )
 				/**
@@ -360,7 +359,7 @@ class Firewall extends Event {
 			) {
 				// Todo: if we use a hook then we should extend cases with a custom reason and send it for log.
 				$service_ua->block_user_agent_or_ip( $user_agent, $ip, User_Agent_Component::REASON_BAD_USER_AGENT );
-				$this->actions_for_blocked( $service_ua->get_message() );
+				return $service_ua->get_message();
 			}
 		}
 
@@ -498,7 +497,7 @@ class Firewall extends Event {
 			'report' => wd_di()->get( Firewall_Report::class )->to_string(),
 			'notification_lockout' => 'enabled' === wd_di()->get( Firewall_Notification::class )->status,
 			'ua_lockout' => wd_di()->get( User_Agent_Lockout::class )->enabled,
-			'user_ip' => $user_ip,
+			'user_ip' => implode( ', ', $user_ip ),
 			'user_ip_header' => $http_ip_header_value,
 		];
 
@@ -744,9 +743,8 @@ class Firewall extends Event {
 
 		$user_ip = $remote_addr->get_ip_address();
 		$user_ip_header = $remote_addr->get_http_ip_header_value( $data['selected_http_header'] );
-
 		$data = [
-			'user_ip' => $user_ip,
+			'user_ip' => is_array( $user_ip ) ? implode( ', ', $user_ip ) : $user_ip,
 			'user_ip_header' => $user_ip_header,
 		];
 
@@ -787,5 +785,30 @@ class Firewall extends Event {
 	 */
 	public function clean_up_firewall_lockout(): void {
 		$this->service->firewall_clean_up_lockout();
+	}
+
+	/**
+	 * Gather IP(s) from various headers and check if any IP is blacklisted, or temporary banned.
+	 *
+	 * @since 4.4.2
+	 *
+	 * @return void
+	 */
+	public function maybe_lockout_gathered_ips(): void {
+		$msg = '';
+		$ips = $this->service->gather_ips();
+
+		if ( ! empty( $ips ) && is_array( $ips ) ) {
+			foreach( $ips as $ip ) {
+				$result = $this->maybe_lockout( $ip );
+				if ( empty( $msg ) && ! empty( $result ) ) {
+					$msg = $result;
+				}
+			}
+		}
+
+		if ( ! empty( $msg ) ) {
+			$this->actions_for_blocked( $msg );
+		}
 	}
 }
