@@ -16,7 +16,8 @@ use WP_Defender\Traits\Permission;
  * @package WP_Defender
  */
 class Central extends Component {
-	use IO, Permission;
+	use IO;
+	use Permission;
 
 	public const INTERNAL_LOG = 'internal.log';
 
@@ -104,13 +105,13 @@ class Central extends Component {
 	/**
 	 * Execute the method, return should be various base on the method.
 	 *
-	 * @param string $class
+	 * @param string $class_name
 	 * @param string $method
 	 *
 	 * @return Response|void
 	 */
-	private function execute_intention( $class, $method ) {
-		$object = wd_di()->get( $class );
+	private function execute_intention( $class_name, $method ) {
+		$object = wd_di()->get( $class_name );
 		if ( is_object( $object ) ) {
 			$request = new Request();
 			// Because the method is getting params from $_REQUEST directly, we don't need to pass any args, just call.
@@ -120,34 +121,34 @@ class Central extends Component {
 
 			return $object->$method( $request );
 		} else {
-			$this->log( sprintf( 'class not found when executing: %s %s', $class, $method ), self::INTERNAL_LOG );
+			$this->log( sprintf( 'class not found when executing: %s %s', $class_name, $method ), self::INTERNAL_LOG );
 		}
 	}
 
 	/**
 	 * @param string $method      The function to call.
-	 * @param string $class       Class name.
+	 * @param string $class_name  Class name.
 	 * @param bool   $is_private  Should this expose for non-auth user.
 	 * @param bool   $is_redirect Include redirect URL in response if necessary.
 	 *
 	 * @return void
 	 */
-	public function add_route( $method, $class, $is_private = true, $is_redirect = false ) {
-		$intention = $this->get_intention( $class, $method );
+	public function add_route( $method, $class_name, $is_private = true, $is_redirect = false ) {
+		$intention = $this->get_intention( $class_name, $method );
 
-		wd_di()->set( sprintf( 'controller.%s', $intention ), [ $class, $method, $is_private, $is_redirect ] );
+		wd_di()->set( sprintf( 'controller.%s', $intention ), [ $class_name, $method, $is_private, $is_redirect ] );
 		wd_di()->set( sprintf( 'route.%s', $intention ), $intention );
 		wd_di()->set( sprintf( 'nonce.%s', $intention ), wp_create_nonce( $intention ) );
 	}
 
 	/**
 	 * @param string $method
-	 * @param string $class
+	 * @param string $class_name
 	 *
 	 * @return mixed
 	 */
-	public function get_route( $method, $class ) {
-		$intention = $this->get_intention( $class, $method );
+	public function get_route( $method, $class_name ) {
+		$intention = $this->get_intention( $class_name, $method );
 
 		try {
 			return wd_di()->get( sprintf( 'route.%s', $intention ) );
@@ -158,12 +159,12 @@ class Central extends Component {
 
 	/**
 	 * @param string $method
-	 * @param string $class
+	 * @param string $class_name
 	 *
 	 * @return mixed
 	 */
-	public function get_nonce( $method, $class ) {
-		$intention = $this->get_intention( $class, $method );
+	public function get_nonce( $method, $class_name ) {
+		$intention = $this->get_intention( $class_name, $method );
 
 		try {
 			return wd_di()->get( sprintf( 'nonce.%s', $intention ) );
@@ -247,14 +248,14 @@ class Central extends Component {
 	/**
 	 * Get the intention.
 	 *
-	 * @param string $class
+	 * @param string $class_name
 	 * @param string $method
 	 *
 	 * @since 3.11.0
 	 * @return false|string
 	 */
-	private function get_intention( string $class, string $method ) {
-		$intention = sprintf( '%s.%s', $class, $method );
+	private function get_intention( string $class_name, string $method ) {
+		$intention = sprintf( '%s.%s', $class_name, $method );
 
 		if ( ! defined( 'DEFENDER_DEBUG' ) || false === DEFENDER_DEBUG ) {
 			$intention = hash( 'md5', $intention );

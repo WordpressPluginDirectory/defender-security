@@ -70,7 +70,7 @@ class Blacklist extends Controller {
 	}
 
 	/**
-	 * @return null|void
+	 * @return void
 	 */
 	public function enqueue_assets() {
 		if ( ! $this->is_page_active() ) {
@@ -538,7 +538,7 @@ class Blacklist extends Controller {
 	 *
 	 * @since 2.8.0
 	 *
-	 * @return null|void
+	 * @return void
 	 */
 	public function update_database() {
 		if ( empty( $this->model->maxmind_license_key ) ) {

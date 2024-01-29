@@ -287,7 +287,7 @@ class Audit_Logging extends Event {
 	}
 
 	/**
-	 * @return null|void
+	 * @return void
 	 */
 	public function enqueue_assets() {
 		if ( ! $this->is_page_active() ) {

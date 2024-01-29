@@ -315,7 +315,7 @@ class Config_Hub_Helper {
 	/**
 	 * Delete transient for matching condition.
 	 *
-	 * @return null|void
+	 * @return void
 	 */
 	public static function clear_config_transient() {
 		if ( ! isset( $_GET['page'], $_GET['view'], $_GET['transient'] ) ) {

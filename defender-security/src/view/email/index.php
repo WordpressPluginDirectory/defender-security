@@ -3,6 +3,7 @@
  * @var \WP_Defender\Integrations\Dashboard_Whitelabel
  */
 $dashboard_whitelabel = wd_di()->get( \WP_Defender\Integrations\Dashboard_Whitelabel::class );
+$can_whitelabel = $dashboard_whitelabel->can_whitelabel();
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -75,8 +76,9 @@ $dashboard_whitelabel = wd_di()->get( \WP_Defender\Integrations\Dashboard_Whitel
     </head>
 
     <body
-            style="-moz-box-sizing: border-box; -ms-text-size-adjust: 100%; -webkit-box-sizing: border-box; -webkit-text-size-adjust: 100%; background-color: #F2F2F2; box-sizing: border-box; color: #1A1A1A; font-family: Roboto, Arial, sans-serif; font-size: 15px; font-weight: normal; line-height: 26px; margin: 0; min-width: 100%; padding: 0; text-align: left; width: 100% !important;">
+            style="-moz-box-sizing: border-box; -ms-text-size-adjust: 100%; -webkit-box-sizing: border-box; -webkit-text-size-adjust: 100%; background-color: #F2F2F2; box-sizing: border-box; color: #1A1A1A; font-family: Roboto, Arial, sans-serif; font-size: 15px; font-weight: normal; line-height: 26px; margin: 0; min-width: 100%; padding: 0; text-align: left; width: 100% !important;<?php echo $can_whitelabel ? 'padding-top:45px;' : ''; ?>">
         <!-- Header image -->
+        <?php if ( ! $can_whitelabel ): ?>
         <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="" style="width:600px;" width="600" ><tr><td style="line-height:0;font-size:0;mso-line-height-rule:exactly;"><![endif]-->
         <div style="margin:0 auto;max-width:600px;">
             <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;">
@@ -121,11 +123,12 @@ $dashboard_whitelabel = wd_di()->get( \WP_Defender\Integrations\Dashboard_Whitel
             </table>
         </div>
         <!--[if mso | IE]></td></tr></table><![endif]-->
+        <?php endif; ?>
         <!-- END Header image -->
 
         <!-- Main content -->
         <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="main-content-outlook" style="width:600px;" width="600" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-        <div class="main-content" style="background:#ffffff;background-color:#ffffff;margin:0px auto;max-width:600px;">
+        <div class="main-content" style="background:#ffffff;background-color:#ffffff;margin:0px auto;max-width:600px;<?php echo $can_whitelabel ? 'border-radius:20px;overflow:hidden;' : ''; ?>">
             <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#ffffff;background-color:#ffffff;width:100%;">
                 <tbody>
                     <tr>
@@ -139,11 +142,16 @@ $dashboard_whitelabel = wd_di()->get( \WP_Defender\Integrations\Dashboard_Whitel
                                                 <div style="font-family:Roboto, Arial, sans-serif;font-size:18px;letter-spacing:-.25px;line-height:30px;text-align:left;color:#1A1A1A;">
                                                     <?php echo $content_body; ?>
                                                     <!--Cheers block-->
+                                                    <?php if (
+                                                        ! $can_whitelabel ||
+                                                        ( $dashboard_whitelabel->is_change_footer() && $dashboard_whitelabel->is_set_footer_text() )
+                                                    ): ?>
                                                     <p style="color:#1A1A1A;font-family:Roboto,Arial,sans-serif;font-size:16px;font-weight:normal;line-height:30px;margin:30px 0 0;padding:0;text-align:left;">
                                                         <?php esc_html_e( "Cheers,", 'defender-security' ) ?>
                                                         <br/>
                                                         <?php echo esc_html( $dashboard_whitelabel->get_footer_text() ); ?>
                                                     </p>
+                                                    <?php endif; ?>
                                                     <!--End Cheers block-->
                                                 </div>
                                             </td>
@@ -161,7 +169,7 @@ $dashboard_whitelabel = wd_di()->get( \WP_Defender\Integrations\Dashboard_Whitel
         <!-- END Main content -->
 
         <!-- Footer -->
-        <?php if( $dashboard_whitelabel->is_hide_branding() === false ): ?>
+        <?php if ( ! $can_whitelabel ): ?>
             <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="" style="width:600px;" width="600" ><tr><td style="line-height:0;font-size:0;mso-line-height-rule:exactly;"><![endif]-->
             <div style="background:#E7F1FB;background-color:#E7F1FB;margin:0 auto;border-radius:0 0 15px 15px;max-width:600px;">
                 <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#E7F1FB;background-color:#E7F1FB;width:100%;border-radius:0 0 15px 15px;">
@@ -296,16 +304,15 @@ $dashboard_whitelabel = wd_di()->get( \WP_Defender\Integrations\Dashboard_Whitel
                                     <tbody>
                                         <tr>
                                             <td align="center" style="font-size:0;padding:0 0 15px;word-break:break-word;">
-                                                <?php if( $dashboard_whitelabel->is_hide_branding() === false ): ?>
+                                                <?php if ( ! $can_whitelabel ): ?>
                                                     <div style="font-family:Roboto, Arial, sans-serif;font-size:10px;letter-spacing:-.25px;line-height:30px;text-align:center;color:#505050;">INCSUB PO BOX 163, ALBERT PARK, VICTORIA.3206 AUSTRALIA</div>
-                                                <?php endif ?>
+                                                <?php endif; ?>
                                                 <!-- Unsubscribe section -->
-                                                <?php
-                                                if ( ! empty( $unsubscribe_link ) ) { ?>
+                                                <?php if ( ! empty( $unsubscribe_link ) ): ?>
                                                     <div style="font-family:Roboto, Arial, sans-serif;font-size:10px;letter-spacing:-.25px;line-height:30px;text-align:center;color:#505050;">
                                                         <a href="<?php echo esc_url( $unsubscribe_link ); ?>" style="color: #000!important;text-decoration-line:underline!important;font-weight: 400!important;"><?php esc_html_e( 'Unsubscribe', 'defender-security' ); ?></a>
                                                     </div>
-                                                <?php } ?>
+                                                <?php endif; ?>
                                                 <!-- End Unsubscribe -->
                                             </td>
                                         </tr>

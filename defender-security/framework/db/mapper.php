@@ -16,7 +16,7 @@ class Mapper extends Component {
 	/**
 	 * Contain the current model class name.
 	 *
-	 * @string
+	 * @var string
 	 */
 	private $repository;
 
@@ -61,12 +61,12 @@ class Mapper extends Component {
 
 	/**
 	 *
-	 * @param $class
+	 * @param $class_name
 	 *
 	 * @return $this
 	 */
-	public function get_repository( $class ) {
-		$this->repository = $class;
+	public function get_repository( $class_name ) {
+		$this->repository = $class_name;
 
 		return $this;
 	}
@@ -93,7 +93,7 @@ class Mapper extends Component {
 		global $wpdb;
 		if ( 2 === count( $args ) ) {
 			list( $key, $value ) = $args;
-			$this->where[] = $wpdb->prepare( "`$key` = " . $this->guess_var_type( $value ), $value );
+			$this->where[] = $wpdb->prepare( "`$key` = " . $this->guess_var_type( $value ), $value );// phpcs:ignore
 
 			return $this;
 		}
@@ -115,12 +115,12 @@ class Mapper extends Component {
 			$this->where[] = $sql;
 		} elseif ( 'between' === strtolower( $operator ) ) {
 			$this->where[] = $wpdb->prepare(
-				"{$key} {$operator} {$this->guess_var_type($value[0])} AND {$this->guess_var_type($value[1])}",
+				"{$key} {$operator} {$this->guess_var_type($value[0])} AND {$this->guess_var_type($value[1])}",// phpcs:ignore
 				$value[0],
 				$value[1]
 			);
 		} else {
-			$this->where[] = $wpdb->prepare( "`$key` $operator {$this->guess_var_type($value)}", $value );
+			$this->where[] = $wpdb->prepare( "`$key` $operator {$this->guess_var_type($value)}", $value );// phpcs:ignore
 		}
 
 		return $this;
@@ -168,7 +168,7 @@ class Mapper extends Component {
 		global $wpdb;
 		$this->group = str_replace(
 			"'",
-			"",
+			"",// phpcs:ignore
 			$wpdb->prepare( 'GROUP BY %s', $group_by )
 		);
 
@@ -189,8 +189,8 @@ class Mapper extends Component {
 		}
 		$this->order = str_replace(
 			"'",
-			"",
-			$wpdb->prepare( "ORDER BY %s %s", $order_by, $order )
+			"",// phpcs:ignore
+			$wpdb->prepare( 'ORDER BY %s %s', $order_by, $order )
 		);
 
 		return $this;
@@ -205,8 +205,8 @@ class Mapper extends Component {
 		global $wpdb;
 		$this->limit = str_replace(
 			"'",
-			"",
-			$wpdb->prepare( 'LIMIT ' . $this->guess_var_type( $offset ), $offset )
+			"",// phpcs:ignore
+			$wpdb->prepare( 'LIMIT ' . $this->guess_var_type( $offset ), $offset )// phpcs:ignore
 		);
 
 		return $this;
@@ -222,7 +222,7 @@ class Mapper extends Component {
 		$sql = $this->query_build();
 		$this->saved_queries = $sql;
 		global $wpdb;
-		$data = $wpdb->get_row( $sql, ARRAY_A );
+		$data = $wpdb->get_row( $sql, ARRAY_A );// phpcs:ignore
 		if ( is_null( $data ) ) {
 			return null;
 		}
@@ -277,7 +277,7 @@ class Mapper extends Component {
 		$this->saved_queries = $sql;
 
 		global $wpdb;
-		$data = $wpdb->get_results( $sql, ARRAY_A );
+		$data = $wpdb->get_results( $sql, ARRAY_A );// phpcs:ignore
 		if ( is_null( $data ) ) {
 			$data = [];
 		}
@@ -292,7 +292,7 @@ class Mapper extends Component {
 		global $wpdb;
 		$sql = $this->query_build( 'COUNT(*)' );
 
-		return $wpdb->get_var( $sql );
+		return $wpdb->get_var( $sql );// phpcs:ignore
 	}
 
 	/**
@@ -307,7 +307,7 @@ class Mapper extends Component {
 		$data = $model->export();
 		unset( $data['table'] );
 		unset( $data['safe'] );
-		foreach ( $data as $key => &$val ) {
+		foreach ( $data as $key => &$val ) {// phpcs:ignore
 			if ( is_array( $val ) ) {
 				$val = json_encode( $val );
 			}
@@ -356,7 +356,7 @@ class Mapper extends Component {
 		$sql = "DELETE FROM $table WHERE $where";
 		$this->clear();
 
-		return $wpdb->query( $sql );
+		return $wpdb->query( $sql );// phpcs:ignore
 	}
 
 	/**
@@ -372,7 +372,7 @@ class Mapper extends Component {
 		$sql = "DELETE FROM $table WHERE $where $order $limit";
 		$this->clear();
 
-		return $wpdb->query( $sql );
+		return $wpdb->query( $sql );// phpcs:ignore
 	}
 
 	/**
@@ -382,7 +382,7 @@ class Mapper extends Component {
 		$table = self::table();
 		global $wpdb;
 
-		return $wpdb->query( sprintf( 'TRUNCATE TABLE `%s`', $table ) );
+		return $wpdb->query( "TRUNCATE TABLE $table" );
 	}
 
 	private function table( $model = null ) {

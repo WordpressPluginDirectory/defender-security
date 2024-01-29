@@ -219,7 +219,7 @@ class Firewall extends Event {
 	}
 
 	/**
-	 * @return null|void
+	 * @return void
 	 */
 	public function enqueue_assets() {
 		if ( ! $this->is_page_active() ) {
@@ -316,7 +316,7 @@ class Firewall extends Event {
 	 *
 	 * @param string $ip
 	 *
-	 * @return null|void|string
+	 * @return void|string
 	 */
 	public function maybe_lockout( $ip ) {
 		do_action( 'wd_before_lockout', $ip );
@@ -620,7 +620,7 @@ class Firewall extends Event {
 	/**
 	 * Schedule cleanup blocklist ips event.
 	 *
-	 * @return null|void
+	 * @return void
 	 */
 	private function schedule_cleanup_blocklist_ips_event() {
 		// Sometimes multiple requests come at the same time. So we will only count the web requests.

@@ -33,7 +33,7 @@ function defender_path( string $path ): string {
  * @return array
  */
 function defender_sanitize_data( $data ) {
-	foreach ( $data as $key => &$value ) {
+	foreach ( $data as $key => &$value ) {// phpcs:ignore
 		if ( is_array( $value ) ) {
 			$value = defender_sanitize_data( $value );
 		} else {
@@ -253,23 +253,6 @@ function defender_noreply_email( string $filter_tag = '' ) {
 }
 
 /**
- * Noreply email header.
- * Generate noreply email header with HTML UTF-8 support.
- *
- * @param string $email Email.
- *
- * @return array Returns the email headers.
- */
-function defender_noreply_html_header( $email ) {
-	$headers = [
-		'From: Defender <' . $email . '>',
-		'Content-Type: text/html; charset=UTF-8',
-	];
-
-	return $headers;
-}
-
-/**
  * Get data of the whitelabel feature from WPMUDEV Dashboard:
  * hide_branding, hide_doc_link, footer_text, hero_image, change_footer.
  *
@@ -455,7 +438,7 @@ function defender_generate_random_string( $length = 16, $strings = 'ABCDEFGHIJKL
 	}
 
 	$secret = [];
-	for ( $i = 0; $i < $length; $i ++ ) {
+	for ( $i = 0; $i < $length; $i++ ) {
 		$secret[] = $strings[ \WP_Defender\Component\Crypt::random_int( 0, strlen( $strings ) - 1 ) ];
 	}
 
@@ -465,15 +448,15 @@ function defender_generate_random_string( $length = 16, $strings = 'ABCDEFGHIJKL
 /**
  * Either return array or echo json.
  *
- * @param mixed $data    A Data to be returned or echoed.
- * @param bool  $success Is it a success or failure.
- * @param bool  $return  True if data needs to be returned.
+ * @param mixed $data      A Data to be returned or echoed.
+ * @param bool  $success   Is it a success or failure.
+ * @param bool  $is_return True if data needs to be returned.
  *
  * @since 3.0.0
  * @return array|void
  */
-function defender_maybe_echo_json( $data, $success, $return ) {
-	if ( true === $return ) {
+function defender_maybe_echo_json( $data, $success, $is_return ) {
+	if ( true === $is_return ) {
 		return [
 			'success' => $success,
 			'data' => $data,
@@ -582,13 +565,13 @@ function defender_is_rest_api_request(): bool {
  * request or a REST API request and acts accordingly.
  * @since 4.2.0
  *
- * @param string $function The function that was called.
- * @param string $version The version number that deprecated the function.
- * @param string $replacement (Optional) The function that should be used instead.
+ * @param string $function_name The function that was called.
+ * @param string $version       The version number that deprecated the function.
+ * @param string $replacement   (Optional) The function that should be used instead.
  *
  * @return void
  */
-function defender_deprecated_function( string $function, string $version, string $replacement = '' ): void {
+function defender_deprecated_function( string $function_name, string $version, string $replacement = '' ): void {
 	/**
 	 * Filters whether to trigger an error for deprecated functions.
 	 *
@@ -598,13 +581,13 @@ function defender_deprecated_function( string $function, string $version, string
 	 */
 	if ( WP_DEBUG && apply_filters( 'defender_deprecated_function_trigger_error', false ) ) {
 		if ( wp_doing_ajax() || defender_is_rest_api_request() ) {
-			do_action( 'deprecated_function_run', $function, $replacement, $version );
+			do_action( 'deprecated_function_run', $function_name, $replacement, $version );
 
-			$log_string = "Function {$function} is deprecated since version {$version}!";
+			$log_string = "Function {$function_name} is deprecated since version {$version}!";
 			$log_string .= $replacement ? " Use {$replacement} instead." : '';
 			error_log( $log_string );
 		} else {
-			_deprecated_function( $function, $version, $replacement );
+			_deprecated_function( $function_name, $version, $replacement );
 		}
 	}
 }

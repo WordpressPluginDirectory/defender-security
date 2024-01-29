@@ -7,12 +7,14 @@ namespace Calotes\Base;
 
 class File {
 	const ENGINE_SPL = 'spl', ENGINE_SCANDIR = 'scan_dir', ENGINE_OPENDIR = 'open_dir';
+
 	/**
 	 * Engine use to create a dir tree
 	 *
 	 * @var string
 	 */
 	public $engine = '';
+
 	/**
 	 * Absolute path to a folder need to create a dir tre
 	 *
@@ -26,6 +28,7 @@ class File {
 	 * @var bool
 	 */
 	public $include_file = true;
+
 	/**
 	 * Is the result include dir
 	 *
@@ -48,7 +51,7 @@ class File {
 	 *
 	 * @var array
 	 */
-	public $exclude = array();
+	public $exclude = [];
 
 	/**
 	 * This is where to define the rules for include files, please note that if $include is provided, the $exclude
@@ -57,11 +60,11 @@ class File {
 	 * 'ext'=>array('jpg','gif') file extension you don't want appear in the result
 	 * 'path'=>array('/tmp/file1.txt','/tmp/file2') absolute path to files
 	 * 'dir'=>array('/tmp/','/dir/') absolute path to the directory you dont want to include files
-	 * 'filename'=>array('abc*') file name you don't want to include, can be regex,
+	 * 'filename'=>array('abc*') file name you don't want to include, can be regex.
 	 *
 	 * @var array
 	 */
-	public $include = array();
+	public $include = [];
 
 	/**
 	 * Does this search recursive
@@ -86,32 +89,32 @@ class File {
 	 * @param bool|true  $is_recursive
 	 * @param bool|int   $max_filesize
 	 */
-	public function __construct( $path, $include_file = true, $include_dir = false, $include = array(), $exclude = array(), $is_recursive = true, $include_hidden = false, $max_filesize = false ) {
-		$this->path           = $path;
-		$this->include_file   = $include_file;
-		$this->include_dir    = $include_dir;
-		$this->include        = $include;
-		$this->exclude        = $exclude;
-		$this->is_recursive   = $is_recursive;
-		$this->engine         = self::ENGINE_SCANDIR;
+	public function __construct( $path, $include_file = true, $include_dir = false, $include_rules = [], $exclude = [], $is_recursive = true, $include_hidden = false, $max_filesize = false ) {
+		$this->path = $path;
+		$this->include_file = $include_file;
+		$this->include_dir = $include_dir;
+		$this->include = $include_rules;
+		$this->exclude = $exclude;
+		$this->is_recursive = $is_recursive;
+		$this->engine = self::ENGINE_SCANDIR;
 		$this->include_hidden = $include_hidden;
-		$this->max_filesize   = $max_filesize;
+		$this->max_filesize = $max_filesize;
 	}
 
 	/**
 	 * @return array
 	 */
 	public function get_dir_tree() {
-		$result = array();
+		$result = [];
 		if ( ! is_dir( $this->path ) ) {
 			return $result;
 		}
 
-		if ( $this->engine == self::ENGINE_SPL ) {
+		if ( self::ENGINE_SPL === $this->engine ) {
 			$result = $this->_get_dir_tree_by_spl();
-		} elseif ( $this->engine == self::ENGINE_SCANDIR ) {
+		} elseif ( self::ENGINE_SCANDIR === $this->engine ) {
 			$result = $this->_get_dir_tree_by_scandir();
-		} elseif ( $this->engine == self::ENGINE_OPENDIR ) {
+		} elseif ( self::ENGINE_OPENDIR === $this->engine ) {
 			$result = $this->_get_dir_tree_by_open_dir();
 		}
 
@@ -125,23 +128,23 @@ class File {
 	 */
 	private function _get_dir_tree_by_spl() {
 		$path = $this->path;
-		$data = array();
+		$data = [];
 		if ( $this->is_recursive ) {
 			$directory_flag = \FilesystemIterator::KEY_AS_PATHNAME | \FilesystemIterator::CURRENT_AS_FILEINFO
-							  | \FilesystemIterator::UNIX_PATHS | \FilesystemIterator::SKIP_DOTS;
-			$directory      = new \RecursiveDirectoryIterator( $path, $directory_flag );
+							| \FilesystemIterator::UNIX_PATHS | \FilesystemIterator::SKIP_DOTS;
+			$directory = new \RecursiveDirectoryIterator( $path, $directory_flag );
 
 			if ( ! empty( $this->include ) || ! empty( $this->exclude ) ) {
 				$directory = new \RecursiveCallbackFilterIterator(
 					$directory,
-					array(
+					[
 						&$this,
 						'filter_directory',
-					)
+					]
 				);
 			}
 			$tree = new \RecursiveIteratorIterator( $directory, \RecursiveIteratorIterator::SELF_FIRST );
-			if ( $this->is_recursive !== true ) {
+			if ( true !== $this->is_recursive ) {
 				$tree->setMaxDepth( $this->is_recursive );
 			}
 		} else {
@@ -152,28 +155,28 @@ class File {
 			$real_path = $file->getRealPath();
 
 			$is_hidden = explode( DIRECTORY_SEPARATOR . '.', $real_path );
-			if ( count( $is_hidden ) > 1 && $this->include_hidden == false ) {
+			if ( count( $is_hidden ) > 1 && false === $this->include_hidden ) {
 				continue;
 			}
-			if ( $this->is_recursive == false ) {
-				// have to filter this, for un recursive
+			if ( false === $this->is_recursive ) {
+				// Have to filter this, for un recursive.
 				if ( ! empty( $this->include ) || ! empty( $this->exclude ) ) {
-					if ( $this->filter_directory( $real_path ) == false ) {
+					if ( false === $this->filter_directory( $real_path ) ) {
 						continue;
 					}
 				}
 			}
 
-			if ( $this->include_file == false && $file->isFile() ) {
+			if ( false === $this->include_file && $file->isFile() ) {
 				continue;
 			}
 
-			if ( $this->include_dir == false && $file->isDir() ) {
+			if ( false === $this->include_dir && $file->isDir() ) {
 				continue;
 			}
 
 			if ( $file->isFile() && is_numeric( $this->max_filesize ) ) {
-				// convert max to bytes
+				// Convert max to bytes.
 				$max_size = $this->max_filesize * ( pow( 1024, 2 ) );
 				if ( $file->getSize() > $max_size ) {
 					continue;
@@ -187,7 +190,7 @@ class File {
 	}
 
 	/**
-	 * @param null $path
+	 * @param $path
 	 *
 	 * @return array
 	 */
@@ -195,17 +198,17 @@ class File {
 		if ( is_null( $path ) ) {
 			$path = $this->path;
 		}
-		$path   = rtrim( $path, DIRECTORY_SEPARATOR ) . DIRECTORY_SEPARATOR;
+		$path = rtrim( $path, DIRECTORY_SEPARATOR ) . DIRECTORY_SEPARATOR;
 		$rfiles = scandir( $path );
-		$data   = array();
+		$data = [];
 
 		foreach ( $rfiles as $rfile ) {
-			if ( $rfile == '.' || $rfile == '..' ) {
+			if ( '.' === $rfile || '..' === $rfile ) {
 				continue;
 			}
-			if ( substr( pathinfo( $rfile, PATHINFO_BASENAME ), 0, 1 ) == '.'
-				 && $this->include_hidden == false ) {
-				// hidden files, move on
+			if ( '.' === substr( pathinfo( $rfile, PATHINFO_BASENAME ), 0, 1 )
+				&& false === $this->include_hidden ) {
+				// Hidden files, move on.
 				continue;
 			}
 
@@ -213,11 +216,11 @@ class File {
 
 			$type = filetype( $real_path );
 
-			if ( ( ! empty( $this->include ) || ! empty( $this->exclude ) ) && ( $this->filter_directory( $real_path, $type ) == false ) ) {
+			if ( ( ! empty( $this->include ) || ! empty( $this->exclude ) ) && ( false === $this->filter_directory( $real_path, $type ) ) ) {
 				continue;
 			}
 
-			if ( $type == 'file' && $this->include_file == true ) {
+			if ( 'file' === $type && true === $this->include_file ) {
 				if ( is_numeric( $this->max_filesize ) ) {
 					$max_size = $this->max_filesize * ( pow( 1024, 2 ) );
 					if ( filesize( $real_path ) > $max_size ) {
@@ -230,13 +233,13 @@ class File {
 				}
 			}
 
-			if ( $type == 'dir' ) {
+			if ( 'dir' === $type ) {
 				if ( $this->include_dir ) {
 					$data[] = $real_path;
 				}
 				if ( $this->is_recursive ) {
 					$tdata = $this->_get_dir_tree_by_scandir( $real_path );
-					$data  = array_merge( $data, $tdata );
+					$data = array_merge( $data, $tdata );
 				}
 			}
 		}
@@ -247,7 +250,7 @@ class File {
 	/**
 	 * Query files on path using opendir&readir
 	 *
-	 * @param null $path
+	 * @param $path
 	 *
 	 * @return array
 	 * @since 1.0.5
@@ -257,26 +260,26 @@ class File {
 			$path = $this->path;
 		}
 		$path = rtrim( $path, DIRECTORY_SEPARATOR ) . DIRECTORY_SEPARATOR;
-		$data = array();
+		$data = [];
 
-		if ( $dh = opendir( $path ) ) {
-			while ( ( $file = readdir( $dh ) ) !== false ) {
-				if ( $file == '.' || $file == '..' ) {
+		if ( $dh = opendir( $path ) ) {// phpcs:ignore
+			while ( ( $file = readdir( $dh ) ) !== false ) {// phpcs:ignore
+				if ( '.' === $file || '..' === $file ) {
 					continue;
 				}
 				$real_path = $path . $file;
-				if ( substr( pathinfo( $real_path, PATHINFO_BASENAME ), 0, 1 ) == '.' ) {
-					// hidden files, move on
+				if ( '.' === substr( pathinfo( $real_path, PATHINFO_BASENAME ), 0, 1 ) ) {
+					// Hidden files, move on.
 					continue;
 				}
 
-				if ( ( ! empty( $this->include ) || ! empty( $this->exclude ) ) && ( $this->filter_directory( $real_path ) == false ) ) {
+				if ( ( ! empty( $this->include ) || ! empty( $this->exclude ) ) && ( false === $this->filter_directory( $real_path ) ) ) {
 					continue;
 				}
 
 				$type = filetype( $real_path );
 
-				if ( $type == 'file' && $this->include_file == true ) {
+				if ( 'file' === $type && true === $this->include_file ) {
 					if ( is_numeric( $this->max_filesize ) ) {
 						$max_size = $this->max_filesize * ( pow( 1024, 2 ) );
 						if ( filesize( $real_path ) > $max_size ) {
@@ -289,7 +292,7 @@ class File {
 					}
 				}
 
-				if ( $type == 'dir' ) {
+				if ( 'dir' === $type ) {
 					if ( $this->include_dir ) {
 						$data[] = $real_path;
 					}
@@ -309,8 +312,9 @@ class File {
 	 * Filter for recursive directory tree
 	 *
 	 * @param $current
+	 * @param $filetype
 	 *
-	 * @return bool
+	 * @return bool|void
 	 */
 	public function filter_directory( $current, $filetype = null ) {
 		if ( ! empty( $this->include ) ) {
@@ -322,15 +326,16 @@ class File {
 
 	/**
 	 * @param $path
+	 * @param $filetype
 	 *
 	 * @return bool
 	 */
 	private function _filter_include( $path, $filetype = null ) {
-		$include     = $this->include;
-		$exclude     = $this->exclude;
-		$applied     = 0;
-		$dir_include = isset( $include['dir'] ) ? $include['dir'] : array();
-		$dir_exclude = isset( $exclude['dir'] ) ? $exclude['dir'] : array();
+		$include = $this->include;
+		$exclude = $this->exclude;
+		$applied = 0;
+		$dir_include = isset( $include['dir'] ) ? $include['dir'] : [];
+		$dir_exclude = isset( $exclude['dir'] ) ? $exclude['dir'] : [];
 
 		if ( ! is_null( $filetype ) ) {
 			$type = $filetype;
@@ -341,59 +346,58 @@ class File {
 		if ( is_array( $dir_include ) && count( $dir_include ) ) {
 			if ( is_array( $dir_exclude ) ) {
 				foreach ( $dir_exclude as $dir ) {
-					if ( strpos( $path, $dir ) === 0 ) {
-						// this mean, exlucde matched, we wont list this
-						// move to next loop
+					if ( 0 === strpos( $path, $dir ) ) {
+						// This mean, exlucde matched, we won't list this. Move to next loop.
 						continue;
 					}
 				}
 			}
 
 			foreach ( $dir_include as $dir ) {
-				if ( strpos( $path, $dir ) === 0 ) {
+				if ( 0 === strpos( $path, $dir ) ) {
 					return true;
 				}
 			}
-			$applied ++;
+			$applied++;// phpcs:ignore
 		}
 
-		// next extension
-		$ext_include = isset( $include['ext'] ) ? $include['ext'] : array();
+		// Next extension.
+		$ext_include = isset( $include['ext'] ) ? $include['ext'] : [];
 
-		if ( is_array( $ext_include ) && count( $ext_include ) && $type == 'file' ) {
-			// we will uses foreach and strcasecmp instead of regex cause it faster
+		if ( is_array( $ext_include ) && count( $ext_include ) && 'file' === $type ) {
+			// We will uses foreach and strcasecmp instead of regex cause it faster.
 			foreach ( $ext_include as $ext ) {
 				if ( strcasecmp( pathinfo( $path, PATHINFO_EXTENSION ), $ext ) === 0 ) {
-					// match
+					// Match.
 					return true;
 				}
 			}
-			$applied ++;
+			$applied++;// phpcs:ignore
 		}
 
-		// now filename
-		$filename_include = isset( $include['filename'] ) ? $include['filename'] : array();
-		if ( is_array( $filename_include ) && count( $filename_include ) && $type == 'file' ) {
+		// Now filename.
+		$filename_include = isset( $include['filename'] ) ? $include['filename'] : [];
+		if ( is_array( $filename_include ) && count( $filename_include ) && 'file' === $type ) {
 			foreach ( $filename_include as $filename ) {
 				if ( preg_match( '/' . $filename . '/', pathinfo( $path, PATHINFO_BASENAME ) ) ) {
 					return true;
 				}
 			}
-			$applied ++;
+			$applied++;// phpcs:ignore
 		}
 
-		// now abs path
-		$path_include = isset( $include['path'] ) ? $include['path'] : array();
-		if ( is_array( $path_include ) && count( $path_include ) && $type == 'file' ) {
+		// Now abs path.
+		$path_include = isset( $include['path'] ) ? $include['path'] : [];
+		if ( is_array( $path_include ) && count( $path_include ) && 'file' === $type ) {
 			foreach ( $path_include as $p ) {
 				if ( strcmp( $p, $path ) === 0 ) {
 					return true;
 				}
 			}
-			$applied ++;
+			$applied++;// phpcs:ignore
 		}
 
-		if ( $applied == 0 ) {
+		if ( 0 === $applied ) {
 			return true;
 		}
 
@@ -401,21 +405,22 @@ class File {
 	}
 
 	/**
-	 * Run the filter for a file/dir
+	 * Run the filter for a file/dir.
 	 *
 	 * @param $path
+	 * @param $filetype
 	 *
 	 * @return bool
 	 */
 	private function _filter_exclude( $path, $filetype = null ) {
 		$exclude = $this->exclude;
-		// first filer dir, or file inside dir
+		// First filer dir, or file inside dir.
 		if ( ! is_null( $filetype ) ) {
 			$type = $filetype;
 		} else {
 			$type = filetype( $path );
 		}
-		$dir_exclude = isset( $exclude['dir'] ) ? $exclude['dir'] : array();
+		$dir_exclude = isset( $exclude['dir'] ) ? $exclude['dir'] : [];
 		if ( is_array( $dir_exclude ) && count( $dir_exclude ) ) {
 			foreach ( $dir_exclude as $dir ) {
 				if ( strpos( $path, $dir ) === 0 ) {
@@ -424,20 +429,20 @@ class File {
 			}
 		}
 
-		// next extension
-		$ext_exclude = isset( $exclude['ext'] ) ? $exclude['ext'] : array();
-		if ( is_array( $ext_exclude ) && count( $ext_exclude ) && $type == 'file' ) {
-			// we will uses foreach and strcasecmp instead of regex cause it faster
+		// Next extension.
+		$ext_exclude = isset( $exclude['ext'] ) ? $exclude['ext'] : [];
+		if ( is_array( $ext_exclude ) && count( $ext_exclude ) && 'file' === $type ) {
+			// We will uses foreach and strcasecmp instead of regex cause it faster.
 			foreach ( $ext_exclude as $ext ) {
 				if ( strcasecmp( pathinfo( $path, PATHINFO_EXTENSION ), $ext ) === 0 ) {
-					// match
+					// Match.
 					return false;
 				}
 			}
 		}
-		// now filename
-		$filename_exclude = isset( $exclude['filename'] ) ? $exclude['filename'] : array();
-		if ( is_array( $filename_exclude ) && count( $filename_exclude ) && $type == 'file' ) {
+		// Now filename.
+		$filename_exclude = isset( $exclude['filename'] ) ? $exclude['filename'] : [];
+		if ( is_array( $filename_exclude ) && count( $filename_exclude ) && 'file' === $type ) {
 			foreach ( $filename_exclude as $filename ) {
 				if ( preg_match( '/' . $filename . '/', pathinfo( $path, PATHINFO_BASENAME ) ) ) {
 					return false;
@@ -445,9 +450,9 @@ class File {
 			}
 		}
 
-		// now abs path
-		$path_exclude = isset( $exclude['path'] ) ? $exclude['path'] : array();
-		if ( is_array( $path_exclude ) && count( $path_exclude ) && $type == 'file' ) {
+		// Now abs path.
+		$path_exclude = isset( $exclude['path'] ) ? $exclude['path'] : [];
+		if ( is_array( $path_exclude ) && count( $path_exclude ) && 'file' === $type ) {
 			foreach ( $path_exclude as $p ) {
 				if ( strcmp( $p, $path ) === 0 ) {
 					return false;

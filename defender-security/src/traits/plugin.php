@@ -228,6 +228,9 @@ trait Plugin {
 		return false;
 	}
 
+	/**
+	 * @return string
+	 */
 	private function get_version_url( string $directory_name, string $version, string $file_path ): string {
 		return sprintf(
 			$this->url_plugin_vcs,
@@ -237,6 +240,9 @@ trait Plugin {
 		);
 	}
 
+	/**
+	 * @return string
+	 */
 	private function get_trunk_url( string $directory_name, string $file_path ): string {
 		return sprintf(
 			$this->url_plugin_vcs_trunk,
@@ -302,7 +308,7 @@ trait Plugin {
 	 *
 	 * @return bool Return true if file is in wp.org plugin else false.
 	 */
-	private function is_quarantinable( $file_path ) {
+	private function is_quarantinable( $file_path ): bool {
 		return $this->is_likely_wporg_slug(
 			$this->get_plugin_directory_name(
 				$file_path

@@ -160,7 +160,7 @@ class Password_Reset extends Event {
 	 * @param int      $user_id
 	 * @param \WP_User $old_user_data
 	 *
-	 * @return null|void
+	 * @return void
 	 */
 	public function handle_update_user( int $user_id, \WP_User $old_user_data ) {
 		$user = get_userdata( $user_id );

@@ -12,9 +12,11 @@ use WP_Defender\Model\Lockout_Log;
 class Firewall_Report extends \WP_Defender\Model\Notification {
 	protected $table = 'wd_lockout_report';
 
+	public const SLUG = 'firewall-report';
+
 	protected function before_load(): void {
 		$default = [
-			'slug' => 'firewall-report',
+			'slug' => self::SLUG,
 			'title' => __( 'Firewall - Reporting', 'defender-security' ),
 			'status' => self::STATUS_DISABLED,
 			'description' => __( 'Configure Defender to automatically email you a lockout report for this website.', 'defender-security' ),
@@ -51,14 +53,22 @@ class Firewall_Report extends \WP_Defender\Model\Notification {
 		$this->save();
 	}
 
+	/**
+	 * @param string $name
+	 * @param string $email
+	 * @param object $service
+	 */
 	private function send_to_user( $name, $email, $service ) {
 		$site_url = network_site_url();
-		/* translators: */
+		$mail_object = wd_di()->get( \WP_Defender\Component\Mail::class );
+		$plugin_label = $mail_object->get_sender_name( self::SLUG );
 		$subject = sprintf(
-		/* translators: %s: Site URL. */
-			__( 'Defender Lockouts Report for %s', 'defender-security' ),
+		/* translators: 1. Plugin label. 2. Site URL. */
+			__( '%1$s Lockouts Report for %2$s', 'defender-security' ),
+			$plugin_label,
 			$site_url
 		);
+		// Frequency.
 		if ( 'daily' === $this->frequency ) {
 			$time_unit = __( 'in the past 24 hours', 'defender-security' );
 			$interval = '-24 hours';
@@ -121,8 +131,9 @@ class Firewall_Report extends \WP_Defender\Model\Notification {
 			false
 		);
 
-		$headers = defender_noreply_html_header(
-			defender_noreply_email( 'wd_lockout_noreply_email' )
+		$headers = $mail_object->get_headers(
+			defender_noreply_email( 'wd_lockout_noreply_email' ),
+			self::SLUG
 		);
 
 		$ret = wp_mail( $email, $subject, $content, $headers );

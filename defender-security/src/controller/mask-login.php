@@ -246,7 +246,7 @@ class Mask_Login extends Event {
 	/**
 	 * If it is request to wp-admin, wp-login.php and similar slugs, we block for sure. If no, then follow the wp flow.
 	 *
-	 * @return null|void
+	 * @return void
 	 */
 	public function handle_login_request() {
 		// If the IP is BLC whitelisted, then skip processing URLs other than the Masked Login URL.
@@ -418,6 +418,22 @@ class Mask_Login extends Event {
 		if ( is_user_logged_in() && false === stripos( $current_url, 'wp-login.php' ) ) {
 			// Do nothing.
 			return $current_url;
+		}
+
+		if ( 'wp_redirect' === $source && ! is_user_logged_in() ) {
+			$parsed_url = wp_parse_url( $current_url );
+
+			$parsed_query = [];
+			if ( isset( $parsed_url['query'] ) ) {
+				wp_parse_str( $parsed_url['query'], $parsed_query );
+			}
+
+			if (
+				'wp-login.php' === trim( $parsed_url['path'], '/' ) &&
+				isset( $parsed_query['checkemail'] ) && 'registered' === $parsed_query['checkemail']
+			) {
+				return str_replace( 'wp-login.php', $this->model->mask_url, $current_url );
+			}
 		}
 
 		if (
@@ -789,7 +805,7 @@ class Mask_Login extends Event {
 	/**
 	 * Handle user profile email change request.
 	 *
-	 * @return null|void
+	 * @return void
 	 */
 	private function handle_email_change_request() {
 		// If it is not for admin request.
@@ -1069,11 +1085,10 @@ class Mask_Login extends Event {
 	 * @param WP_Admin_Bar $admin_bar
 	 *
 	 * @since 3.4.0
-	 * @return null|void
+	 * @return void
 	 */
 	public function update_admin_bar_menu( WP_Admin_Bar $admin_bar ) {
 		$mask_url = trim( $this->model->mask_url );
-
 		if ( empty( $mask_url ) ) {
 			return;
 		}

@@ -46,7 +46,7 @@ class Admin {
 			wd_di()->get( \WP_Defender\Component\Rate::class )->init();
 			add_action( 'admin_init', [ $this, 'register_free_modules' ], 20 );
 			// @since 4.4.0.
-			add_action( 'wpdef_fixed_scan_issue', [ $this, 'after_scan_fix' ], 10, 2 );
+			add_action( 'wpdef_fixed_scan_issue', [ $this, 'after_scan_fix' ] );
 			// For submenu callout.
 			add_action( 'admin_head', [ $this, 'retarget_submenu_callout' ] );
 
@@ -54,7 +54,7 @@ class Admin {
 			add_submenu_page(
 				'wp-defender',
 				$message,
-				"<strong id=\"wpdef_menu_callout\" style=\"color: #FECF2F; font-weight: 700;\">" . $message . "</strong>",
+				'<strong id="wpdef_menu_callout" style="color: #FECF2F; font-weight: 700;">' . $message . '</strong>',
 				is_multisite() ? 'manage_network_options' : 'manage_options',
 				'wdf-upsell',
 				[ $this, 'menu_nope' ]
@@ -79,10 +79,9 @@ jQuery(document).ready(function($) {
 	/**
 	 * Fired when the scan issue is fixed.
 	 *
-	 * @param string $issue_type Scan issue type, e.g. plugin_integrity, malware or vulnerability.
-	 * @param string $action     Scan action, e.g. delete or resolve.
+	 * @return void
 	*/
-	public function after_scan_fix( string $issue_type, string $action ): void {
+	public function after_scan_fix(): void {
 		\WP_Defender\Component\Rate::run_counter_of_fixed_scans();
 	}
 
@@ -178,8 +177,9 @@ jQuery(document).ready(function($) {
 				__( 'WPMU DEV', 'defender-security' )
 			);
 			$links[1] = sprintf(
-					/* translators: %s: Author URI. */
-				__( 'By %s', 'defender-security' ), $author_uri
+				/* translators: %s: Author URI. */
+				__( 'By %s', 'defender-security' ),
+				$author_uri
 			);
 		}
 
@@ -233,9 +233,9 @@ jQuery(document).ready(function($) {
 			return;
 		}
 		/* @noinspection PhpIncludeInspection */
-		require_once( defender_path( 'extra/free-dashboard/module.php' ) );
+		require_once defender_path( 'extra/free-dashboard/module.php' );
 		/* @noinspection PhpIncludeInspection */
-		require_once( defender_path( 'extra/recommended-plugins-notice/notice.php' ) );
+		require_once defender_path( 'extra/recommended-plugins-notice/notice.php' );
 
 		// Register the current plugin.
 		do_action(

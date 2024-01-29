@@ -323,7 +323,7 @@ class Notification extends Event {
 				'out_house_recipients' => $data['out_house_recipients'],
 			];
 			// @since 2.7.0.
-			if ( 'malware-report' !== $slug ) {
+			if ( \WP_Defender\Model\Notification\Malware_Report::SLUG !== $slug ) {
 				$import['frequency'] = $data['frequency'];
 				$import['day_n'] = $data['day_n'];
 				$import['day'] = $data['day'];

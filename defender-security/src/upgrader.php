@@ -30,7 +30,9 @@ use WP_Defender\Traits\Webauthn as Webauthn_Trait;
 use WP_Defender\Bootstrap;
 
 class Upgrader {
-	use User, Webauthn_Trait, IO;
+	use User;
+	use Webauthn_Trait;
+	use IO;
 
 	/**
 	 * Migrate old security headers from security tweaks. Trigger it once time.
@@ -153,7 +155,7 @@ class Upgrader {
 	 *
 	 * @param $current_version
 	 *
-	 * @return null|void
+	 * @return void
 	 */
 	public function maybe_show_new_features( $current_version ) {
 		if ( false === $current_version ) {
@@ -174,7 +176,7 @@ class Upgrader {
 	 * @param $current_version
 	 *
 	 * @since 2.4
-	 * @return null|void
+	 * @return void
 	 */
 	public function migrate_configs( $current_version ) {
 		if (
@@ -258,7 +260,7 @@ class Upgrader {
 	/**
 	 * Run an upgrade/installation.
 	 *
-	 * @return null|void
+	 * @return void
 	 */
 	public function run() {
 		// Sometimes multiple requests come at the same time. So we will only count the web requests.
@@ -388,7 +390,7 @@ class Upgrader {
 	 * @param $wpdb
 	 *
 	 * @since 2.4.7
-	 * @return null|void
+	 * @return void
 	 */
 	private function add_index_to_defender_email_log( $wpdb ) {
 		$table = $wpdb->base_prefix . 'defender_email_log';
@@ -398,7 +400,7 @@ class Upgrader {
 			return;
 		}
 
-		$wpdb->query( "ALTER TABLE {$table} ADD INDEX `source` (`source`);" );
+		$wpdb->query( "ALTER TABLE {$table} ADD INDEX `source` (`source`);" );// phpcs:ignore
 	}
 
 	/**
@@ -407,7 +409,7 @@ class Upgrader {
 	 * @param $wpdb
 	 *
 	 * @since 2.4.7
-	 * @return null|void
+	 * @return void
 	 */
 	private function add_index_to_defender_audit_log( $wpdb ) {
 		$table = $wpdb->base_prefix . 'defender_audit_log';
@@ -423,7 +425,7 @@ class Upgrader {
 				ADD INDEX `user_id` (`user_id`),
 				ADD INDEX `context` (`context`),
 				ADD INDEX `ip` (`ip`);";
-		$wpdb->query( $sql );
+		$wpdb->query( $sql );// phpcs:ignore
 	}
 
 	/**
@@ -432,7 +434,7 @@ class Upgrader {
 	 * @param $wpdb
 	 *
 	 * @since 2.4.7
-	 * @return null|void
+	 * @return void
 	 */
 	private function add_index_to_defender_scan_item( $wpdb ) {
 		$table = $wpdb->base_prefix . 'defender_scan_item';
@@ -442,7 +444,7 @@ class Upgrader {
 			return;
 		}
 
-		$wpdb->query( "ALTER TABLE {$table} ADD INDEX `type` (`type`), ADD INDEX `status` (`status`);" );
+		$wpdb->query( "ALTER TABLE {$table} ADD INDEX `type` (`type`), ADD INDEX `status` (`status`);" );// phpcs:ignore
 	}
 
 	/**
@@ -451,7 +453,7 @@ class Upgrader {
 	 * @param $wpdb
 	 *
 	 * @since 2.4.7
-	 * @return null|void
+	 * @return void
 	 */
 	private function add_index_to_defender_lockout_log( $wpdb ) {
 		$table = $wpdb->base_prefix . 'defender_lockout_log';
@@ -462,7 +464,7 @@ class Upgrader {
 		}
 
 		$sql = "ALTER TABLE {$table} ADD INDEX `ip` (`ip`), ADD INDEX `type` (`type`), ADD INDEX `tried` (`tried`);";
-		$wpdb->query( $sql );
+		$wpdb->query( $sql );// phpcs:ignore
 	}
 
 	/**
@@ -471,7 +473,7 @@ class Upgrader {
 	 * @param $wpdb
 	 *
 	 * @since 2.4.7
-	 * @return null|void
+	 * @return void
 	 */
 	private function add_index_to_defender_lockout( $wpdb ) {
 		$table = $wpdb->base_prefix . 'defender_lockout';
@@ -486,7 +488,7 @@ class Upgrader {
 				ADD INDEX `status` (`status`),
 				ADD INDEX `attempt` (`attempt`),
 				ADD INDEX `attempt_404` (`attempt_404`);";
-		$wpdb->query( $sql );
+		$wpdb->query( $sql );// phpcs:ignore
 	}
 
 	/**
@@ -908,7 +910,7 @@ Your temporary password is {{passcode}}. To finish logging in, copy and paste th
 		$index_ddl = "CREATE INDEX {$column_name} ON {$table_name} ({$column_name})";
 
 		$prev_val = $wpdb->hide_errors();
-		$wpdb->query( $index_ddl );
+		$wpdb->query( $index_ddl );// phpcs:ignore
 		$wpdb->show_errors( $prev_val );
 	}
 
@@ -963,7 +965,7 @@ Your temporary password is {{passcode}}. To finish logging in, copy and paste th
 		if ( is_multisite() ) {
 			$offset = 0;
 			$limit = 100;
-			while ( $blogs = $wpdb->get_results( "SELECT blog_id FROM {$wpdb->blogs} LIMIT {$offset}, {$limit}", ARRAY_A ) ) {
+			while ( $blogs = $wpdb->get_results( "SELECT blog_id FROM {$wpdb->blogs} LIMIT {$offset}, {$limit}", ARRAY_A ) ) {// phpcs:ignore
 				if ( ! empty( $blogs ) && is_array( $blogs ) ) {
 					foreach ( $blogs as $blog ) {
 						switch_to_blog( $blog['blog_id'] );
@@ -986,7 +988,7 @@ Your temporary password is {{passcode}}. To finish logging in, copy and paste th
 	 * @param object $service
 	 *
 	 * @since 3.3.0
-	 * @return null|void
+	 * @return void
 	 */
 	private function update_webauthn_user_handle_core( object $service ) {
 		$data = get_option( $this->option_prefix . $service::CREDENTIAL_OPTION_KEY );
@@ -996,17 +998,15 @@ Your temporary password is {{passcode}}. To finish logging in, copy and paste th
 			return;
 		}
 
-		$users = get_users( [
-			'fields' => [ 'ID', 'user_login', 'display_name' ],
-		] );
+		$users = get_users( [ 'fields' => [ 'ID', 'user_login', 'display_name' ] ] );
 
-		foreach( $users as $user ) {
+		foreach ( $users as $user ) {
 			if ( empty( $data ) ) {
 				break;
 			}
 
 			$user_credentials = [];
-			foreach( $data as $key => $item ) {
+			foreach ( $data as $key => $item ) {
 				$old_hash = hash( 'sha256', $user->user_login . '-' . $user->display_name . '-' . AUTH_SALT );
 				$old_base64_hash = base64_encode( $old_hash );
 				$old_base64_hash = preg_replace( '/\=+$/', '', $old_base64_hash );
@@ -1078,10 +1078,14 @@ Your temporary password is {{passcode}}. To finish logging in, copy and paste th
 			foreach ( $query->get_results() as $user_id ) {
 				$backup_code = get_user_meta( $user_id, Fallback_Email::FALLBACK_BACKUP_CODE_KEY, true );
 				if ( ! empty( $backup_code ) && isset( $backup_code['code'], $backup_code['time'] ) ) {
-					update_user_meta( $user_id, Fallback_Email::FALLBACK_BACKUP_CODE_KEY, [
-						'code' => wp_hash( $backup_code['code'] ),
-						'time' => $backup_code['time'],
-					] );
+					update_user_meta(
+						$user_id,
+						Fallback_Email::FALLBACK_BACKUP_CODE_KEY,
+						[
+							'code' => wp_hash( $backup_code['code'] ),
+							'time' => $backup_code['time'],
+						]
+					);
 				}
 			}
 		}
@@ -1149,13 +1153,13 @@ Your temporary password is {{passcode}}. To finish logging in, copy and paste th
 		$offset = 0;
 		$length = 100;
 		$table = $wpdb->base_prefix . 'defender_lockout';
-		while( $blacklist_chunk = array_slice( $blacklist, $offset, $length ) ) {
-			$sql = "DELETE FROM {$table} WHERE status = 'blocked' AND ip IN (" . implode( ', ', array_fill( 0, count( $blacklist_chunk ), '%s' ) ) . ")";
+		while( $blacklist_chunk = array_slice( $blacklist, $offset, $length ) ) {// phpcs:ignore
+			$sql = "DELETE FROM {$table} WHERE status = 'blocked' AND ip IN (" . implode( ', ', array_fill( 0, count( $blacklist_chunk ), '%s' ) ) . ")";// phpcs:ignore
 			$query = call_user_func_array(
 				[ $wpdb, 'prepare' ],
 				array_merge( [ $sql ], $blacklist_chunk )
 			);
-			$wpdb->query( $query );
+			$wpdb->query( $query );// phpcs:ignore
 
 			$offset += $length;
 		}
@@ -1174,7 +1178,7 @@ Your temporary password is {{passcode}}. To finish logging in, copy and paste th
 		$service = wd_di()->get( Backup_Settings::class );
 		$configs = Config_Hub_Helper::get_configs( $service );
 
-		foreach( $configs as $key => $config ) {
+		foreach ( $configs as $key => $config ) {
 			$is_updated = false;
 
 			if ( isset( $config['configs']['scan']['email_subject_issue_found'] ) ) {
@@ -1250,7 +1254,7 @@ Your temporary password is {{passcode}}. To finish logging in, copy and paste th
 			}
 
 			if ( true === $is_updated ) {
-			    $model->save();
+				$model->save();
 			}
 		}
 	}
@@ -1364,7 +1368,7 @@ Your temporary password is {{passcode}}. To finish logging in, copy and paste th
 		$service = wd_di()->get( Backup_Settings::class );
 		$configs = Config_Hub_Helper::get_configs( $service );
 
-		foreach( $configs as $key => $config ) {
+		foreach ( $configs as $key => $config ) {
 			$is_updated = false;
 
 			if ( isset( $config['name'] ) ) {
@@ -1400,14 +1404,26 @@ Your temporary password is {{passcode}}. To finish logging in, copy and paste th
 
 		$prev_val = $wpdb->hide_errors();
 		// Changes for Lockout table.
-		$table_name = $wpdb->base_prefix . 'defender_lockout';
-		$wpdb->query( "ALTER TABLE {$table_name} MODIFY COLUMN ip VARCHAR(45)" );
+		$wpdb->query(
+			$wpdb->prepare(
+				'ALTER TABLE %s MODIFY COLUMN ip VARCHAR(45)',
+				$wpdb->base_prefix . 'defender_lockout'
+			)
+		);
 		// Changes for Lockout log table.
-		$table_name = $wpdb->base_prefix . 'defender_lockout_log';
-		$wpdb->query( "ALTER TABLE {$table_name} MODIFY COLUMN ip VARCHAR(45)" );
+		$wpdb->query(
+			$wpdb->prepare(
+				'ALTER TABLE %s MODIFY COLUMN ip VARCHAR(45)',
+				$wpdb->base_prefix . 'defender_lockout_log'
+			)
+		);
 		// Changes for Audit log table.
-		$table_name = $wpdb->base_prefix . 'defender_audit_log';
-		$wpdb->query( "ALTER TABLE {$table_name} MODIFY COLUMN ip VARCHAR(45)" );
+		$wpdb->query(
+			$wpdb->prepare(
+				'ALTER TABLE %s MODIFY COLUMN ip VARCHAR(45)',
+				$wpdb->base_prefix . 'defender_audit_log'
+			)
+		);
 		$wpdb->show_errors( $prev_val );
 	}
 
@@ -1481,7 +1497,7 @@ Your temporary password is {{passcode}}. To finish logging in, copy and paste th
 	/**
 	 * Upgrade to 4.1.0.
 	 *
-	 * @return null|void
+	 * @return void
 	 */
 	private function upgrade_4_1_0() {
 		// Remove Maxmind DB directory from multisite subsites.
@@ -1490,7 +1506,7 @@ Your temporary password is {{passcode}}. To finish logging in, copy and paste th
 
 			if ( is_null( $wp_filesystem ) ) {
 				if ( ! function_exists( 'WP_Filesystem' ) ) {
-					require_once( ABSPATH . 'wp-admin/includes/file.php' );
+					require_once ABSPATH . 'wp-admin/includes/file.php';
 				}
 				\WP_Filesystem();
 			}
@@ -1501,7 +1517,7 @@ Your temporary password is {{passcode}}. To finish logging in, copy and paste th
 			$main_site_id = get_main_site_id();
 			$offset = 0;
 			$limit = 100;
-			while ( $blogs = $wpdb->get_results(
+			while ( $blogs = $wpdb->get_results(// phpcs:ignore
 				$wpdb->prepare(
 					"SELECT blog_id FROM {$wpdb->blogs} WHERE blog_id != %d LIMIT %d, %d",
 					$main_site_id,

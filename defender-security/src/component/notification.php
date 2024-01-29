@@ -113,17 +113,17 @@ class Notification extends Component {
 	 */
 	public function find_module_by_slug( $slug ) {
 		switch ( $slug ) {
-			case 'tweak-reminder':
+			case Tweak_Reminder::SLUG:
 				return wd_di()->get( Tweak_Reminder::class );
-			case 'malware-notification':
+			case Malware_Notification::SLUG:
 				return wd_di()->get( Malware_Notification::class );
-			case 'firewall-notification':
+			case Firewall_Notification::SLUG:
 				return wd_di()->get( Firewall_Notification::class );
-			case 'malware-report':
+			case Malware_Report::SLUG:
 				return wd_di()->get( Malware_Report::class );
-			case 'firewall-report':
+			case Firewall_Report::SLUG:
 				return wd_di()->get( Firewall_Report::class );
-			case 'audit-report':
+			case Audit_Report::SLUG:
 			default:
 				return wd_di()->get( Audit_Report::class );
 		}
@@ -174,8 +174,9 @@ class Notification extends Component {
 	 * @throws \DI\NotFoundException
 	 */
 	public function send_email( $subscriber, Abstract_Notification $model ) {
-		$headers = defender_noreply_html_header(
-			defender_noreply_email( 'wd_confirm_noreply_email' )
+		$headers = wd_di()->get( \WP_Defender\Component\Mail::class )->get_headers(
+			defender_noreply_email( 'wd_confirm_noreply_email' ),
+			'subscription'
 		);
 		$email = $subscriber['email'];
 		$name = $subscriber['name'] ?? '';
@@ -225,8 +226,9 @@ class Notification extends Component {
 	 * @throws \DI\NotFoundException
 	 */
 	public function send_subscribed_email( $email, $m, $name ) {
-		$headers = defender_noreply_html_header(
-			defender_noreply_email( 'wd_subscribe_noreply_email' )
+		$headers = wd_di()->get( \WP_Defender\Component\Mail::class )->get_headers(
+			defender_noreply_email( 'wd_subscribe_noreply_email' ),
+			'subscribe_confimed'
 		);
 
 		$notification = wd_di()->get( \WP_Defender\Controller\Notification::class );
@@ -289,8 +291,9 @@ class Notification extends Component {
 			false
 		);
 
-		$headers = defender_noreply_html_header(
-			defender_noreply_email( 'wd_unsubscribe_noreply_email' )
+		$headers = wd_di()->get( \WP_Defender\Component\Mail::class )->get_headers(
+			defender_noreply_email( 'wd_unsubscribe_noreply_email' ),
+			'unsubscription'
 		);
 
 		wp_mail( $email, $subject, $content, $headers );

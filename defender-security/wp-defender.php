@@ -2,7 +2,7 @@
 /**
  * Plugin Name:  Defender
  * Plugin URI:   https://wpmudev.com/project/wp-defender/
- * Version:      4.4.2
+ * Version:      4.5.0
  * Description:  Get regular security scans, vulnerability reports, safety recommendations and customized hardening for your site in just a few clicks. Defender is the analyst and enforcer who never sleeps.
  * Author:       WPMU DEV
  * Author URI:   https://wpmudev.com/
@@ -13,7 +13,7 @@
  * Requires at least: 5.2
  */
 /*
-Copyright 2007-2023 Incsub (https://incsub.com)
+Copyright 2007-2024 Incsub (https://incsub.com)
 Author - Hoang Ngo, Anton Shulga
 
 This program is free software; you can redistribute it and/or modify
@@ -34,10 +34,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 	die;
 }
 if ( ! defined( 'DEFENDER_VERSION' ) ) {
-	define( 'DEFENDER_VERSION', '4.4.2' );
+	define( 'DEFENDER_VERSION', '4.5.0' );
 }
 if ( ! defined( 'DEFENDER_DB_VERSION' ) ) {
-	define( 'DEFENDER_DB_VERSION', '4.4.2' );
+	define( 'DEFENDER_DB_VERSION', '4.5.0' );
 }
 if ( ! defined( 'DEFENDER_SUI' ) ) {
 	define( 'DEFENDER_SUI', '2-12-23' );
@@ -51,7 +51,7 @@ if ( ! defined( 'WP_DEFENDER_DIR' ) ) {
 if ( ! defined( 'WP_DEFENDER_FILE' ) ) {
 	define( 'WP_DEFENDER_FILE', __FILE__ );
 }
-if( ! defined( 'WP_DEFENDER_BASE_URL' ) ) {
+if ( ! defined( 'WP_DEFENDER_BASE_URL' ) ) {
 	define( 'WP_DEFENDER_BASE_URL', plugin_dir_url( WP_DEFENDER_FILE ) );
 }
 if ( ! defined( 'WP_DEFENDER_MIN_PHP_VERSION' ) ) {
@@ -111,7 +111,7 @@ require_once WP_DEFENDER_DIR . 'vendor/autoload.php';
 if ( file_exists( WP_DEFENDER_DIR . 'vendor/woocommerce/action-scheduler/action-scheduler.php' ) ) {
 	add_action(
 		'plugins_loaded',
-		function() {
+		function () {
 			require_once WP_DEFENDER_DIR . 'vendor/woocommerce/action-scheduler/action-scheduler.php';
 		},
 		-10 // Don't change the priority to positive number, because to load this before AS initialized.
@@ -140,3 +140,13 @@ add_filter( 'admin_body_class', [ $bootstrap, 'add_sui_to_body' ], 99 );
 
 register_deactivation_hook( __FILE__, [ $bootstrap, 'deactivation_hook' ] );
 register_activation_hook( __FILE__, [ $bootstrap, 'activation_hook' ] );
+
+// Declare incompatibility with WooCommerce Checkout block.
+add_action(
+	'before_woocommerce_init',
+	function () {
+		if ( class_exists( '\Automattic\WooCommerce\Utilities\FeaturesUtil' ) ) {
+			\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'cart_checkout_blocks', WP_DEFENDER_FILE, false );
+		}
+	}
+);

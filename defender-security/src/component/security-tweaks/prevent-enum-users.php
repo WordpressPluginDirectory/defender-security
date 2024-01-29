@@ -56,7 +56,7 @@ class Prevent_Enum_Users extends Component implements Security_Key_Const_Interfa
 	/**
 	 * Shield up.
 	 *
-	 * @return null|void
+	 * @return void
 	 */
 	public function shield_up() {
 		$this->resolved = true;

@@ -17,12 +17,14 @@ class Tweak_Reminder extends \WP_Defender\Model\Notification {
 	 */
 	protected $table = 'wd_security_tweaks_reminder';
 
+	public const SLUG = 'tweak-reminder';
+
 	/**
 	 * Load the default first before actual value imported from db.
 	 */
 	protected function before_load(): void {
 		$params = [
-			'slug' => 'tweak-reminder',
+			'slug' => self::SLUG,
 			'title' => __( 'Security Recommendations - Notification', 'defender-security' ),
 			'status' => self::STATUS_DISABLED,
 			'description' => __( 'Get email notifications if/when a security recommendation needs fixing.', 'defender-security' ),
@@ -166,8 +168,9 @@ class Tweak_Reminder extends \WP_Defender\Model\Notification {
 		);
 		$subject = sprintf( $subject, network_site_url(), is_array( $tweaks->issues ) || $tweaks->issues instanceof \Countable ? count( $tweaks->issues ) : 0 );
 
-		$headers = defender_noreply_html_header(
-			defender_noreply_email( 'wd_recommendation_noreply_email' )
+		$headers = wd_di()->get( \WP_Defender\Component\Mail::class )->get_headers(
+			defender_noreply_email( 'wd_recommendation_noreply_email' ),
+			self::SLUG
 		);
 
 		$ret = wp_mail( $email, $subject, $content, $headers );

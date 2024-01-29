@@ -67,7 +67,7 @@ class Main_Setting extends Event {
 	}
 
 	/**
-	 * @return null|void
+	 * @return void
 	 */
 	public function enqueue_assets() {
 		if ( ! $this->is_page_active() ) {
@@ -759,16 +759,15 @@ class Main_Setting extends Event {
 	}
 
 	/**
-	 * Clear logs from file that are 30 days old.
+	 * Clear log files older than the specified time.
 	 *
 	 * @param int $time_limit
 	 *
 	 * @since 2.7.0
-	 * @return null|void
+	 * @return void
 	 */
 	public function clear_logs_from_files( int $time_limit = MONTH_IN_SECONDS ) {
 		$now = date( 'c' );
-		// Todo: why only defender.log?
 		$files = [ 'defender.log' ];
 
 		foreach ( $files as $file_name ) {
@@ -804,7 +803,7 @@ class Main_Setting extends Event {
 					// It looks like it's a valid date string, compare with today.
 					$time_diff = strtotime( $now ) - strtotime( $items[1] );
 
-					// We don't need to continue on, because if this entry is not older than 30 days, the next one will not be as well.
+					// We don't need to continue on, because if this entry is not older than specific time, the next one will not be as well.
 					if ( $time_diff < $time_limit ) {
 						break;
 					}

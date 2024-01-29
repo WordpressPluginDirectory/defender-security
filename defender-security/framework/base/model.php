@@ -279,7 +279,7 @@ abstract class Model extends \Calotes\Base\Component {
 				settype( $value, $type );
 			}
 
-			if ( $meta['sanitize'] !== false ) {
+			if ( false !== $meta['sanitize'] ) {
 				$func = $meta['sanitize'];
 				if ( ! function_exists( $func ) ) {
 					// The formatting.php still need to be included.

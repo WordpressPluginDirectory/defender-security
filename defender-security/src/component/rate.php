@@ -77,6 +77,9 @@ class Rate extends \Calotes\Base\Component {
 		return empty( $scan_count ) ? 0 : (int) $scan_count;
 	}
 
+	/**
+	 * Count completed scans.
+	*/
 	public static function run_counter_of_completed_scans(): void {
 		$scan_count = self::get_count_scans( self::SLUG_COMPLETED_SCANS );
 		if ( $scan_count < self::NUMBER_COMPLETED_SCANS ) {
@@ -84,6 +87,9 @@ class Rate extends \Calotes\Base\Component {
 		}
 	}
 
+	/**
+	 * Count fixed scans.
+	*/
 	public static function run_counter_of_fixed_scans(): void {
 		$scan_count = self::get_count_scans( self::SLUG_FIXED_SCAN_ISSUES );
 		if ( $scan_count < self::NUMBER_FIXED_SCANS ) {
@@ -92,6 +98,8 @@ class Rate extends \Calotes\Base\Component {
 	}
 
 	/**
+	 * Display specific Scan notice.
+	 *
 	 * @return array
 	 */
 	public static function what_scan_notice_display(): array {

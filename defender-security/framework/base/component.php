@@ -254,13 +254,13 @@ class Component {
 			$message = print_r( $message, true );
 		}
 
-		$this->internal_logging[] = date( 'Y-m-d H:i:s' ) . ' ' . $message;
+		$this->internal_logging[] = date( 'Y-m-d H:i:s' ) . ' ' . $message;// phpcs:ignore
 		// Uncomment it for detailed logging on wp cli.
 		// if ( 'cli' === PHP_SAPI ) {
 		// echo $message . PHP_EOL;
 		// }
 
-		$message = '[' . date( 'c' ) . '] ' . $message . PHP_EOL;
+		$message = '[' . date( 'c' ) . '] ' . $message . PHP_EOL;// phpcs:ignore
 
 		if ( $this->has_method( 'get_log_path' ) ) {
 			if ( ! empty( $category ) && 0 === preg_match( '/\.log$/', $category ) ) {

@@ -14,6 +14,8 @@ use WP_Defender\Model\Setting\User_Agent_Lockout;
 use WP_Defender\Traits\Formats;
 use WP_Defender\Component\User_Agent;
 use WP_Defender\Component\IP\Global_IP;
+use WP_Defender\Component\Firewall_Logs as Firewall_Logs_Component;
+use WP_Defender\Behavior\WPMUDEV;
 
 class Firewall_Logs extends Controller {
 	use Formats;
@@ -23,9 +25,24 @@ class Firewall_Logs extends Controller {
 	 */
 	protected $slug = 'wdf-ip-lockout';
 
+	/**
+	 * @var WPMUDEV
+	 */
+	private $wpmudev;
+
 	public function __construct() {
 		$this->register_routes();
 		add_action( 'defender_enqueue_assets', [ &$this, 'enqueue_assets' ] );
+
+		$this->wpmudev = wd_di()->get( WPMUDEV::class );
+
+		/**
+		 * Send Firewall logs to Blocklist API.
+		 */
+		if ( ! wp_next_scheduled( 'wpdef_firewall_send_compact_logs_to_api' ) ) {
+			wp_schedule_event( time() + 15, 'twicedaily', 'wpdef_firewall_send_compact_logs_to_api' );
+		}
+		add_action( 'wpdef_firewall_send_compact_logs_to_api', [ $this, 'send_compact_logs_to_api' ] );
 	}
 
 	/**
@@ -628,5 +645,75 @@ class Firewall_Logs extends Controller {
 	 */
 	public function export_strings(): array {
 		return [];
+	}
+
+	/**
+	 * Send last 12 hours logs to Blocklist API.
+	 *
+	 * If running for first time then grab 7 days of logs.
+	 * If last run difference is greater than 12 hours then grab 12+ hours of log but at most grab 7 days of logs.
+	 *
+	 * @return void
+	 */
+	public function send_compact_logs_to_api(): void {
+		/**
+		 * Enable/disable sending FIrewall logs to API.
+		 *
+		 * @param bool $status Status for sending logs. Send logs to API if true.
+		 * @since 4.5.0
+		 */
+		$send_logs = (bool) apply_filters( 'wpdef_firewall_send_logs_to_api', true );
+
+		if (
+			! $send_logs ||
+			! $this->wpmudev->is_dash_activated() ||
+			! $this->wpmudev->is_site_connected_to_hub()
+		) {
+			return;
+		}
+
+		$from = time() - ( 7 * DAY_IN_SECONDS );
+
+		$last_run_time = get_site_option('wpdef_ip_blocklist_sync_last_run_time');
+		if ( $last_run_time ) {
+			$time_difference = time() - $last_run_time;
+
+			if ( $time_difference < 7 * DAY_IN_SECONDS ) { // 7 days in seconds
+				$from = $last_run_time;
+			}
+		}
+		update_site_option( 'wpdef_ip_blocklist_sync_last_run_time', time() );
+
+		$service = wd_di()->get( Firewall_Logs_Component::class );
+		$logs = $service->get_compact_logs( $from );
+
+		if ( empty( $logs ) ) {
+			return;
+		}
+
+		$this->attach_behavior( WPMUDEV::class, WPMUDEV::class );
+
+		$offset = 0;
+		$length = 1000;
+		$domain = network_site_url();
+		while( $logs_chunk = array_slice( $logs, $offset, $length ) ) {
+			$args = [
+				'domain' => $domain,
+				'logs' => $logs_chunk,
+			];
+			$data = $this->make_wpmu_request(
+				WPMUDEV::API_IP_BLOCKLIST_SUBMIT_LOGS,
+				$args,
+				[ 'method' => 'POST' ]
+			);
+
+			if ( is_wp_error( $data ) ) {
+				$this->log( sprintf( 'IP Blocklist API Error: %s', $data->get_error_message() ), Firewall::FIREWALL_LOG );
+			}
+
+			$offset += $length;
+		}
+
+		$this->log( 'IP Blocklist API: Process for sending logs completed.', Firewall::FIREWALL_LOG );
 	}
 }

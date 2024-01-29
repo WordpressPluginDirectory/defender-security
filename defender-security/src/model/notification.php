@@ -289,7 +289,9 @@ abstract class Notification extends Setting {
 	 */
 	public function check_active_status(): bool {
 		// Exception after migrating Scheduled scanning to Scan settings.
-		if ( 'malware-report' === $this->slug && true === ( new \WP_Defender\Model\Setting\Scan() )->scheduled_scanning ) {
+		if ( \WP_Defender\Model\Notification\Malware_Report::SLUG === $this->slug
+			&& true === ( new \WP_Defender\Model\Setting\Scan() )->scheduled_scanning
+		) {
 			return true;
 		}
 

@@ -86,67 +86,65 @@ SQL;
 	public function create_table_quarantine() {
 		global $wpdb;
 
-		if ( ! $this->table_exists( $this->quarantine_table ) ) {
-			$quarantine_table = $wpdb->base_prefix . $this->quarantine_table;
-			$scan_item_table = $wpdb->base_prefix . $this->scan_item_table;
-			$charset_collate = $wpdb->get_charset_collate();
+		$quarantine_table = $wpdb->base_prefix . $this->quarantine_table;
+		$scan_item_table = $wpdb->base_prefix . $this->scan_item_table;
+		$charset_collate = $wpdb->get_charset_collate();
 
-			if ( $this->is_quarantine_dependent_tables_innodb() ) {
-				$sql = <<<SQL
-					CREATE TABLE IF NOT EXISTs `{$quarantine_table}` (
-						`id` bigint unsigned NOT NULL AUTO_INCREMENT,
-						`defender_scan_item_id` int UNSIGNED DEFAULT NULL,
-						`file_hash` char(53) NOT NULL,
-						`file_full_path` text NOT NULL,
-						`file_original_name` tinytext NOT NULL,
-						`file_extension` varchar(16) DEFAULT NULL,
-						`file_mime_type` varchar(64) DEFAULT NULL,
-						`file_rw_permission` smallint UNSIGNED,
-						`file_owner` varchar(255) DEFAULT NULL,
-						`file_group` varchar(255) DEFAULT NULL,
-						`file_version` varchar(32) DEFAULT NULL,
-						`file_category` tinyint UNSIGNED DEFAULT 0,
-						`file_modified_time` datetime NOT NULL,
-						`source_slug` varchar(255) NOT NULL,
-						`created_time` datetime NOT NULL,
-						`created_by` bigint UNSIGNED DEFAULT NULL,
-						PRIMARY KEY (`id`),
-						CONSTRAINT `fk_defender_scan_item`
-							FOREIGN KEY (`defender_scan_item_id`) REFERENCES {$scan_item_table}(`id`)
-							ON UPDATE CASCADE ON DELETE SET NULL,
-						CONSTRAINT `fk_created_by`
-							FOREIGN KEY (`created_by`) REFERENCES {$wpdb->users}(`id`)
-							ON UPDATE CASCADE ON DELETE SET NULL
-					) {$charset_collate};
+		if ( $this->is_quarantine_dependent_tables_innodb() ) {
+			$sql = <<<SQL
+				CREATE TABLE IF NOT EXISTs `{$quarantine_table}` (
+					`id` bigint unsigned NOT NULL AUTO_INCREMENT,
+					`defender_scan_item_id` int UNSIGNED DEFAULT NULL,
+					`file_hash` char(53) NOT NULL,
+					`file_full_path` text NOT NULL,
+					`file_original_name` tinytext NOT NULL,
+					`file_extension` varchar(16) DEFAULT NULL,
+					`file_mime_type` varchar(64) DEFAULT NULL,
+					`file_rw_permission` smallint UNSIGNED,
+					`file_owner` varchar(255) DEFAULT NULL,
+					`file_group` varchar(255) DEFAULT NULL,
+					`file_version` varchar(32) DEFAULT NULL,
+					`file_category` tinyint UNSIGNED DEFAULT 0,
+					`file_modified_time` datetime NOT NULL,
+					`source_slug` varchar(255) NOT NULL,
+					`created_time` datetime NOT NULL,
+					`created_by` bigint UNSIGNED DEFAULT NULL,
+					PRIMARY KEY (`id`),
+					CONSTRAINT `fk_defender_scan_item`
+						FOREIGN KEY (`defender_scan_item_id`) REFERENCES {$scan_item_table}(`id`)
+						ON UPDATE CASCADE ON DELETE SET NULL,
+					CONSTRAINT `fk_created_by`
+						FOREIGN KEY (`created_by`) REFERENCES {$wpdb->users}(`id`)
+						ON UPDATE CASCADE ON DELETE SET NULL
+				) {$charset_collate};
 SQL;
-			} else {
-				$sql = <<<SQL
-					CREATE TABLE IF NOT EXISTs `{$quarantine_table}` (
-						`id` bigint unsigned NOT NULL AUTO_INCREMENT,
-						`defender_scan_item_id` int UNSIGNED DEFAULT NULL,
-						`file_hash` char(53) NOT NULL,
-						`file_full_path` text NOT NULL,
-						`file_original_name` tinytext NOT NULL,
-						`file_extension` varchar(16) DEFAULT NULL,
-						`file_mime_type` varchar(64) DEFAULT NULL,
-						`file_rw_permission` smallint UNSIGNED,
-						`file_owner` varchar(255) DEFAULT NULL,
-						`file_group` varchar(255) DEFAULT NULL,
-						`file_version` varchar(32) DEFAULT NULL,
-						`file_category` tinyint UNSIGNED DEFAULT 0,
-						`file_modified_time` datetime NOT NULL,
-						`source_slug` varchar(255) NOT NULL,
-						`created_time` datetime NOT NULL,
-						`created_by` bigint UNSIGNED DEFAULT NULL,
-						PRIMARY KEY (`id`),
-						KEY `defender_scan_item_id` (`defender_scan_item_id`),
-						KEY `created_by` (`created_by`)
-					) {$charset_collate};
+		} else {
+			$sql = <<<SQL
+				CREATE TABLE IF NOT EXISTs `{$quarantine_table}` (
+					`id` bigint unsigned NOT NULL AUTO_INCREMENT,
+					`defender_scan_item_id` int UNSIGNED DEFAULT NULL,
+					`file_hash` char(53) NOT NULL,
+					`file_full_path` text NOT NULL,
+					`file_original_name` tinytext NOT NULL,
+					`file_extension` varchar(16) DEFAULT NULL,
+					`file_mime_type` varchar(64) DEFAULT NULL,
+					`file_rw_permission` smallint UNSIGNED,
+					`file_owner` varchar(255) DEFAULT NULL,
+					`file_group` varchar(255) DEFAULT NULL,
+					`file_version` varchar(32) DEFAULT NULL,
+					`file_category` tinyint UNSIGNED DEFAULT 0,
+					`file_modified_time` datetime NOT NULL,
+					`source_slug` varchar(255) NOT NULL,
+					`created_time` datetime NOT NULL,
+					`created_by` bigint UNSIGNED DEFAULT NULL,
+					PRIMARY KEY (`id`),
+					KEY `defender_scan_item_id` (`defender_scan_item_id`),
+					KEY `created_by` (`created_by`)
+				) {$charset_collate};
 SQL;
-			}
-
-			$wpdb->query( $sql );
 		}
+
+		$wpdb->query( $sql );
 	}
 
 	/**
@@ -179,6 +177,7 @@ SQL;
 		wp_clear_scheduled_hook( 'wpdef_fetch_global_ip_list' );
 		wp_clear_scheduled_hook( 'wpdef_quarantine_delete_expired' );
 		wp_clear_scheduled_hook( 'wpdef_firewall_clean_up_lockout' );
+		wp_clear_scheduled_hook( 'wpdef_firewall_send_compact_logs_to_api' );
 
 		// Remove old legacy cron jobs if they exist.
 		wp_clear_scheduled_hook( 'lockoutReportCron' );
@@ -199,8 +198,7 @@ SQL;
 		// Hide errors.
 		$wpdb->hide_errors();
 		// Email log table.
-		if ( ! $this->table_exists( 'defender_email_log' ) ) {
-			$sql = "CREATE TABLE IF NOT EXISTS {$wpdb->base_prefix}defender_email_log (
+		$sql = "CREATE TABLE IF NOT EXISTS {$wpdb->base_prefix}defender_email_log (
  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
  `timestamp` int NOT NULL,
  `source` varchar(255) NOT NULL,
@@ -208,11 +206,10 @@ SQL;
  PRIMARY KEY  (`id`),
  KEY `source` (`source`)
 ) $charset_collate;";
-			$wpdb->query( $sql );
-		}
+		$wpdb->query( $sql );
+
 		// Audit log table. Though our data mainly store on API side, we will need a table for caching.
-		if ( ! $this->table_exists( 'defender_audit_log' ) ) {
-			$sql = "CREATE TABLE IF NOT EXISTS {$wpdb->base_prefix}defender_audit_log (
+		$sql = "CREATE TABLE IF NOT EXISTS {$wpdb->base_prefix}defender_audit_log (
  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
  `timestamp` int NOT NULL,
  `event_type` varchar(255) NOT NULL,
@@ -232,11 +229,10 @@ SQL;
  KEY `context` (`context`),
  KEY `ip` (`ip`)
 ) $charset_collate;";
-			$wpdb->query( $sql );
-		}
+		$wpdb->query( $sql );
+
 		// Scan item table.
-		if ( ! $this->table_exists( 'defender_scan_item' ) ) {
-			$sql = "CREATE TABLE IF NOT EXISTS {$wpdb->base_prefix}defender_scan_item (
+		$sql = "CREATE TABLE IF NOT EXISTS {$wpdb->base_prefix}defender_scan_item (
  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
  `parent_id` int NOT NULL,
  `type` varchar(255) NOT NULL,
@@ -246,11 +242,10 @@ SQL;
  KEY `type` (`type`),
  KEY `status` (`status`)
 ) $charset_collate;";
-			$wpdb->query( $sql );
-		}
+		$wpdb->query( $sql );
+
 		// Scan table.
-		if ( ! $this->table_exists( 'defender_scan' ) ) {
-			$sql = "CREATE TABLE IF NOT EXISTS {$wpdb->base_prefix}defender_scan (
+		$sql = "CREATE TABLE IF NOT EXISTS {$wpdb->base_prefix}defender_scan (
  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
  `percent` float NOT NULL,
  `total_tasks` tinyint(4) NOT NULL,
@@ -261,11 +256,10 @@ SQL;
  `is_automation` bool NOT NULL,
  PRIMARY KEY  (`id`)
 ) $charset_collate;";
-			$wpdb->query( $sql );
-		}
+		$wpdb->query( $sql );
+
 		// Lockout log table.
-		if ( ! $this->table_exists( 'defender_lockout_log' ) ) {
-			$sql = "CREATE TABLE IF NOT EXISTS {$wpdb->base_prefix}defender_lockout_log (
+		$sql = "CREATE TABLE IF NOT EXISTS {$wpdb->base_prefix}defender_lockout_log (
  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
  `log` text,
  `ip` varchar(45) DEFAULT NULL,
@@ -281,11 +275,10 @@ SQL;
  KEY `tried` (`tried`),
  KEY `country_iso_code` (`country_iso_code`)
 ) $charset_collate;";
-			$wpdb->query( $sql );
-		}
+		$wpdb->query( $sql );
+
 		// Lockout table.
-		if ( ! $this->table_exists( 'defender_lockout' ) ) {
-			$sql = "CREATE TABLE IF NOT EXISTS {$wpdb->base_prefix}defender_lockout (
+		$sql = "CREATE TABLE IF NOT EXISTS {$wpdb->base_prefix}defender_lockout (
  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
  `ip` varchar(45) DEFAULT NULL,
  `status` varchar(16) DEFAULT NULL,
@@ -302,8 +295,7 @@ SQL;
  KEY `attempt` (`attempt`),
  KEY `attempt_404` (`attempt_404`)
 ) $charset_collate;";
-			$wpdb->query( $sql );
-		}
+		$wpdb->query( $sql );
 
 		if ( class_exists( 'WP_Defender\Controller\Quarantine' ) ) {
 			$this->create_table_quarantine();
@@ -537,21 +529,6 @@ SQL;
 		$this->localize_script();
 
 		do_action( 'defender_enqueue_assets' );
-	}
-
-	/**
-	 * Check to exist table.
-	 *
-	 * @param string $table_name
-	 *
-	 * @return bool
-	 */
-	private function table_exists( $table_name ): bool {
-		global $wpdb;
-		// Full table name.
-		$table_name = $wpdb->base_prefix . $table_name;
-
-		return $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) === $table_name;
 	}
 
 	/**

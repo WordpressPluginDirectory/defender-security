@@ -20,15 +20,15 @@ class HTTP {
 
 	/**
 	 * @param string $key
-	 * @param mixed  $default
+	 * @param mixed  $default_name
 	 * @param bool   $strict
 	 *
 	 * @return string|array|bool|null
 	 */
-	public static function get( $key, $default = null, $strict = false ) {
-		$value = $_GET[ $key ] ?? $default;
+	public static function get( $key, $default_name = null, $strict = false ) {
+		$value = $_GET[ $key ] ?? $default_name;
 		if ( true === $strict && empty( $value ) ) {
-			$value = $default;
+			$value = $default_name;
 		}
 		if ( is_array( $value ) ) {
 			$value = defender_sanitize_data( $value );
@@ -41,12 +41,12 @@ class HTTP {
 
 	/**
 	 * @param string $key
-	 * @param mixed  $default
+	 * @param mixed  $default_name
 	 *
 	 * @return string|array|bool|null
 	 */
-	public static function post( $key, $default = null ) {
-		$value = isset( $_POST[ $key ] ) ? wp_unslash( $_POST[ $key ] ) : $default;
+	public static function post( $key, $default_name = null ) {
+		$value = isset( $_POST[ $key ] ) ? wp_unslash( $_POST[ $key ] ) : $default_name;
 		if ( is_array( $value ) ) {
 			$value = defender_sanitize_data( $value );
 		} elseif ( is_string( $value ) ) {

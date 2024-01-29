@@ -89,7 +89,6 @@ class Two_Factor extends Event {
 			add_action( 'pre_get_users', [ &$this, 'filter_users_by_2fa' ] );
 			add_action( 'show_user_profile', [ &$this, 'show_user_profile' ] );
 			add_action( 'profile_update', [ &$this, 'profile_update' ] );
-			add_action( 'wp_loaded', [ &$this, 'flush_rewrite_rules' ] );
 
 			if ( ! defined( 'DOING_AJAX' ) && ! $is_jetpack_sso && ! $is_tml ) {
 				add_filter( 'authenticate', [ &$this, 'maybe_show_otp_form' ], 30, 3 );
@@ -160,7 +159,7 @@ class Two_Factor extends Event {
 	/**
 	 * If force redirect enabled, then we should check and redirect to profile page until the 2FA enabled.
 	 *
-	 * @return null|void
+	 * @return void
 	 */
 	public function maybe_redirect_to_show_2fa_enabler() {
 		$user = wp_get_current_user();
@@ -227,7 +226,7 @@ class Two_Factor extends Event {
 	/**
 	 * Verify the OTP after user login successful.
 	 *
-	 * @return null|void
+	 * @return void
 	 */
 	public function verify_otp_login_time() {
 		if ( 'POST' !== $_SERVER['REQUEST_METHOD'] ) {
@@ -656,7 +655,7 @@ class Two_Factor extends Event {
 	 *
 	 * @param int $user_id
 	 *
-	 * @return null|void
+	 * @return void
 	 */
 	public function profile_update( int $user_id ) {
 		if ( isset( $_POST['_wpdef_2fa_nonce_user_options'] ) ) {
@@ -836,19 +835,10 @@ class Two_Factor extends Event {
 	public function save_settings( Request $request ): Response {
 		$model = $this->model;
 		$data = $request->get_data();
-		$woo_toggle_change = false;
-		// Woo is activated and Woo-toggle is changed from 'false' to 'true'.
-		if ( $this->is_woo_activated && false === $model->detect_woo && true === $data['detect_woo'] ) {
-			$woo_toggle_change = true;
-		}
 		$model->import( $data );
 		if ( $model->validate() ) {
 			$model->save();
 			Config_Hub_Helper::set_clear_active_flag();
-
-			if ( $woo_toggle_change ) {
-				set_site_transient( $this->flush_slug, true, 3600 );
-			}
 
 			return new Response(
 				true,
@@ -869,19 +859,7 @@ class Two_Factor extends Event {
 	}
 
 	/**
-	 * Flush rewrite rules to make the plugin custom endpoint available.
-	 *
 	 * @return void
-	 */
-	public function flush_rewrite_rules(): void {
-		if ( get_site_transient( $this->flush_slug ) ) {
-			flush_rewrite_rules();
-			delete_site_transient( $this->flush_slug );
-		}
-	}
-
-	/**
-	 * @return null|void
 	 * @throws \ReflectionException
 	 */
 	public function enqueue_assets() {
@@ -943,6 +921,11 @@ class Two_Factor extends Event {
 		if ( $sender ) {
 			$from_email = get_bloginfo( 'admin_email' );
 			$headers[] = sprintf( 'From: %s <%s>', $sender, $from_email );
+			/**Todo: check
+			$headers[] = wd_di()->get( \WP_Defender\Component\Mail::class )->get_headers(
+				defender_noreply_email( 'wd_two_fa_totp_noreply_email' ),
+				'totp'
+			);*/
 		}
 		// Main email template.
 		$body = $this->render_partial(
@@ -1288,7 +1271,8 @@ class Two_Factor extends Event {
 	 * @return void
 	 */
 	public function wp_defender_2fa_endpoint(): void {
-		add_rewrite_endpoint( $this->slug, EP_ROOT | EP_PAGES );
+		add_rewrite_endpoint( $this->slug, EP_PERMALINK | EP_PAGES );
+		flush_rewrite_rules();
 	}
 
 	/**
@@ -1331,7 +1315,7 @@ class Two_Factor extends Event {
 	/**
 	 * Save the 2fa details and redirect back to 'My Account' page.
 	 *
-	 * @return null|void
+	 * @return void
 	 */
 	public function save_2fa_details() {
 		if ( empty( $_POST['action'] ) || 'save_def_2fa_user_settings' !== $_POST['action'] ) {

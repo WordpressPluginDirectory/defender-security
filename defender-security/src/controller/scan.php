@@ -83,6 +83,11 @@ class Scan extends Event {
 		add_action( 'wpdef_clear_scan_logs', [ $this, 'clear_scan_logs' ] );
 
 		add_filter( 'heartbeat_nopriv_send', [ $this, 'nopriv_heartbeat' ], 10, 2 );
+
+		add_action(
+			'action_scheduler_completed_action',
+			[ $this, 'scan_completed_analytics' ]
+		);
 	}
 
 	/**
@@ -139,7 +144,7 @@ class Scan extends Event {
 	/**
 	 * Use this for self ping, so it can both run in background and active mode with good performance.
 	 *
-	 * @return null|void
+	 * @return void
 	 * @throws \ReflectionException
 	 * @defender_route
 	 * @is_public
@@ -163,7 +168,6 @@ class Scan extends Event {
 			$this->process();
 		} else {
 			$this->queue_to_sync_with_hub();
-
 			$this->service->remove_lock();
 		}
 	}
@@ -666,7 +670,7 @@ class Scan extends Event {
 	/**
 	 * Enqueue assets.
 	 *
-	 * @return null|void
+	 * @return void
 	 */
 	public function enqueue_assets() {
 		if ( ! $this->is_page_active() ) {
@@ -1018,5 +1022,29 @@ class Scan extends Event {
 			$analytics_data['event'],
 			array_merge( $analytics_data['data'], $extra_data )
 		);
+	}
+
+	/**
+	 * Triggers and send analytics data on scan completed.
+	 *
+	 * @param int $action_id Action ID.
+	 *
+	 * @return void
+	 */
+	public function scan_completed_analytics( $action_id ) {
+		if ( 'defender' === \ActionScheduler::store()->fetch_action( $action_id )->get_group() ) {
+			/**
+			 * @var Scan_Analytics
+			 */
+			$scan_analytics = wd_di()->get( Scan_Analytics::class );
+
+			$scan_model = wd_di()->get( Model_Scan::class );
+			$analytics_data = $scan_analytics->scan_completed( $scan_model );
+
+			$this->track_feature(
+				$analytics_data['event'],
+				$analytics_data['data']
+			);
+		}
 	}
 }

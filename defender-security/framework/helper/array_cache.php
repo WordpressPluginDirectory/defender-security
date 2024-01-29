@@ -27,14 +27,14 @@ class Array_Cache extends Component {
 	/**
 	 * @param $name
 	 * @param $group
-	 * @param $default
+	 * @param $default_name
 	 *
-	 * @return mixed|null
+	 * @return mixed
 	 */
-	public static function get( $name, $group = null, $default = null ) {
+	public static function get( $name, $group = null, $default_name = null ) {
 		$key = $name . $group;
 
-		return self::$cached[ $key ] ?? $default;
+		return self::$cached[ $key ] ?? $default_name;
 	}
 
 	/**

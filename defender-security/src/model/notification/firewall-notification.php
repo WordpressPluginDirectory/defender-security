@@ -17,13 +17,15 @@ class Firewall_Notification extends \WP_Defender\Model\Notification {
 
 	protected $table = 'wd_malware_firewall_notification';
 
+	public const SLUG = 'firewall-notification';
+
 	/**
 	 * @return void
 	 */
 	protected function before_load(): void {
 		$default = [
 			'title' => __( 'Firewall - Notification', 'defender-security' ),
-			'slug' => 'firewall-notification',
+			'slug' => self::SLUG,
 			'status' => self::STATUS_DISABLED,
 			'description' => __( 'Get email when a user or IP is locked out for trying to access your login area.', 'defender-security' ),
 			// @since 3.0.0 Fix 'Guest'-line.
@@ -221,8 +223,9 @@ class Firewall_Notification extends \WP_Defender\Model\Notification {
 			false
 		);
 
-		$headers = defender_noreply_html_header(
-			defender_noreply_email( 'wd_lockout_noreply_email' )
+		$headers = wd_di()->get( \WP_Defender\Component\Mail::class )->get_headers(
+			defender_noreply_email( 'wd_lockout_noreply_email' ),
+			self::SLUG
 		);
 
 		$ret = wp_mail( $email, $subject, $content, $headers );

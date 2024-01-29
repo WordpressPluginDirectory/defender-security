@@ -5,10 +5,7 @@
         <td class="main-intro-content"
             style="-moz-hyphens: auto; -webkit-hyphens: auto; border-collapse: collapse !important; color: #1a1a1a; font-size: 15px; font-weight: normal; hyphens: auto; line-height: 26px; margin: 0; padding: 0; text-align: left; vertical-align: top; word-wrap: break-word;">
             <h1 style="-webkit-font-smoothing:antialiased;color:inherit;font-size:25px;font-smoothing:antialiased;font-weight:bold;line-height:30px;margin:0 0 20px;padding:0;text-align:left;word-wrap:normal">
-                <?php
-                /* translators: %s: Site URL. */
-                printf( __( "Audit Update From Defender! %s", 'defender-security' ), esc_url( $site_url ) );
-                ?>
+                <?php echo esc_html( $header ); ?>
             </h1>
             <p style="-webkit-font-smoothing:antialiased;font-size:16px;font-smoothing:antialiased;font-weight:normal;line-height:24px;margin:0;margin-bottom:30px;padding:0;text-align:left">
                 <?php

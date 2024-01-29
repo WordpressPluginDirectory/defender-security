@@ -11,16 +11,19 @@ class View extends Component {
 	 * @var array
 	 */
 	public $blocks = [];
+
 	/**
 	 * @var array
 	 */
 	public $params = [];
+
 	/**
 	 * The template file in which this view should be rendered.
 	 *
 	 * @var null
 	 */
 	public $layout = null;
+
 	/**
 	 * The file contains content of this view, relative path.
 	 *
@@ -28,10 +31,6 @@ class View extends Component {
 	 */
 	public $view_file = null;
 
-	/**
-	 * @var array
-	 */
-	protected $_cache_stack = [];
 	/**
 	 * The folder contains view files, absolute path.
 	 *
@@ -72,43 +71,9 @@ class View extends Component {
 	private function render_php_file( $file, $params = [] ) {
 		ob_start();
 		ob_implicit_flush( false );
-		extract( $params, EXTR_OVERWRITE );
+		extract( $params, EXTR_OVERWRITE );// phpcs:ignore
 		require $file;
 
 		return ob_get_clean();
-	}
-
-	/**
-	 * Todo: need?
-	 * Starting a cache block.
-	 */
-	public function begin_cache( $id ) {
-		ob_start();
-		$this->_cache_stack[ $id ] = null;
-	}
-
-	/**
-	 * Todo: need?
-	 * @param $id
-	 *
-	 * @return string
-	 */
-	public function end_cache( $id ) {
-		$cached = ob_get_clean();
-		$this->_cache_stack[ $id ] = $cached;
-
-		return $cached;
-	}
-
-	/**
-	 * Todo: need?
-	 * Get cache content cached.
-	 *
-	 * @param $id
-	 *
-	 * @return mixed|null
-	 */
-	public function get_cache( $id ) {
-		return isset( $this->_cache_stack[ $id ] ) ?? null;
 	}
 }

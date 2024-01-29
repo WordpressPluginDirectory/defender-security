@@ -1,13 +1,13 @@
 === Defender Security - Malware Scanner, Login Security & Firewall ===
 Plugin Name: Defender Security - Malware Scanner, Login Security & Firewall
-Version: 4.4.2
+Version: 4.5.0
 Author: WPMU DEV
 Author URI: https://wpmudev.com/
 Contributors: WPMUDEV
 Tags: security, security plugin, firewall, malware, malware scanner, antivirus, ip blocking, login security, brute force attacks, limit login attempts, custom login url, activity log, audit logs, block hackers, two-factor authentication, 2fa, hack, captcha, webauthn, authentication, fido2, fingerprint, face verification, yubikey, USB keys, woocommerce
 Requires at least: 5.2
 Tested up to: 6.4.2
-Stable tag: 4.4.2
+Stable tag: 4.5.0
 Requires PHP: 7.4
 License: GPL v2 - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 
@@ -269,6 +269,18 @@ Please open a new thread in Defender’s [support forum](https://wordpress.org/s
 
 == Changelog ==
 
+= 4.5.0 ( 2024-01-24 ) =
+
+- Enhance: Compatibility with PHP 8.3
+- Enhance: Improve white-labeled emails
+- Enhance: Redesign Quarantine page
+- Fix: Scanning Issues when suspicious files are in the plugins folder and don't have plugin headers
+- Fix: Remove redundant table creation conditional guard clause
+- Fix: Rules for Defender > 2FA > Woocommerce are not overwritten over time
+- Fix: Scan flagging "All in one security" files as suspicious
+- Fix: Defender Google reCAPTCHA does not work with WooCommerce Gutenberg Checkout block
+- Fix: Masked Login not working after registration
+
 = 4.4.2 ( 2024-01-22 ) =
 
 - Enhance: Recommended IP Detection method with improved accuracy, site security, and harder-to-bypass IP banning
@@ -306,55 +318,6 @@ Please open a new thread in Defender’s [support forum](https://wordpress.org/s
 
 - Fix: Deprecation error in the log
 - Fix: Data opt-in modal visibility conditions
-
-= 4.2.0 ( 2023-10-16 ) =
-
-- Enhance: Compatibility with WordPress 6.4
-- Enhance: Improve Mask Login hooks to avoid bypassing
-- Enhance: Add relevant icons to suspicious file accordion
-- Enhance: 'Save Changes' button in security headers is not disabled when clicked
-- Enhance: UI Enhancements
-- Fix: Secure log data handling
-- Fix: Global IP data sync error on new sites
-- Fix: Mask login fails to recognize Subdirectory/Subdomain and Post/Page slugs
-
-= 4.1.0 ( 2023-09-11 ) =
-
-- New: Safe Repair for Suspicious files
-- Enhance: Require PHP 7.4 as the minimum supported version
-- Enhance: Allow to quarantine readme.txt files
-- Enhance: Enable "Move to quarantine" by default when deleting or repairing a file
-- Enhance: Improve the Quarantine directory accessibility logic
-- Enhance: Update Quarantine page copy
-- Enhance: Add new toggle state "Push permanently blocklisted IPs" to config structure
-- Enhance: Add banned IP to the Global IP blocklist on the firewall logs page
-- Enhance: Remove Beta info about 2FA
-- Enhance: GeoLite2 DB URL is not working
-- Enhance: PHP v8.1 warnings for the "PHP QR Code" package
-- Enhance: Update the primary color in the email notifications
-- Enhance: Change the "Settings" link to "Dashboard" on plugins page
-- Enhance: UI Enhancements
-- Fix: False positives on Windows server
-- Fix: Bypass masked URL and view the masked URL slug using Gravity Forms gf_page-argument
-- Fix: Compatibility issues with the Polylang plugin
-- Fix: Fix scrolling on Global IP section
-- Fix: Quarantined file time sent to HUB is not in GMT/UTC-based timestamp
-- Fix: Replace the deprecated FILTER_SANITIZE_STRING in PHP v8.1+
-- Fix: Forminator shortcode not rendered in Gutenberg block when Defender is activated
-- Fix: Cannot recheck Prevent PHP Execution
-- Fix: IP Allowlist/Blocklist do not accept more than one IP on Windows server
-- Fix: Mismatch in the "Free Membership text" on the Defender dashboard page
-- Fix: Geo-blocking does not work on a multisite subsite
-- Fix: Hide WPMU DEV URLs when Whitelabel is enabled and not listed users
-- Fix: Compatibility issues with the Amelia Pro plugin
-
-= 4.0.2 ( 2023-08-24 ) =
-
-- Fix : Adjust table creation based on storage engines
-
-= 4.0.1 ( 2023-08-08 ) =
-
-- Fix: Quarantine table creation on upgrade from free to pro
 
 
 [Changelog for previous versions](https://wpmudev.com/project/wp-defender/#view-changelog).

@@ -4,14 +4,17 @@ namespace WP_Defender\Model\Notification;
 
 use WP_Defender\Controller\Audit_Logging;
 use WP_Defender\Model\Audit_Log;
+use WP_Defender\Component\Mail;
 
 class Audit_Report extends \WP_Defender\Model\Notification {
 	protected $table = 'wd_audit_report';
 
+	public const SLUG = 'audit-report';
+
 	protected function before_load(): void {
 		$default = [
 			'title' => __( 'Audit Logging - Reporting', 'defender-security' ),
-			'slug' => 'audit-report',
+			'slug' => self::SLUG,
 			'status' => self::STATUS_DISABLED,
 			'description' => __( 'Schedule Defender to automatically email you a summary of all your website events.', 'defender-security' ),
 			// @since 3.0.0 Fix 'Guest'-line.
@@ -93,16 +96,24 @@ class Audit_Report extends \WP_Defender\Model\Notification {
 			$site_url
 		);
 		$audit_logging = wd_di()->get( Audit_Logging::class );
+		$mail_object = wd_di()->get( Mail::class );
+		$plugin_label = $mail_object->get_sender_name( self::SLUG );
 		if ( count( $data ) ) {
 			$logs_url = network_admin_url( 'admin.php?page=wdf-logging&view=logs' );
 			// Need for activated Mask Login feature.
 			$logs_url = apply_filters( 'report_email_logs_link', $logs_url, $email );
+			$header = sprintf(
+			/* translators: 1. Plugin label. 2. Site URL. */
+				__( 'Audit Update From %1$s! %2$s', 'defender-security' ),
+				$plugin_label,
+				$site_url
+			);
 			$message = $audit_logging->render_partial(
 				'email/audit-report-table', [
 					'logs_url' => $logs_url,
 					'name' => $name,
 					'list' => $list,
-					'site_url' => $site_url,
+					'header' => $header,
 				], false
 			);
 		} else {
@@ -125,8 +136,9 @@ class Audit_Report extends \WP_Defender\Model\Notification {
 			false
 		);
 
-		$headers = defender_noreply_html_header(
-			defender_noreply_email( 'wd_audit_noreply_email' )
+		$headers = $mail_object->get_headers(
+			defender_noreply_email( 'wd_audit_noreply_email' ),
+			self::SLUG
 		);
 
 		$ret = wp_mail( $email, $subject, $content, $headers );

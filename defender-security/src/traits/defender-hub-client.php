@@ -84,6 +84,8 @@ trait Defender_Hub_Client {
 				return "{$base}api/hub/v1/global-ip-list";
 			case self::API_PACKAGE_CONFIGS:
 				return "{$base}api/hub/v1/package-configs";
+			case self::API_IP_BLOCKLIST_SUBMIT_LOGS:
+				return "{$base}api/blocklist/v1/logs";
 			case self::API_HUB_SYNC:
 			default:
 				return "{$base}api/defender/v1/scan-results";

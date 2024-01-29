@@ -30,7 +30,7 @@ class Controller extends Component {
 	public function register_page( $title, $slug, $callback, $parent_slug = null, $icon = null, $menu_title = '' ) {
 		$hook = is_multisite() ? 'network_admin_menu' : 'admin_menu';
 		$menu_title = '' !== $menu_title ? $menu_title : $title;
-		$function = function () use ( $title, $slug, $callback, $hook, $parent_slug, $icon, $menu_title ) {
+		$function = function () use ( $title, $slug, $callback, $parent_slug, $icon, $menu_title ) {
 			$cap = is_multisite() ? 'manage_network_options' : 'manage_options';
 			if ( null === $parent_slug ) {
 				$page_hook = add_menu_page( $title, $menu_title, $cap, $slug, $callback, $icon );
@@ -58,11 +58,11 @@ class Controller extends Component {
 	/**
 	 * @param string|array $view_file
 	 * @param array        $params
-	 * @param bool         $echo
+	 * @param bool         $output
 	 *
 	 * @return bool|string|void
 	 */
-	public function render( $view_file, $params = [], $echo = true ) {
+	public function render( $view_file, $params = [], $output = true ) {
 		$stop_further = $this->check_has_server_error();
 
 		if ( $stop_further ) {
@@ -97,7 +97,7 @@ class Controller extends Component {
 				)
 			);
 		}
-		if ( false === $echo ) {
+		if ( false === $output ) {
 			return $content;
 		}
 
@@ -114,7 +114,7 @@ class Controller extends Component {
 		$base_path = dirname( $reflector->getFileName(), 2 );
 
 		if ( is_dir( $base_path . DIRECTORY_SEPARATOR . 'controller' )
-			 && is_dir( $base_path . DIRECTORY_SEPARATOR . 'view' )
+			&& is_dir( $base_path . DIRECTORY_SEPARATOR . 'view' )
 		) {
 			return $base_path . DIRECTORY_SEPARATOR;
 		}
@@ -125,11 +125,11 @@ class Controller extends Component {
 	/**
 	 * @param $view_file
 	 * @param array $params
-	 * @param bool  $echo
+	 * @param bool  $output
 	 *
 	 * @return string
 	 */
-	public function render_partial( $view_file, $params = [], $echo = true ) {
+	public function render_partial( $view_file, $params = [], $output = true ) {
 		$base_path = $this->get_base_path();
 
 		if ( ! isset( $params['controller'] ) ) {
@@ -145,7 +145,7 @@ class Controller extends Component {
 		} else {
 			$content = $view->render( $view_file, $params );
 		}
-		if ( true === $echo ) {
+		if ( true === $output ) {
 			echo $content;
 		}
 

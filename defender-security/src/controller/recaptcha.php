@@ -146,7 +146,7 @@ class Recaptcha extends Event {
 	}
 
 	/**
-	 * @return null|void
+	 * @return void
 	 */
 	protected function add_actions() {
 		$extra_conditions = is_admin() && ! ( defined( 'DOING_AJAX' ) && $this->is_recaptcha_settings() );
@@ -655,7 +655,7 @@ class Recaptcha extends Event {
 	 *
 	 * @param int $comment_post_id Post ID.
 	 *
-	 * @return null|void
+	 * @return void
 	 */
 	public function validate_captcha_field_on_comment( $comment_post_id ) {
 		if ( $this->service->exclude_recaptcha_for_requests() ) {

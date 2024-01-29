@@ -95,4 +95,47 @@ class Scan extends Event {
 			'data' => $analytics_data,
 		];
 	}
+
+	/**
+	 * Analytics data for scan completed event.
+	 *
+	 * @param Scan_Model $scan_model Scan model object.
+	 *
+	 * @return array[
+	 *   'event' => string,
+	 *   'data' => array
+	 * ]
+	 */
+	public function scan_completed( Scan_Model $scan_model ): array {
+		$last_scan = $scan_model::get_last();
+		$scan_item_group_total = wd_di()->get( Scan_Item::class )
+			->get_types_total( $last_scan->id, Scan_Item::STATUS_ACTIVE );
+
+		$data = [];
+
+		if ( isset( $scan_item_group_total['all'] ) ) {
+			$data['Threats Count'] = $scan_item_group_total['all'];
+		}
+
+		if ( isset( $scan_item_group_total['core_integrity'] ) ) {
+			$data['WP core issue count'] = $scan_item_group_total['core_integrity'];
+		}
+
+		if ( isset( $scan_item_group_total['malware'] ) ) {
+			$data['Suspicious Code'] = $scan_item_group_total['malware'];
+		}
+
+		if ( isset( $scan_item_group_total['plugin_integrity'] ) ) {
+			$data['Plugin file modified'] = $scan_item_group_total['plugin_integrity'];
+		}
+
+		if ( isset( $scan_item_group_total['vulnerability'] ) ) {
+			$data['Vulnerability'] = $scan_item_group_total['vulnerability'];
+		}
+
+		return [
+			'event' => 'def_scan_completed_new',
+			'data' => $data,
+		];
+	}
 }

@@ -41,7 +41,7 @@ class General_Notice extends \WP_Defender\Controller {
 		return new Response( true, [] );
 	}
 
-	protected static function delete_slugs(): void {
+	public static function delete_slugs(): void {
 		delete_site_option( self::IP_DETECTION_SLUG );
 	}
 
