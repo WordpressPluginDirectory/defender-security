@@ -5,6 +5,8 @@ namespace WP_Defender\Model\Setting;
 use Calotes\Model\Setting;
 
 class Firewall extends Setting {
+	use \WP_Defender\Traits\IP;
+
 	/**
 	 * Option name
 	 * @var string
@@ -38,6 +40,22 @@ class Firewall extends Setting {
 	 * @defender_property
 	 */
 	public $trusted_proxies_ip = '';
+
+	/**
+	 * Trusted proxy preset.
+	 *
+	 * @var string
+	 * @defender_property
+	 */
+	public $trusted_proxy_preset = '';
+
+	/**
+	 * Trusted proxy preset list.
+	 *
+	 * @var array
+	 * @defender_property
+	 */
+	public $trusted_proxy_preset_list = ['cloudflare'];
 
 	/**
 	 * Define settings labels.
@@ -74,6 +92,15 @@ class Firewall extends Setting {
 		}
 
 		return (array) $ip_array;
+	}
+
+	/**
+	 * Get the trusted proxy preset.
+	 *
+	 * @return string
+	 */
+	public function get_trusted_proxy_preset(): string {
+		return $this->trusted_proxy_preset;
 	}
 
 	/**
@@ -115,20 +142,8 @@ class Firewall extends Setting {
 				];
 			}
 
-			$remote_addr = $_SERVER['REMOTE_ADDR'];
-			if ( ! in_array( $remote_addr, $trusted_proxies_ip, true ) ) {
-				return [
-					'error' => true,
-					'message' => sprintf(
-					/* translators: %s: IP value. */
-						__( 'At least one proxy ip should match with %s', 'defender-security' ),
-						'<strong>REMOTE_ADDR: ' . $remote_addr . '</strong>'
-					),
-				];
-			}
-
 			foreach ( $trusted_proxies_ip as $ip ) {
-				if ( ! filter_var( $ip, FILTER_VALIDATE_IP ) ) {
+				if ( ! $this->validate_ip( $ip ) ) {
 					return [
 						'error' => true,
 						'message' => sprintf(

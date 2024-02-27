@@ -40,14 +40,23 @@ class Remote_Address {
 	}
 
 	private function instance() {
-		switch ( $this->http_ip_header ) {
+		/**
+		 * Filter the HTTP IP header.
+		 *
+		 * @param string $http_ip_header HTTP header for identifying client's IP.
+		 * @since 4.5.1
+		 */
+		$http_ip_header = apply_filters( 'wpdef_firewall_ip_detection', $this->http_ip_header );
+		switch ( $http_ip_header ) {
 			case 'HTTP_X_FORWARDED_FOR':
 			case 'HTTP_X_REAL_IP':
 			case 'HTTP_CF_CONNECTING_IP':
 				$remote_address = wd_di()->get( Modern_Remote_Address::class );
-				$remote_address->set_use_proxy();
-				$remote_address->set_proxy_header( $this->http_ip_header );
-				$remote_address->set_trusted_proxies( $this->firewall->get_trusted_proxies_ip() );
+				$remote_address
+					->set_use_proxy()
+					->set_proxy_header( $http_ip_header )
+					->set_trusted_proxies( $this->firewall->get_trusted_proxies_ip() )
+					->set_trusted_proxy_preset( $this->firewall->get_trusted_proxy_preset() );
 
 				return $remote_address;
 

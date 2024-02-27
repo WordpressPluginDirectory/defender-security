@@ -34,6 +34,7 @@ use WP_Defender\Controller\Webauthn;
 use WP_Defender\Controller\Quarantine;
 use WP_Defender\Controller\Data_Tracking;
 use WP_Defender\Controller\General_Notice;
+use WP_Defender\Component\Firewall as Firewall_Component;
 
 /**
  * Traits to handle common (pro & free) bootstrap functionalities.
@@ -159,6 +160,10 @@ SQL;
 		$settings = wd_di()->get( Main_Setting::class );
 		$settings->set_intention( 'Reactivation' );
 		$settings->track_opt( true );
+
+		$service = wd_di()->get( Firewall_Component::class );
+		$service->auto_switch_ip_detection_option();
+		$service->maybe_show_misconfigured_ip_detection_option_notice();
 	}
 
 	/**
@@ -178,6 +183,7 @@ SQL;
 		wp_clear_scheduled_hook( 'wpdef_quarantine_delete_expired' );
 		wp_clear_scheduled_hook( 'wpdef_firewall_clean_up_lockout' );
 		wp_clear_scheduled_hook( 'wpdef_firewall_send_compact_logs_to_api' );
+		wp_clear_scheduled_hook( 'wpdef_firewall_fetch_trusted_proxy_preset_ips' );
 
 		// Remove old legacy cron jobs if they exist.
 		wp_clear_scheduled_hook( 'lockoutReportCron' );

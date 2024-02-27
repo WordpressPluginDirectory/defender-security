@@ -116,7 +116,7 @@ trait Defender_Hub_Client {
 	 * @return array|WP_Error
 	 */
 	private function hub_api_request( string $scenario, array $body = [], array $args = [], bool $recheck = false ) {
-		$dash_api = \WPMUDEV_Dashboard::$api;
+		$dash_api = WPMUDEV_Dashboard::$api;
 
 		if ( ! $dash_api->has_key() ) {
 			throw new Exception( __( 'Dash plugin authentication API key missing.', 'defender-security' ) );
@@ -205,12 +205,11 @@ trait Defender_Hub_Client {
 	 * @return array|WP_Error
 	 */
 	public function make_wpmu_free_request( string $scenario, array $body = [], array $args = [], bool $recheck = false ) {
-
 		if ( $this->can_wpmu_free_request() === false ) {
 			throw new Exception( __( 'Permission denied API call.', 'defender-security' ) );
 		}
 
-		$dash_api = \WPMUDEV_Dashboard::$api;
+		$dash_api = WPMUDEV_Dashboard::$api;
 
 		if ( ! $dash_api->has_key() ) {
 			throw new Exception( __( 'Dash plugin authentication API key missing.', 'defender-security' ) );
@@ -225,11 +224,11 @@ trait Defender_Hub_Client {
 	 * @return bool True for allowed request, false for not allowed.
 	 */
 	public function can_wpmu_free_request() {
-		if ( ! class_exists( '\WPMUDEV_Dashboard' ) ) {
+		if ( ! class_exists( 'WPMUDEV_Dashboard' ) ) {
 			throw new Exception( __( 'WPMU DEV Dashboard plugin is missing.', 'defender-security' ) );
 		}
 
-		\WPMUDEV_Dashboard::instance();
+		WPMUDEV_Dashboard::instance();
 
 		$membership_status = WPMUDEV_Dashboard::$api->get_membership_status();
 

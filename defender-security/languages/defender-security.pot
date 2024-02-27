@@ -2,9 +2,9 @@
 # This file is distributed under the GNU General Public License (Version 2 - GPLv2).
 msgid ""
 msgstr ""
-"Project-Id-Version: Defender Pro 4.5.0\n"
+"Project-Id-Version: Defender Pro 4.5.1\n"
 "Report-Msgid-Bugs-To: https://wpmudev.com\n"
-"POT-Creation-Date: 2024-01-23 13:37:41+00:00\n"
+"POT-Creation-Date: 2024-02-26 07:58:50+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -241,7 +241,7 @@ msgstr ""
 msgid "7 days"
 msgstr ""
 
-#: languages/vue-js.php:168 src/controller/mask-login.php:1188
+#: languages/vue-js.php:168 src/controller/mask-login.php:1178
 #: src/model/setting/mask-login.php:169
 msgid ""
 "A page already exists at this URL. Please enter a unique URL for your login "
@@ -311,8 +311,8 @@ msgstr ""
 #: src/component/backup-settings.php:1361 src/controller/audit-logging.php:525
 #: src/controller/audit-logging.php:550
 #: src/controller/blocklist-monitor.php:201
-#: src/controller/blocklist-monitor.php:217 src/controller/mask-login.php:856
-#: src/controller/mask-login.php:869 src/controller/password-protection.php:309
+#: src/controller/blocklist-monitor.php:217 src/controller/mask-login.php:846
+#: src/controller/mask-login.php:859 src/controller/password-protection.php:309
 #: src/controller/password-protection.php:326 src/controller/recaptcha.php:1058
 #: src/controller/scan.php:895 src/controller/scan.php:931
 #: src/controller/security-headers.php:218 src/controller/two-factor.php:1106
@@ -1085,7 +1085,7 @@ msgstr ""
 msgid "Clear list"
 msgstr ""
 
-#: languages/vue-js.php:826 src/model/setting/firewall.php:50
+#: languages/vue-js.php:826 src/model/setting/firewall.php:68
 msgid "Clear Temporary IP Block List"
 msgstr ""
 
@@ -1415,7 +1415,7 @@ msgstr ""
 msgid "Dark"
 msgstr ""
 
-#: languages/vue-js.php:1106 src/class-admin.php:142
+#: languages/vue-js.php:1106 src/class-admin.php:151
 #: src/controller/dashboard.php:67
 msgid "Dashboard"
 msgstr ""
@@ -1580,7 +1580,7 @@ msgstr ""
 msgid "Details"
 msgstr ""
 
-#: languages/vue-js.php:1253 src/model/setting/firewall.php:51
+#: languages/vue-js.php:1253 src/model/setting/firewall.php:69
 msgid "Detect IP Addresses"
 msgstr ""
 
@@ -1686,7 +1686,7 @@ msgid ""
 "which expose user ID by default."
 msgstr ""
 
-#: languages/vue-js.php:1333 src/class-admin.php:144
+#: languages/vue-js.php:1333 src/class-admin.php:153
 msgid "Docs"
 msgstr ""
 
@@ -1730,7 +1730,7 @@ msgstr ""
 msgid "Edit Name & Description"
 msgstr ""
 
-#: languages/vue-js.php:1374 src/model/setting/firewall.php:52
+#: languages/vue-js.php:1374 src/model/setting/firewall.php:70
 msgid "Edit Trusted Proxies"
 msgstr ""
 
@@ -1962,7 +1962,7 @@ msgid "Fetching your domain info..."
 msgstr ""
 
 #: languages/vue-js.php:1547 src/model/setting/scan.php:119
-#: src/traits/defender-hub-client.php:615
+#: src/traits/defender-hub-client.php:614
 msgid "File change detection"
 msgstr ""
 
@@ -2005,7 +2005,7 @@ msgid "Finnish"
 msgstr ""
 
 #: languages/vue-js.php:1582 src/component/backup-settings.php:1231
-#: src/component/mail.php:50 src/controller/firewall.php:44
+#: src/component/mail.php:50 src/controller/firewall.php:45
 #: src/model/notification/firewall-notification.php:219
 #: src/model/notification/firewall-report.php:127
 msgid "Firewall"
@@ -2403,8 +2403,8 @@ msgstr ""
 #: src/component/backup-settings.php:1373 src/controller/audit-logging.php:535
 #: src/controller/audit-logging.php:559
 #: src/controller/blocklist-monitor.php:203
-#: src/controller/blocklist-monitor.php:217 src/controller/mask-login.php:856
-#: src/controller/mask-login.php:869 src/controller/password-protection.php:309
+#: src/controller/blocklist-monitor.php:217 src/controller/mask-login.php:846
+#: src/controller/mask-login.php:859 src/controller/password-protection.php:309
 #: src/controller/password-protection.php:321
 #: src/controller/password-protection.php:327 src/controller/recaptcha.php:1058
 #: src/controller/scan.php:897 src/controller/scan.php:932
@@ -2536,7 +2536,7 @@ msgid "Keep"
 msgstr ""
 
 #: languages/vue-js.php:2000 src/model/setting/scan.php:122
-#: src/traits/defender-hub-client.php:618
+#: src/traits/defender-hub-client.php:617
 msgid "Known vulnerabilities"
 msgstr ""
 
@@ -2833,7 +2833,7 @@ msgstr ""
 
 #: languages/vue-js.php:2243 src/component/ip/global-ip.php:232
 #: src/component/ip/global-ip.php:235 src/component/notification.php:392
-#: src/component/notification.php:407 src/controller/firewall.php:423
+#: src/component/notification.php:407 src/controller/firewall.php:429
 #: src/model/notification/malware-report.php:130 src/model/notification.php:334
 #: src/model/notification.php:349
 msgid "Never"
@@ -3089,7 +3089,7 @@ msgid ""
 "database."
 msgstr ""
 
-#: languages/vue-js.php:2418
+#: languages/vue-js.php:2418 src/class-admin.php:310
 msgid "Ok, I understand"
 msgstr ""
 
@@ -3418,7 +3418,7 @@ msgstr ""
 msgid "Quickly remove all the nations inside a continent or region."
 msgstr ""
 
-#: languages/vue-js.php:2686 src/class-admin.php:207 src/component/rate.php:64
+#: languages/vue-js.php:2686 src/class-admin.php:216 src/component/rate.php:64
 msgid "Rate Defender"
 msgstr ""
 
@@ -3623,7 +3623,7 @@ msgstr ""
 msgid "Revert"
 msgstr ""
 
-#: languages/vue-js.php:2853 src/class-admin.php:220
+#: languages/vue-js.php:2853 src/class-admin.php:229
 msgid "Roadmap"
 msgstr ""
 
@@ -3686,7 +3686,7 @@ msgid "Saving"
 msgstr ""
 
 #: languages/vue-js.php:2925 src/model/setting/scan.php:120
-#: src/traits/defender-hub-client.php:616
+#: src/traits/defender-hub-client.php:615
 msgid "Scan core files"
 msgstr ""
 
@@ -3695,7 +3695,7 @@ msgid "Scan in progress"
 msgstr ""
 
 #: languages/vue-js.php:2932 src/model/setting/scan.php:121
-#: src/traits/defender-hub-client.php:617
+#: src/traits/defender-hub-client.php:616
 msgid "Scan plugin files"
 msgstr ""
 
@@ -3985,11 +3985,11 @@ msgstr ""
 msgid "Subscribed"
 msgstr ""
 
-#: languages/vue-js.php:3196 src/class-admin.php:208
+#: languages/vue-js.php:3196 src/class-admin.php:217
 msgid "Support"
 msgstr ""
 
-#: languages/vue-js.php:3202 src/traits/defender-hub-client.php:619
+#: languages/vue-js.php:3202 src/traits/defender-hub-client.php:618
 msgid "Suspicious code"
 msgstr ""
 
@@ -5222,23 +5222,23 @@ msgid ""
 "enable %2$s."
 msgstr ""
 
-#: src/class-admin.php:53 src/class-admin.php:147
+#: src/class-admin.php:56 src/class-admin.php:156
 msgid "Upgrade For 80% Off!"
 msgstr ""
 
-#: src/class-admin.php:142
+#: src/class-admin.php:151
 msgid "Go to Defender Dashboard"
 msgstr ""
 
-#: src/class-admin.php:147
+#: src/class-admin.php:156
 msgid "Upgrade to Defender Pro"
 msgstr ""
 
-#: src/class-admin.php:149
+#: src/class-admin.php:158
 msgid "Renew Your Membership"
 msgstr ""
 
-#: src/class-admin.php:149
+#: src/class-admin.php:158
 msgid "Renew Membership"
 msgstr ""
 
@@ -5246,26 +5246,71 @@ msgstr ""
 msgid "WPMU DEV"
 msgstr ""
 
-#: src/class-admin.php:181
+#: src/class-admin.php:190
 #. translators: %s: Author URI.
 msgid "By %s"
 msgstr ""
 
-#: src/class-admin.php:199
+#: src/class-admin.php:208
 #. translators: %s: Plugin name.
 msgid "More information about %s"
 msgstr ""
 
-#: src/class-admin.php:201 src/class-admin.php:215
+#: src/class-admin.php:210 src/class-admin.php:224
 msgid "View details"
 msgstr ""
 
-#: src/class-admin.php:218
+#: src/class-admin.php:227
 msgid "Premium Support"
 msgstr ""
 
-#: src/class-admin.php:246
+#: src/class-admin.php:255
 msgid "Get Fast!"
+msgstr ""
+
+#: src/class-admin.php:281
+msgid ""
+"Cloudflare Usage Detected: Switched to CF-Connecting-IP for Better "
+"Compatibility"
+msgstr ""
+
+#: src/class-admin.php:285
+msgid ""
+"Improve IP Detection : We suggest Switching to X-Forward-For IP Detection "
+"Method"
+msgstr ""
+
+#: src/class-admin.php:303
+#. translators: %s: Link.
+msgid ""
+"We have switched to using the CF-Connecting-IP HTTP header for IP "
+"detection, offering enhanced compatibility for users behind Cloudflare "
+"Proxy. If you wish to change this setting, you can do so from <a "
+"href=\"%s\">here</a>."
+msgstr ""
+
+#: src/class-admin.php:318
+#. translators: %s: Link.
+msgid ""
+"Based on your server configuration, we recommend switching to the "
+"X-Forwarded-For method for accurate IP detection and to prevent firewall "
+"blocks. Easily modify your settings <a href=\"%s\">here</a>."
+msgstr ""
+
+#: src/class-admin.php:325
+msgid "Switch to X-Forwarded-For"
+msgstr ""
+
+#: src/class-admin.php:328 src/view/two-fa/providers/biometric.php:18
+msgid "Dismiss"
+msgstr ""
+
+#: src/class-admin.php:381 src/class-admin.php:410 src/component/rate.php:262
+msgid "Invalid request, you are not allowed to do that action."
+msgstr ""
+
+#: src/class-admin.php:394 src/component/rate.php:269
+msgid "Invalid request, allowed data not provided."
 msgstr ""
 
 #: src/component/audit/comment-audit.php:33
@@ -6021,7 +6066,7 @@ msgstr ""
 msgid "Something wrong happen, please try again!"
 msgstr ""
 
-#: src/component/backup-settings.php:581 src/upgrader.php:677
+#: src/component/backup-settings.php:581 src/upgrader.php:682
 msgid "Basic Config"
 msgstr ""
 
@@ -6039,8 +6084,8 @@ msgstr ""
 msgid "Inactive %s"
 msgstr ""
 
-#: src/component/backup-settings.php:1115 src/controller/firewall.php:551
-#: src/controller/firewall.php:600 src/controller/scan.php:903
+#: src/component/backup-settings.php:1115 src/controller/firewall.php:563
+#: src/controller/firewall.php:612 src/controller/scan.php:903
 #: src/controller/scan.php:935 src/controller/security-tweaks.php:915
 #: src/controller/security-tweaks.php:942
 msgid "Email notifications active"
@@ -6072,11 +6117,11 @@ msgstr ""
 msgid "The Defender file with the random key is incorrect."
 msgstr ""
 
-#: src/component/feature-modal.php:28
+#: src/component/feature-modal.php:30
 msgid "NEW: Defender Safe Repair"
 msgstr ""
 
-#: src/component/feature-modal.php:34
+#: src/component/feature-modal.php:36
 #. translators: %s: user display name
 msgid ""
 "Hey %s! With Defender's Safe Repair feature, you no longer have to be "
@@ -6086,19 +6131,19 @@ msgid ""
 "copies from their official plugin repository."
 msgstr ""
 
-#: src/component/feature-modal.php:52
+#: src/component/feature-modal.php:56
 msgid "Modal for Quarantine"
 msgstr ""
 
-#: src/component/feature-modal.php:53
+#: src/component/feature-modal.php:57
 msgid "CHECK IT OUT!"
 msgstr ""
 
-#: src/component/feature-modal.php:54
+#: src/component/feature-modal.php:58
 msgid "Get it now"
 msgstr ""
 
-#: src/component/http/remote-address.php:87
+#: src/component/http/remote-address.php:96
 #. translators: %s - HTTP IP header
 msgid "%s header missing in $_SERVER global variable."
 msgstr ""
@@ -6274,14 +6319,6 @@ msgstr ""
 msgid ""
 "We've spent countless hours developing Defender and making it free for you "
 "to use. We would really appreciate it if you dropped us a quick rating!"
-msgstr ""
-
-#: src/component/rate.php:262
-msgid "Invalid request, you are not allowed to do that action."
-msgstr ""
-
-#: src/component/rate.php:269
-msgid "Invalid request, allowed data not provided."
 msgstr ""
 
 #: src/component/recaptcha.php:130 src/integrations/class-woocommerce.php:37
@@ -6749,8 +6786,8 @@ msgstr ""
 msgid "The file %s could not be loaded."
 msgstr ""
 
-#: src/component/security-tweaks/servers/server-factory.php:50
-#: src/component/security-tweaks/servers/server-factory.php:94
+#: src/component/security-tweaks/servers/server-factory.php:49
+#: src/component/security-tweaks/servers/server-factory.php:93
 #. translators: %s: Server name.
 msgid "The %s server is not supported yet."
 msgstr ""
@@ -7114,8 +7151,8 @@ msgid "Invalid data."
 msgstr ""
 
 #: src/controller/audit-logging.php:395 src/controller/blacklist.php:171
-#: src/controller/firewall.php:175 src/controller/main-setting.php:111
-#: src/controller/mask-login.php:364 src/controller/mask-login.php:1177
+#: src/controller/firewall.php:181 src/controller/main-setting.php:111
+#: src/controller/mask-login.php:360 src/controller/mask-login.php:1167
 #: src/controller/password-protection.php:224
 #: src/controller/password-reset.php:202 src/controller/scan.php:507
 #: src/controller/security-headers.php:113 src/controller/two-factor.php:847
@@ -7124,7 +7161,7 @@ msgid "Your settings have been updated."
 msgstr ""
 
 #: src/controller/audit-logging.php:530 src/controller/audit-logging.php:554
-#: src/controller/firewall.php:556 src/controller/firewall.php:606
+#: src/controller/firewall.php:568 src/controller/firewall.php:618
 #: src/controller/scan.php:908 src/controller/scan.php:940
 #. translators: %s: Frequency value.
 msgid "Email reports sending %s"
@@ -7272,29 +7309,29 @@ msgstr ""
 msgid "Wrong start and end date."
 msgstr ""
 
-#: src/controller/firewall.php:101
+#: src/controller/firewall.php:107
 msgid "NEW"
 msgstr ""
 
-#: src/controller/firewall.php:270
+#: src/controller/firewall.php:276
 msgid "Demo"
 msgstr ""
 
-#: src/controller/firewall.php:398
+#: src/controller/firewall.php:404
 msgid "Your logs have been successfully deleted."
 msgstr ""
 
-#: src/controller/firewall.php:407 src/controller/firewall.php:722
+#: src/controller/firewall.php:413 src/controller/firewall.php:734
 msgid "Failed remove!"
 msgstr ""
 
-#: src/controller/firewall.php:562 src/controller/firewall.php:612
+#: src/controller/firewall.php:574 src/controller/firewall.php:624
 #: src/controller/scan.php:914 src/controller/scan.php:946
 #. translators: %s: Html for Pro-tag.
 msgid "Email report inactive %s"
 msgstr ""
 
-#: src/controller/firewall.php:713
+#: src/controller/firewall.php:725
 msgid "Deleted lockout records successfully."
 msgstr ""
 
@@ -7405,7 +7442,7 @@ msgid ""
 "to this page to continue setup."
 msgstr ""
 
-#: src/controller/mask-login.php:495
+#: src/controller/mask-login.php:485
 msgid "This feature is forbidden temporarily for security reason. Try login again."
 msgstr ""
 
@@ -8213,20 +8250,15 @@ msgstr ""
 msgid "MaxMind license key"
 msgstr ""
 
-#: src/model/setting/firewall.php:49
+#: src/model/setting/firewall.php:67
 msgid "Days to keep logs"
 msgstr ""
 
-#: src/model/setting/firewall.php:114
+#: src/model/setting/firewall.php:141
 msgid "Trusted proxies should not be empty"
 msgstr ""
 
-#: src/model/setting/firewall.php:124
-#. translators: %s: IP value.
-msgid "At least one proxy ip should match with %s"
-msgstr ""
-
-#: src/model/setting/firewall.php:136
+#: src/model/setting/firewall.php:151
 #. translators: %s: IP value.
 msgid "%s is not a valid IP address"
 msgstr ""
@@ -8605,12 +8637,12 @@ msgstr ""
 msgid "Polynesia"
 msgstr ""
 
-#: src/traits/defender-bootstrap.php:515
+#: src/traits/defender-bootstrap.php:521
 msgid "UPGRADE TO PRO"
 msgstr ""
 
 #: src/traits/defender-hub-client.php:122
-#: src/traits/defender-hub-client.php:216
+#: src/traits/defender-hub-client.php:215
 msgid "Dash plugin authentication API key missing."
 msgstr ""
 
@@ -8625,11 +8657,11 @@ msgid ""
 "install the WPMU DEV Dashboard."
 msgstr ""
 
-#: src/traits/defender-hub-client.php:210
+#: src/traits/defender-hub-client.php:209
 msgid "Permission denied API call."
 msgstr ""
 
-#: src/traits/defender-hub-client.php:229
+#: src/traits/defender-hub-client.php:228
 msgid "WPMU DEV Dashboard plugin is missing."
 msgstr ""
 
@@ -8747,41 +8779,41 @@ msgstr ""
 msgid "Hub"
 msgstr ""
 
-#: src/upgrader.php:676
+#: src/upgrader.php:681
 msgid "Basic config"
 msgstr ""
 
-#: src/upgrader.php:1272
+#: src/upgrader.php:1277
 msgid "Scan of {SITE_URL} complete."
 msgstr ""
 
-#: src/upgrader.php:1273
+#: src/upgrader.php:1278
 msgid "Malware Scan of {SITE_URL} is complete."
 msgstr ""
 
-#: src/upgrader.php:1278
+#: src/upgrader.php:1283
 msgid "{ISSUES_COUNT} issues found."
 msgstr ""
 
-#: src/upgrader.php:1279
+#: src/upgrader.php:1284
 msgid "{ISSUES_COUNT} issue(s) found."
 msgstr ""
 
-#: src/upgrader.php:1313
+#: src/upgrader.php:1318
 msgid ""
 "{ISSUES_COUNT} vulnerabilities were identified for {SITE_URL} during a "
 "Malware Scan."
 msgstr ""
 
-#: src/upgrader.php:1314
+#: src/upgrader.php:1319
 msgid "Malware Scan identified {ISSUES_COUNT} issue(s) on {SITE_URL}."
 msgstr ""
 
-#: src/upgrader.php:1319
+#: src/upgrader.php:1324
 msgid "See details for each issue below."
 msgstr ""
 
-#: src/upgrader.php:1320
+#: src/upgrader.php:1325
 msgid "The identified issue(s) is/are listed below."
 msgstr ""
 
@@ -9013,10 +9045,6 @@ msgstr ""
 
 #: src/view/two-fa/providers/backup-codes.php:20
 msgid "Download Codes"
-msgstr ""
-
-#: src/view/two-fa/providers/biometric.php:18
-msgid "Dismiss"
 msgstr ""
 
 #: src/view/two-fa/providers/totp-disabled.php:4

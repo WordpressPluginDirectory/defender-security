@@ -721,7 +721,7 @@ class Security_Tweaks extends Event {
 	/**
 	 * @param $slug
 	 *
-	 * @return mixed|null
+	 * @return mixed
 	 */
 	private function get_tweak( $slug ) {
 		$tweaks = Array_Cache::get( 'tweaks', 'tweaks' );

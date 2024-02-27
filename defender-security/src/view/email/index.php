@@ -271,7 +271,7 @@ $can_whitelabel = $dashboard_whitelabel->can_whitelabel();
                                                                     <tr>
                                                                         <td style="font-size:0;height:25px;vertical-align:middle;text-align:center;width:25px;">
                                                                             <a href="https://twitter.com/wpmudev" target="_blank" style="display:inline-block;">
-                                                                                <img height="11" width="13" src="<?php echo esc_url( defender_asset_url( '/assets/email-images/icon-twitter.png' ) ); ?>" style="width:13px;height:11px;border-radius:3px;display:block;" />
+                                                                                <img height="12" width="13" src="<?php echo esc_url( defender_asset_url( '/assets/email-images/icon-twitter.png' ) ); ?>" style="width:13px;height:12px;border-radius:3px;display:block;" />
                                                                             </a>
                                                                         </td>
                                                                     </tr>

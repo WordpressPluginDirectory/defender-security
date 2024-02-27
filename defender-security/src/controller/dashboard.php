@@ -188,7 +188,7 @@ class Dashboard extends Event {
 		$firewall = wd_di()->get( Firewall::class );
 
 		return array_merge(
-			wd_di()->get( Feature_Modal::class )->get_dashboard_modals(),
+			wd_di()->get( Feature_Modal::class )->get_dashboard_modals( true ),
 			[
 				'scan' => wd_di()->get( Scan::class )->data_frontend(),
 				'firewall' => $firewall->data_frontend(),

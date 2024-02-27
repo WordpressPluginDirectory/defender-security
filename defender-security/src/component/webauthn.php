@@ -18,14 +18,14 @@ class Webauthn implements PublicKeyCredentialSourceRepository {
 	/**
 	 * Option key for storing user credentials.
 	 *
-	 * @type string
+	 * @var string
 	 */
 	public const CREDENTIAL_OPTION_KEY = 'user_credentials';
 
 	/**
 	 * Meta key for storing credentials having userHandle mismatch.
 	 *
-	 * @type string
+	 * @var string
 	 */
 	public const USER_HANDLE_MISMATCH_KEY = 'user_handle_match_failed';
 
@@ -34,7 +34,7 @@ class Webauthn implements PublicKeyCredentialSourceRepository {
 	 *
 	 * @param int $userId
 	 *
-	 * @return mixed|null
+	 * @return mixed
 	 */
 	public function getCredentials( int $userId ) {
 		return $this->get_user_meta( $userId, self::CREDENTIAL_OPTION_KEY );
@@ -184,7 +184,7 @@ class Webauthn implements PublicKeyCredentialSourceRepository {
 	/**
 	 * Add authenticators to userHandle mismatch list.
 	 *
-	 * @param WP_User $user
+	 * @param \WP_User $user
 	 * @param array $data
 	 *
 	 * @since 3.4.0

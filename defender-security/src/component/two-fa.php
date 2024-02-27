@@ -544,7 +544,7 @@ class Two_Fa extends Component {
 		if (
 			apply_filters( 'wd_2fa_enable_attempts', true )
 			&& $login_settings->enabled
-			&& ! $$skip_priority_lockout_checks
+			&& ! $skip_priority_lockout_checks
 		) {
 			$line = get_user_meta( $user_id, 'wd_2fa_attempt_' . $slug, true );
 			// Fresh start or there's a record.

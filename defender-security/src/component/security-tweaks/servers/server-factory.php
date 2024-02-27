@@ -3,7 +3,6 @@
 namespace WP_Defender\Component\Security_Tweaks\Servers;
 
 use WP_Error;
-use Exception;
 
 class Server_Factory {
 
@@ -61,25 +60,25 @@ class Server_Factory {
 	/**
 	 * Get supported servers.
 	 *
-	 * @return array
+	 * @return void
 	 */
 	public function get_supported_servers() {
 		$this->servers = apply_filters( 'defender_get_supported_servers', [
-			'nginx'     => 'Nginx',
-			'apache'    => 'Apache',
-			'litespeed' => 'Apache', // We're going to use same server for Apache and LiteSpeed
-			'iis-7'     => 'IIS_7',
-			'flywheel'  => 'Flywheel',
-			'cloudflare'=> 'Flywheel', // We're going to use same server for Flywheel and Cloudflare
+			'nginx' => 'Nginx',
+			'apache' => 'Apache',
+			'litespeed' => 'Apache', // We're going to use same server for Apache and LiteSpeed.
+			'iis-7' => 'IIS_7',
+			'flywheel' => 'Flywheel',
+			'cloudflare' => 'Flywheel', // We're going to use same server for Flywheel and Cloudflare.
+			// A specific case for WordPress Playground.
+			'php.wasm'  => 'PHP_Wasm',
 		] );
 	}
 
 	/**
-	 * Get the server for specific service.
+	 * Get the server for specific service. Return WP_Defender\Component\Security_Tweaks\Servers\[$server].
 	 *
-	 * @param string
-	 *
-	 * @return WP_Defender\Component\Security_Tweaks\Servers\[$server]
+	 * @param string $service
 	 */
 	public function from( $service ) {
 		$server = __NAMESPACE__ . '\\' . $this->server;

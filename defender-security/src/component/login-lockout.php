@@ -35,7 +35,7 @@ class Login_Lockout extends \WP_Defender\Component {
 	protected $banned_username_message;
 
 	/**
-	 * @var string
+	 * @var array
 	 */
 	protected $ip;
 
@@ -86,10 +86,10 @@ class Login_Lockout extends \WP_Defender\Component {
 	/**
 	 * Show a message to tell user how many attempt they have until get lockout.
 	 *
-	 * @param WP_User|WP_Error|null $user
-	 * @param string                $username
+	 * @param \WP_User|WP_Error|null $user
+	 * @param string                 $username
 	 *
-	 * @return WP_User|WP_Error|null
+	 * @return \WP_User|WP_Error|null
 	 */
 	public function show_attempt_left( $user, $username ) {
 		if ( ! is_wp_error( $user ) && $user instanceof \WP_User

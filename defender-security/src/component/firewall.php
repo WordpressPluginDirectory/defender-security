@@ -3,11 +3,31 @@
 namespace WP_Defender\Component;
 
 use WP_Defender\Component;
+use WP_Defender\Component\Trusted_Proxy_Preset\Trusted_Proxy_Preset;
 use WP_Defender\Model\Lockout_Ip;
 use WP_Defender\Model\Setting\Firewall as Model_Firewall;
 use WP_Defender\Behavior\WPMUDEV;
 
 class Firewall extends Component {
+	/**
+	 * The notice slug if there is switching IP Detection option to Cloudflare (CF).
+	 */
+	public const IP_DETECTION_CF_SHOW_SLUG = 'wd_show_ip_detection_cf_notice';
+
+	/**
+	 * The notice slug if CF IP Detection notice is rejected.
+	 */
+	public const IP_DETECTION_CF_DISMISS_SLUG = 'wd_dismiss_ip_detection_cf_notice';
+
+	/**
+	 * The notice slug if there is switching IP Detection option to X-Forwarded-For (XFF).
+	 */
+	public const IP_DETECTION_XFF_SHOW_SLUG = 'wd_show_ip_detection_xff_notice';
+
+	/**
+	 * The notice slug if CF IP Detection notice is rejected.
+	 */
+	public const IP_DETECTION_XFF_DISMISS_SLUG = 'wd_dismiss_ip_detection_xff_notice';
 
 	/**
 	 * Check if the first commencing request is proper staff remote access.
@@ -236,7 +256,7 @@ class Firewall extends Component {
 			'REMOTE_ADDR',
 		];
 
-		$client_ips = [];
+		$gathered_ips = [];
 		foreach ( $ip_headers as $header ) {
 			if ( ! empty( $_SERVER[ $header ] ) ) {
 				// Handle multiple IP addresses
@@ -244,13 +264,135 @@ class Firewall extends Component {
 
 				foreach( $ips as $ip ) {
 					if ( $this->validate_ip( $ip ) ) {
-						$client_ips[] = $ip;
+						$gathered_ips[] = $ip;
 					}
 				}
 			}
 		}
-		$client_ips = array_unique( $client_ips );
 
-		return $this->filter_user_ips( $client_ips );
+		/**
+		 * Filter the gathered IPs before checking the lockout records.
+		 *
+		 * @param array $gathered_ips IPs gathered from request headers.
+		 * @since 4.5.1
+		 */
+		$gathered_ips = (array) apply_filters( 'wpdef_firewall_gathered_ips', array_unique( $gathered_ips ) );
+
+		return $this->filter_user_ips( $gathered_ips );
+	}
+
+	/**
+	 * Check if the current request is recognized as coming from Cloudflare.
+	 *
+	 * @return bool
+	 */
+	public function is_cloudflare_request(): bool {
+		$is_cloudflare = true;
+
+		if( ! (
+			isset( $_SERVER['HTTP_CF_CONNECTING_IP'] ) ||
+			isset( $_SERVER['HTTP_CF_IPCOUNTRY'] ) ||
+			isset( $_SERVER['HTTP_CF_RAY'] ) ||
+			isset( $_SERVER['HTTP_CF_VISITOR'] )
+		) ) {
+			$is_cloudflare = false;
+		}
+
+		return $is_cloudflare;
+	}
+
+	/**
+	 * Auto-detect proxy server and switch to appropriate IP Detection option.
+	 *
+	 * @return void
+	 */
+	public function auto_switch_ip_detection_option(): void {
+		$model = wd_di()->get( Model_Firewall::class );
+
+		if ( $this->is_cloudflare_request() ) {
+			if (
+				'HTTP_CF_CONNECTING_IP' !== $model->http_ip_header &&
+				! self::is_switched_ip_detection_notice( self::IP_DETECTION_CF_SHOW_SLUG )
+			) {
+				$model->http_ip_header = 'HTTP_CF_CONNECTING_IP';
+				update_site_option( self::IP_DETECTION_CF_SHOW_SLUG, true );
+			}
+
+			$model->trusted_proxy_preset = 'cloudflare';
+			$model->save();
+
+			// Fetch trusted proxy ips
+			$this->update_trusted_proxy_preset_ips();
+		}
+	}
+
+	/**
+	 * Update trusted proxy preset IPs.
+	 *
+	 * @return void
+	 */
+	public function update_trusted_proxy_preset_ips(): void {
+		$model = wd_di()->get( Model_Firewall::class );
+		if ( ! empty( $model->trusted_proxy_preset ) ) {
+			/**
+			 * @var Trusted_Proxy_Preset $trusted_proxy_preset ;
+			 */
+			$trusted_proxy_preset = wd_di()->get( Trusted_Proxy_Preset::class );
+			$trusted_proxy_preset->set_proxy_preset( $model->trusted_proxy_preset );
+			$trusted_proxy_preset->update_ips();
+		}
+	}
+
+	/**
+	 * Show a notice if wrong IP Detection option is configured for the site.
+	 *
+	 * @return void
+	 */
+	public function maybe_show_misconfigured_ip_detection_option_notice(): void {
+		$model = wd_di()->get( Model_Firewall::class );
+
+		if (
+			'HTTP_X_FORWARDED_FOR' !== $model->http_ip_header &&
+			isset( $_SERVER['HTTP_X_FORWARDED_FOR'] ) &&
+			! $this->is_cloudflare_request() &&
+			! self::is_xff_notice_ready()
+		) {
+			update_site_option( self::IP_DETECTION_XFF_SHOW_SLUG, true );
+		}
+	}
+
+	/**
+	 * @param string $key
+	 *
+	 * @return bool
+	 */
+	public static function is_switched_ip_detection_notice( string $key ): bool {
+		return (bool) get_site_option( $key );
+	}
+
+	/**
+	 * @return bool
+	 */
+	public static function is_xff_notice_ready(): bool {
+		return self::is_switched_ip_detection_notice( self::IP_DETECTION_XFF_SHOW_SLUG )
+			&& ! self::is_switched_ip_detection_notice( self::IP_DETECTION_XFF_DISMISS_SLUG );
+	}
+
+	/**
+	 * @return bool
+	 */
+	public static function is_cf_notice_ready(): bool {
+		return self::is_switched_ip_detection_notice( self::IP_DETECTION_CF_SHOW_SLUG )
+			&& ! self::is_switched_ip_detection_notice( self::IP_DETECTION_CF_DISMISS_SLUG );
+	}
+
+	/**
+	 * @return void
+	 */
+	public static function delete_slugs(): void {
+		delete_site_option( self::IP_DETECTION_CF_SHOW_SLUG );
+		delete_site_option( self::IP_DETECTION_CF_DISMISS_SLUG );
+		delete_site_option( self::IP_DETECTION_XFF_SHOW_SLUG );
+		delete_site_option( self::IP_DETECTION_XFF_DISMISS_SLUG );
 	}
 }

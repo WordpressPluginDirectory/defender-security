@@ -5,6 +5,7 @@ namespace WP_Defender\Component;
 use Calotes\Helper\HTTP;
 use WP_Defender\Component;
 use WP_User;
+use WP_Error;
 
 /**
  * Doing the logic for Pwned Passwords module.
@@ -29,7 +30,7 @@ class Password_Protection extends Component {
 	protected $model;
 
 	/**
-	 * Use for cache
+	 * Use for cache.
 	 *
 	 * @var \WP_Defender\Model\Setting\Password_Protection
 	 */
@@ -67,7 +68,7 @@ class Password_Protection extends Component {
 	 *
 	 * @param string $password
 	 *
-	 * @return \WP_Error|bool
+	 * @return WP_Error|bool
 	 */
 	public function check_pwned_password( $password ) {
 		$hash    = strtoupper( hash( 'sha1', $password ) );
@@ -106,7 +107,7 @@ class Password_Protection extends Component {
 	 * Check if the specified user role is enabled.
 
 	 * @param WP_User $user
-	 * @param array   $selected_user_roles
+	 * @param array $selected_user_roles
 	 *
 	 * @return bool
 	 */
@@ -185,7 +186,7 @@ class Password_Protection extends Component {
 	 * @param string|null $url
 	 * @param bool        $safe
 	 *
-	 * @return void|null
+	 * @return void
 	 */
 	public function reset_password_redirect( $url, $safe = false ) {
 		if ( empty( $url ) ) {
@@ -243,7 +244,7 @@ class Password_Protection extends Component {
 		$changed = (int) get_user_meta( $user->ID, 'wd_last_password_change', true );
 
 		if ( ! $changed ) {
-			return strtotime( $user->user_registered );
+			return (int) strtotime( $user->user_registered );
 		}
 
 		return $changed;
@@ -257,7 +258,6 @@ class Password_Protection extends Component {
 	 * @return bool
 	 */
 	public function check_expired_password( $user ) {
-
 		return isset( $this->model->force_time ) && $this->model->force_time >= $this->password_last_changed( $user );
 	}
 
@@ -303,10 +303,10 @@ class Password_Protection extends Component {
 	/**
 	 * Force reset password.
 	 *
-	 * @param \WP_User|\WP_Error $user     WP_User object or WP_Error.
-	 * @param string             $password Password plain string.
+	 * @param WP_User|WP_Error $user	WP_User object or WP_Error.
+	 * @param string $password			Password plain string.
 	 *
-	 * @return \WP_User|\WP_Error Return user object or error object.
+	 * @return WP_User|WP_Error			Return user object or error object.
 	 */
 	public function do_force_reset( $user, $password ) {
 		if (
@@ -326,10 +326,10 @@ class Password_Protection extends Component {
 	/**
 	 * Reset weak password.
 	 *
-	 * @param \WP_User|\WP_Error $user     WP_User object or WP_Error.
-	 * @param string             $password Password plain string.
+	 * @param WP_User|WP_Error $user	WP_User object or WP_Error.
+	 * @param string $password			Password plain string.
 	 *
-	 * @return \WP_User|\WP_Error Return user object or error object.
+	 * @return WP_User|WP_Error			Return user object or error object.
 	 */
 	public function do_weak_reset( $user, $password ) {
 		if (
@@ -347,11 +347,11 @@ class Password_Protection extends Component {
 	}
 
 	/**
-	 * Redirect to reset password with error message
+	 * Redirect to reset password with error message.
 	 *
-	 * @param \WP_User|\WP_Error $user        WP_User object or WP_Error.
-	 * @param string             $action      Action query string name.
-	 * @param string             $cookie_name Cookie name.
+	 * @param WP_User|WP_Error $user	WP_User object or WP_Error.
+	 * @param string $action			Action query string name.
+	 * @param string $cookie_name		Cookie name.
 	 */
 	private function trigger_redirect( $user, $action, $cookie_name ) {
 		// Set cookie to check and display the warning notice on reset password page.
@@ -383,10 +383,10 @@ class Password_Protection extends Component {
 	 *
 	 * @since 2.6.1
 	 *
-	 * @param WP_User $user     WP_User object.
-	 * @param string  $password Plain password string.
+	 * @param WP_User $user		WP_User object.
+	 * @param string $password	Plain password string.
 	 *
-	 * @return bool If password weak then true else false.
+	 * @return bool	If password weak then true else false.
 	 */
 	public function is_weak_password( $user, $password ) {
 		$user_roles         = $this->password_protection_model->user_roles;
@@ -409,9 +409,9 @@ class Password_Protection extends Component {
 	 *
 	 * @since 2.6.1
 	 *
-	 * @param WP_User $user WP_User object.
+	 * @param WP_User $user	WP_User object.
 	 *
-	 * @return bool If password expired then true else false.
+	 * @return bool	If password expired then true else false.
 	 */
 	public function is_force_reset( $user ) {
 		$user_roles         = $this->model->user_roles;

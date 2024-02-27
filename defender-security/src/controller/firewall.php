@@ -8,6 +8,7 @@ use Calotes\Helper\Array_Cache;
 use Calotes\Helper\HTTP;
 use WP_Defender\Component\Blacklist_Lockout;
 use WP_Defender\Component\Config\Config_Hub_Helper;
+use WP_Defender\Component\Trusted_Proxy_Preset\Trusted_Proxy_Preset;
 use WP_Defender\Component\User_Agent as User_Agent_Component;
 use WP_Defender\Event;
 use WP_Defender\Controller\Dashboard;
@@ -85,6 +86,11 @@ class Firewall extends Event {
 		add_action( 'admin_print_scripts', [ &$this, 'print_emoji_script' ] );
 
 		$this->maybe_extend_mime_types();
+
+		if ( ! wp_next_scheduled( 'wpdef_firewall_fetch_trusted_proxy_preset_ips' ) ) {
+			wp_schedule_event( time(), 'daily', 'wpdef_firewall_fetch_trusted_proxy_preset_ips' );
+		}
+		add_action( 'wpdef_firewall_fetch_trusted_proxy_preset_ips', [ &$this, 'update_trusted_proxy_preset_ips' ] );
 	}
 
 	/**
@@ -457,6 +463,12 @@ class Firewall extends Event {
 		Array_Cache::remove( 'countries', 'ip_lockout' );
 		// Remove Global IP data.
 		( new \WP_Defender\Controller\Global_Ip() )->remove_data();
+
+		$trusted_proxy_preset = wd_di()->get( Trusted_Proxy_Preset::class );
+		foreach ( $this->model->trusted_proxy_preset_list as $preset ) {
+			$trusted_proxy_preset->set_proxy_preset( $preset );
+			$trusted_proxy_preset->delete_ips();
+		}
 	}
 
 	/**
@@ -810,5 +822,14 @@ class Firewall extends Event {
 		if ( ! empty( $msg ) ) {
 			$this->actions_for_blocked( $msg );
 		}
+	}
+
+	/**
+	 * Update trusted proxy preset IPs periodically.
+	 *
+	 * @return void
+	 */
+	public function update_trusted_proxy_preset_ips(): void {
+		$this->service->update_trusted_proxy_preset_ips();
 	}
 }

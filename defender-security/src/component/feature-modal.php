@@ -21,10 +21,12 @@ class Feature_Modal extends Component {
 	/**
 	 * Get modals that are displayed on the Dashboard page.
 	 *
+	 * @param bool $force_hide The modal is not displayed in every version, so we need a flag that will control the display process.
+	 *
 	 * @return array
 	 * @since 2.7.0 Use one template for Welcome modal and dynamic data.
 	 */
-	public function get_dashboard_modals(): array {
+	public function get_dashboard_modals( $force_hide = false ): array {
 		$title = __( 'NEW: Defender Safe Repair', 'defender-security' );
 
 		$current_user = wp_get_current_user();
@@ -35,8 +37,10 @@ class Feature_Modal extends Component {
 			esc_html( $current_user->display_name )
 		);
 		$wpmudev = wd_di()->get( \WP_Defender\Behavior\WPMUDEV::class );
-		// @since 4.0.0 Highlight the Safe Repair feature only for Pro users.
-		if ( 'wd_show_feature_quarantine' === self::FEATURE_SLUG && ! $wpmudev->is_pro() ) {
+		if ( $force_hide ) {
+			$is_displayed = false;
+		} elseif ( 'wd_show_feature_quarantine' === self::FEATURE_SLUG && ! $wpmudev->is_pro() ) {
+			// @since 4.0.0 Highlight the Safe Repair feature only for Pro users.
 			$is_displayed = false;
 		} else {
 			$is_displayed = $this->display_last_modal( self::FEATURE_SLUG );
@@ -60,7 +64,8 @@ class Feature_Modal extends Component {
 	}
 
 	/**
-	 * Display modal with the latest changes if:
+	 * Display modal if:
+	 * plugin version has important changes,
 	 * plugin settings have been reset before -> this is not fresh install,
 	 * Whitelabel > Documentation, Tutorials and What’s New Modal > checked Show tab OR Whitelabel is disabled.
 	 *

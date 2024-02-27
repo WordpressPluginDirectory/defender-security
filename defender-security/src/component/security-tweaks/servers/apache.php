@@ -471,7 +471,7 @@ class Apache {
 	 * Protect uploads directory.
 	 * This only when user provide a custom uploads.
 	 *
-	 * @return void
+	 * @return void|WP_Error
 	 */
 	public function protect_uploads_directory() {
 		if ( defined( 'UPLOADS' ) ) {

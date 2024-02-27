@@ -10,12 +10,14 @@ use WP_Defender\Integrations\MaxMind_Geolocation;
 use WP_Defender\Model\Setting\Security_Headers;
 use WP_Defender\Model\Setting\Scan as Scan_Settings;
 use WP_Defender\Model\Setting\Two_Fa as Two_Fa_Settings;
+use WP_Defender\Model\Setting\Firewall as Firewall_Settings;
 use WP_Defender\Component\Two_Fa as Two_Fa_Component;
 use WP_Defender\Component\Config\Config_Hub_Helper;
 use WP_Defender\Controller\Security_Tweaks;
 use WP_Defender\Component\Legacy_Versions;
 use WP_Defender\Component\Backup_Settings;
 use WP_Defender\Component\Webauthn;
+use WP_Defender\Component\Firewall;
 use WP_Defender\Model\Notification\Malware_Report;
 use WP_Defender\Model\Notification\Audit_Report;
 use WP_Defender\Model\Notification\Firewall_Notification;
@@ -358,6 +360,9 @@ class Upgrader {
 		}
 		if ( version_compare( $db_version, '4.4.2', '<' ) ) {
 			$this->upgrade_4_4_2();
+		}
+		if ( version_compare( $db_version, '4.5.1', '<' ) ) {
+			$this->upgrade_4_5_1();
 		}
 		// This is not a new installation. Make a mark.
 		defender_no_fresh_install();
@@ -1559,5 +1564,16 @@ Your temporary password is {{passcode}}. To finish logging in, copy and paste th
 	private function upgrade_4_4_2(): void {
 		// Add the IP detection notice.
 		update_site_option( \WP_Defender\Controller\General_Notice::IP_DETECTION_SLUG, true );
+	}
+
+	/**
+	 * Upgrade to 4.5.1.
+	 *
+	 * @return void
+	 */
+	private function upgrade_4_5_1(): void {
+		$service = wd_di()->get( Firewall::class );
+		$service->auto_switch_ip_detection_option();
+		$service->maybe_show_misconfigured_ip_detection_option_notice();
 	}
 }

@@ -258,10 +258,6 @@ class Mask_Login extends Event {
 			return;
 		}
 
-		// Doesn't need to handle the login request for bots and crawlers.
-		if ( $this->service->is_bot_request() ) {
-			return;
-		}
 		// Need to check if the current request is for signup, login.
 		// If it is not the slug, then we redirect to the 404 redirect, or 403 wp die.
 		$requested_path = $this->service->get_request_path();
@@ -409,12 +405,6 @@ class Mask_Login extends Event {
 	 * @return string|void
 	 */
 	public function alter_url( string $current_url, string $source ): string {
-		// Doesn't need to alter the URL for bots.
-		// We will not unveil the masked login URL for them, instead show default login URL.
-		if ( $this->service->is_bot_request() ) {
-			return $current_url;
-		}
-
 		if ( is_user_logged_in() && false === stripos( $current_url, 'wp-login.php' ) ) {
 			// Do nothing.
 			return $current_url;

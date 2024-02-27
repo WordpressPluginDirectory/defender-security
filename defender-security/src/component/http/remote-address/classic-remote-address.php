@@ -3,7 +3,6 @@
 namespace WP_Defender\Component\Http\Remote_Address;
 
 use WP_Defender\Traits\IP;
-use WP_Defender\Extra\IP_Helper;
 
 /**
  * Class Classic_Remote_Address.
