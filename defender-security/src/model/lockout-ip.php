@@ -4,6 +4,7 @@ namespace WP_Defender\Model;
 
 use Calotes\Helper\Array_Cache;
 use WP_Defender\DB;
+use Calotes\Base\Model;
 use WP_Defender\Model\Setting\Blacklist_Lockout;
 
 class Lockout_Ip extends DB {
@@ -113,10 +114,50 @@ class Lockout_Ip extends DB {
 	}
 
 	/**
+	 * Get the first IP.
+	 *
+	 * @param string $ip
+	 *
+	 * @return null|Model
+	 */
+	public static function is_blocklisted_ip( $ip ): ?Model {
+		$orm = self::get_orm();
+
+		return $orm->get_repository( self::class )
+			->select( 'ip,status' )
+			->where( 'ip', $ip )
+			->where( 'status', self::STATUS_BLOCKED )
+			->first();
+	}
+
+	/**
+	 * Maybe unblock IP?
+	 *
+	 * @param string $ip
+	 *
+	 * @return string
+	 */
+	public static function get_unlocked_ip_by( $ip ) {
+		$orm = self::get_orm();
+		$model = $orm->get_repository( self::class )
+			->where( 'ip', $ip )
+			->first();
+
+		if ( is_object( $model ) ) {
+			$model->status = self::STATUS_NORMAL;
+			$orm->save( $model );
+
+			return $model->ip;
+		}
+
+		return '';
+	}
+
+	/**
 	 * Get bulk IPs.
 	 *
 	 * @param string          $status
-	 * @param string|null     $ips
+	 * @param array|null      $ips
 	 * @param int|string|null $limit
 	 *
 	 * @return array

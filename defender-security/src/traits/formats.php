@@ -273,4 +273,13 @@ trait Formats {
 
 		return $interval;
 	}
+
+	/**
+	 * @param int $timestamp
+	 *
+	 * @return string
+	 */
+	public function get_local_human_date( int $timestamp ): string {
+		return date( 'l, jS \of F, Y \a\t h:i:s A', $timestamp + ( 3600 * get_option('gmt_offset') ) );
+	}
 }

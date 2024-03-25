@@ -14,7 +14,7 @@ use WP_Defender\Component\Cli;
 use WP_Defender\Controller\Advanced_Tools;
 use WP_Defender\Controller\Dashboard;
 use WP_Defender\Controller\Audit_Logging;
-use WP_Defender\Controller\Firewall;
+use WP_Defender\Controller\Firewall as Firewall_Controller;
 use WP_Defender\Controller\HUB;
 use WP_Defender\Controller\Mask_Login;
 use WP_Defender\Controller\Notification;
@@ -184,6 +184,7 @@ SQL;
 		wp_clear_scheduled_hook( 'wpdef_firewall_clean_up_lockout' );
 		wp_clear_scheduled_hook( 'wpdef_firewall_send_compact_logs_to_api' );
 		wp_clear_scheduled_hook( 'wpdef_firewall_fetch_trusted_proxy_preset_ips' );
+		wp_clear_scheduled_hook( 'wpdef_firewall_clean_up_unlockout' );
 
 		// Remove old legacy cron jobs if they exist.
 		wp_clear_scheduled_hook( 'lockoutReportCron' );
@@ -191,6 +192,29 @@ SQL;
 		wp_clear_scheduled_hook( 'cleanUpOldLog' );
 		wp_clear_scheduled_hook( 'scanReportCron' );
 		wp_clear_scheduled_hook( 'tweaksSendNotification' );
+	}
+
+	public function create_table_unlockout() {
+		global $wpdb;
+
+		$charset_collate = $wpdb->get_charset_collate();
+
+		$sql = <<<SQL
+		CREATE TABLE IF NOT EXISTS {$wpdb->base_prefix}defender_unlockout (
+			`id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+			`ip` varchar(45) DEFAULT NULL,
+			`type` varchar(16) NOT NULL,
+			`email` varchar(255) NOT NULL,
+			`status` varchar(16) NOT NULL,
+			`timestamp` int(11) NOT NULL,
+			PRIMARY KEY  (`id`),
+			KEY `ip` (`ip`),
+			KEY `type` (`type`),
+			KEY `email` (`email`),
+			KEY `status` (`status`)
+		   ) {$charset_collate};
+SQL;
+			$wpdb->query( $sql );
 	}
 
 	/**
@@ -306,6 +330,8 @@ SQL;
 		if ( class_exists( 'WP_Defender\Controller\Quarantine' ) ) {
 			$this->create_table_quarantine();
 		}
+		// Create Unlock table.
+		$this->create_table_unlockout();
 	}
 
 	private function init_modules_common(): void {
@@ -330,7 +356,7 @@ SQL;
 		wd_di()->get( Security_Tweaks::class );
 		wd_di()->get( Scan::class );
 		wd_di()->get( Audit_Logging::class );
-		wd_di()->get( Firewall::class );
+		wd_di()->get( Firewall_Controller::class );
 		wd_di()->get( WAF::class );
 		wd_di()->get( Two_Factor::class );
 		wd_di()->get( Advanced_Tools::class );

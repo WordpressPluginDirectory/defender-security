@@ -22,6 +22,7 @@ function defender_drop_custom_tables() {
 	$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}defender_lockout_log" );
 	$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}defender_lockout" );
 	$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}defender_audit_log" );
+	$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}defender_unlockout" );
 }
 
 /**

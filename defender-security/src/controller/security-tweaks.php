@@ -768,7 +768,10 @@ class Security_Tweaks extends Event {
 		wp_clear_scheduled_hook( 'wpdef_sec_key_gen' );
 	}
 
-	public function remove_data() {}
+	public function remove_data() {
+		// Remove cached data.
+		Array_Cache::remove( 'tweaks', 'tweaks' );
+	}
 
 	/**
 	 * @param array  $data

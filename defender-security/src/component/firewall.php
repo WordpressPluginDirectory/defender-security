@@ -167,19 +167,31 @@ class Firewall extends Component {
 
 	/**
 	 * @param string $ip
+	 *
+	 * @return array
 	 */
-	public function is_blocklisted_ip( string $ip ) {
+	public function is_blocklisted_ip( string $ip ): array {
+		$array = [
+			'reason' => '',
+			'result' => false,
+		];
 		/**
 		 * @var Blacklist_Lockout
 		 */
 		$service = wd_di()->get( Blacklist_Lockout::class );
 
 		if ( $service->is_blacklist( $ip ) ) {
-			return true;
+			return [
+				'reason' => 'local_ip',
+				'result' => true,
+			];
 		}
 
 		if ( $service->is_country_blacklist( $ip ) ) {
-			return true;
+			return [
+				'reason' => 'country',
+				'result' => true,
+			];
 		}
 
 		/**
@@ -191,8 +203,13 @@ class Firewall extends Component {
 			$global_ip->is_global_ip_enabled() &&
 			$global_ip->is_ip_blocked( $ip )
 		) {
-			return true;
+			return [
+				'reason' => 'global_ip',
+				'result' => true,
+			];
 		}
+
+		return $array;
 	}
 
 	/**
@@ -394,5 +411,40 @@ class Firewall extends Component {
 		delete_site_option( self::IP_DETECTION_CF_DISMISS_SLUG );
 		delete_site_option( self::IP_DETECTION_XFF_SHOW_SLUG );
 		delete_site_option( self::IP_DETECTION_XFF_DISMISS_SLUG );
+	}
+
+	/**
+	 * Get the first blocked IP.
+	 *
+	 * @param array $ips
+	 *
+	 * @return string
+	 */
+	public function get_blocked_ip( $ips ): string {
+		$blocked_ip = '';
+		foreach ( $ips as $ip ) {
+			$is_blocklisted = $this->is_blocklisted_ip( $ip );
+			if ( $is_blocklisted['result'] ) {
+				$blocked_ip = $ip;
+				break;
+			}
+		}
+		// Do not continue if there is not a single blocked IP.
+		if ( '' === $blocked_ip ) {
+			// Maybe IP(-s) in Active lockouts?
+			if ( count( $ips ) > 1 ) {
+				$models = Lockout_Ip::get_bulk( Lockout_Ip::STATUS_BLOCKED, $ips );
+				foreach ( $models as $model ) {
+					$blocked_ip = $model->ip;
+					break;
+				}
+			} else {
+				if ( null !== Lockout_Ip::is_blocklisted_ip( $ips[0] ) ) {
+					$blocked_ip = $ips[0];
+				}
+			}
+		}
+
+		return $blocked_ip;
 	}
 }

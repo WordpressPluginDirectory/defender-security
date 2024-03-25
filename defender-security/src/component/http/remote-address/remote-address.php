@@ -75,6 +75,22 @@ class Remote_Address {
 	}
 
 	/**
+	 * Get the list of trusted proxy addresses.
+	 *
+	 * @since 4.6.0
+	 * @return array
+	 */
+	public function get_trusted_proxies(): array {
+		/**
+		 * Filter the list of trusted proxies.
+		 *
+		 * @param array $trusted_proxies List of trusted proxy IP addresses or CIDR ranges.
+		 * @since 4.6.0
+		 */
+		return (array) apply_filters( 'wpdef_firewall_trusted_proxies', $this->trusted_proxies );
+	}
+
+	/**
 	 * Set list of trusted proxy addresses.
 	 *
 	 * @param  array $trusted_proxies
@@ -122,7 +138,7 @@ class Remote_Address {
 			return $ip;
 		}
 
-		// direct IP address
+		// Direct IP address.
 		if ( isset( $_SERVER['REMOTE_ADDR'] ) ) {
 			return $_SERVER['REMOTE_ADDR'];
 		}
@@ -148,6 +164,8 @@ class Remote_Address {
 			return false;
 		}
 
+		$trusted_proxies = $this->get_trusted_proxies();
+
 		// Extract IPs
 		$ips = array_reverse( explode( ',', $_SERVER[ $header ] ) );
 		foreach( $ips as $ip ) {
@@ -159,7 +177,7 @@ class Remote_Address {
 			// not know if it is a proxy server, or a client. As such, we treat it
 			// as the originating IP.
 			// @see http://en.wikipedia.org/wiki/X-Forwarded-For
-			foreach( $this->trusted_proxies as $trusted_proxy ) {
+			foreach( $trusted_proxies as $trusted_proxy ) {
 				if (
 					( false !== strpos( $trusted_proxy, '/' ) && $this->compare_cidr( $ip, $trusted_proxy ) ) ||
 					$trusted_proxy === $ip

@@ -80,6 +80,10 @@
 			font-weight: normal;
 		}
 
+		.locked_page_header {
+			color: #333333;
+		}
+
 		.message {
 			font-size: 15px;
 			line-height: 30px;
@@ -108,7 +112,22 @@
 		.day-notation {
 			font-weight: normal;
 		}
+
+		#wd_step_show_success .success_icon {
+			width: 60px;
+			height: 60px;
+			margin: 0 auto;
+			background-image: url("<?php echo defender_asset_url('/assets/img/green-icon.svg'); ?>");
+			background-repeat: no-repeat;
+			background-size: contain;
+			background-position: center;
+		}
+
 	</style>
+	<?php if ( ! empty( $is_unlock_me ) ) { ?>
+		<link rel="stylesheet" href="<?php echo esc_url( defender_asset_url( '/assets/css/unlock.css') ); ?>">
+		<script src="<?php echo includes_url( '/js/jquery/jquery.min.js' ); ?>"></script>
+	<?php } ?>
 </head>
 
 <body class="<?php echo 'sui-' . DEFENDER_SUI; ?>">
@@ -122,13 +141,75 @@
 				echo '<div class="image"></div>';
 			}
 			?>
-			<p class="message"><?php echo $message ?></p>
+			<h1 class="locked_page_header"><?php esc_html_e('Access Denied', 'defender-security'); ?></h1>
+			<p class="message"><?php
+				echo $message . '<br/>';
+				if ( ! empty( $is_unlock_me ) ) {
+					printf(
+						__( 'If you are a site admin, click on the %1$s button below to unlock yourself.', 'defender-security' ),
+						'<strong>' . esc_html( $button_title ) . '</strong>',
+					);
+				}
+			?></p>
+			<?php if ( ! empty( $is_unlock_me ) ) { ?>
+				<div class="unlock_wrap sui-wrap">
+					<!--Step#1-->
+					<button type="button" id="wd_step_show_toggle"
+						class="sui-button sui-button-lg sui-button-blue"
+						<?php disabled( $button_disabled, true ); ?>
+					>
+						<i class="sui-icon-lock" aria-hidden="true"></i>
+						<?php echo esc_html( $button_title ); ?>
+					</button>
+					<!--Step#2-->
+					<form method="post" class="sui-box unlock_section" id="wd_step_show_form" action="">
+						<div class="sui-form-field">
+							<label for="unlock_user_field" id="label-unlock_user_field" class="sui-label">
+								<?php esc_html_e( 'Enter your registered username or email', 'defender-security'); ?>
+							</label>
+							<div class="sui-row">
+								<div class="sui-col-md-9">
+									<input type="text"
+										placeholder="<?php echo esc_attr__( 'Enter your username or email.', 'defender-security' ); ?>"
+										id="unlock_user_field"
+										class="sui-form-control"
+										aria-labelledby="label-unlock_user_field"
+									/>
+								</div>
+								<div class="sui-col-md-3">
+									<button type="button" class="sui-button sui-button-lg sui-button-blue" id="wd_verify_user">
+										<?php echo esc_html( $button_title ); ?>
+									</button>
+								</div>
+							</div>
+						</div>
+					</form>
+					<!--Step#3-->
+					<div class="sui-box unlock_section" id="wd_step_show_success">
+						<div class="success_icon"></div>
+						<p id="unlock_sent_email"><?php esc_html_e( 'If the username/email exists, an email will be sent to your registered email address.', 'defender-security'); ?></p>
+						<p>
+							<?php
+							$resend_link = '<a href="" id="unlock_sent_again_link">';
+							$resend_link .= __( 'Try again', 'defender-security' );
+							$resend_link .= '</a>';
+							/* translators: %s: Resend link. */
+							printf(
+								__('Didn\'t get the email? %s.', 'defender-security' ),
+								$resend_link
+							);
+							?>
+						</p>
+					</div>
+
+				</div>
+			<?php } ?>
 			<?php if ( ! empty( $remaining_time ) && is_int( $remaining_time ) && $remaining_time > 0 ) { ?>
 				<p class="message"><?php esc_html_e("You will be able to attempt to access again in:", 'defender-security'); ?></p>
 				<p id="countdown-time"><span class="sui-icon-stopwatch" aria-hidden="true"></span><span id="remaining-time"></span></p>
 			<?php } ?>
 		</div>
-		<?php if (!$info['hide_doc_link']) { ?>
+		<?php if ( ! $info['hide_doc_link'] ) { ?>
 			<div class="powered">
 				<div class="plugin-icon"></div>
 				<?php esc_html_e("Powered by", 'defender-security') ?>
@@ -231,5 +312,76 @@
 			}
 		</script>
 	<?php } ?>
+	<script>
+		<?php if ( ! empty( $is_unlock_me ) ) { ?>
+			jQuery(function ($) {
+				//Verify user.
+				function verifyUser(that) {
+					let userField = $.trim( $('#unlock_user_field').val() );
+					//No action if the field is empty.
+					if ( '' == userField ) {
+						return;
+					}
+					let data = {
+						data: JSON.stringify({
+							'user_data': userField
+						})
+					};
+					$.ajax({
+						type: 'POST',
+						url: '<?php echo $action_verify_blocked_user; ?>',
+						data: data,
+						beforeSend: function () {
+							that.prop('disabled', true);
+						},
+						success: function ( response ) {
+							// Enable button.
+							that.prop('disabled', false);
+							// Hide the current step and show the next one.
+							$('#wd_step_show_form').hide();
+							$('#wd_step_show_success').show();
+						},
+						error: function ( e ) {
+							console.log( 'Unexpected error occurred: ', e );
+						}
+					})
+				}
+
+				//Show a form for communication with the user.
+				$('body').on('click', '#wd_step_show_toggle', function(){
+					$(this).hide();
+					$('#wd_step_show_form').show();
+				});
+				// Verify a blocked user.
+				$('body').on('click', '#wd_verify_user', function(e){
+					e.preventDefault();
+					verifyUser($(this));
+				});
+				$(window).on('keydown', function (event) {
+					if (event.keyCode == 13 && jQuery(event.target).attr('id') === 'unlock_user_field') {
+						verifyUser(jQuery(event.target))
+					}
+				});
+				//Show the form again.
+				$('body').on('click', '#unlock_sent_again_link', function(e){
+					let that = $(this);
+					e.preventDefault();
+					//Check the attempt limit.
+					$.ajax({
+						type: 'POST',
+						url: '<?php echo $action_send_again; ?>',
+						data: {},
+						success: function ( response ) {
+							if ( response.success === false ) {
+								location.reload();
+							}
+							$('#wd_step_show_success').hide();
+							$('#wd_step_show_form').show();
+						}
+					});
+				});
+			})
+		<?php } ?>
+	</script>
 </body>
 </html>

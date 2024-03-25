@@ -3,6 +3,7 @@
 namespace WP_Defender\Component;
 
 use WP_Defender\Component;
+use WP_Defender\Model\Setting\Mask_Login as Model_Mask_Login;
 
 /**
  * Doing the logic for mask login module.
@@ -124,7 +125,7 @@ class Mask_Login extends Component {
 	 * @return bool
 	 */
 	public function redeem_ticket( $ticket ): bool {
-		$settings = new \WP_Defender\Model\Setting\Mask_Login();
+		$settings = wd_di()->get( Model_Mask_Login::class );
 		$detail = $settings->express_tickets[ $ticket ] ?? false;
 		if ( false === $detail ) {
 			return false;
@@ -182,5 +183,18 @@ class Mask_Login extends Component {
 		$requested_path = $this->get_request_path();
 
 		return trim( $requested_path, '/' ) === trim( $is_login_path, '/' );
+	}
+
+	/**
+	 * @since 4.6.0
+	 * @return string
+	 */
+	public static function maybe_masked_login_url(): string {
+		$settings = wd_di()->get( Model_Mask_Login::class );
+		if ( $settings->is_active() ) {
+			return $settings->get_new_login_url();
+		} else {
+			return wp_login_url();
+		}
 	}
 }

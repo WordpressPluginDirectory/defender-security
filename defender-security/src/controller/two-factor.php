@@ -733,19 +733,6 @@ class Two_Factor extends Event {
 	}
 
 	/**
-	 * Check if DEFENDER_DEBUG is enabled for the route.
-	 *
-	 * @param string $route
-	 *
-	 * @return string|array
-	 */
-	public function check_route( string $route ) {
-		return defined( 'DEFENDER_DEBUG' ) && true === constant( 'DEFENDER_DEBUG' )
-			? wp_slash( $route )
-			: $route;
-	}
-
-	/**
 	 * A simple filter to show activate 2fa screen on profile page.
 	 *
 	 * @param WP_User $user The current WP_User object.

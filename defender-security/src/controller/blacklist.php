@@ -347,7 +347,7 @@ class Blacklist extends Controller {
 		$status = 'unban' === $data['behavior'] ? Lockout_Ip::STATUS_BLOCKED : Lockout_Ip::STATUS_NORMAL;
 		$ips = null;
 		$bulk_ips = null;
-		$limit	 = 50;
+		$limit = 50;
 
 		if ( ! empty( $data['ips'] ) ) {
 			$ips = json_decode( $data['ips'] );

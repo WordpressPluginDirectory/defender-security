@@ -45,6 +45,8 @@ function defender_init_routes() {
 			'import_ua' => 'import_ua',
 			'export_ua' => 'export_ua',
 			'empty_lockouts' => 'empty_lockouts',
+			'verify_blocked_user' => [ 'verify_blocked_user', true ],
+			'send_again' => [ 'send_again', true ],
 		],
 		'global_ip_lockout' => [
 			'refresh_global_ip_list' => 'refresh_global_ip_list',

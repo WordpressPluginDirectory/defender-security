@@ -83,7 +83,7 @@ class Mapper extends Component {
 	}
 
 	/**
-	 * Define the conditions, this is for generic where
+	 * Define the conditions, this is for generic where.
 	 *
 	 * @param mixed ...$args
 	 *
@@ -300,7 +300,7 @@ class Mapper extends Component {
 	 *
 	 * @param Model $model
 	 *
-	 * @return int The ID of current record.
+	 * @return int|bool The ID of current record OR false.
 	 */
 	public function save( Model &$model ) {
 		global $wpdb;
@@ -333,7 +333,6 @@ class Mapper extends Component {
 	}
 
 	/**
-	 *
 	 * @param $where
 	 *
 	 * @return false|int

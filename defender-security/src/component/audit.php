@@ -336,11 +336,11 @@ class Audit extends Component {
 		$events = Array_Cache::get( 'logs', 'audit', [] );
 
 		if ( ! ( is_array( $events ) || $events instanceof \Countable ? count( $events ) : 0 )
-			|| ! class_exists( \WP_Defender\Model\Audit_Log::class )
+			|| ! class_exists( Audit_Log::class )
 		) {
 			return;
 		}
-		$model = new \WP_Defender\Model\Audit_Log();
+		$model = new Audit_Log();
 
 		if ( ( is_array( $events ) || $events instanceof \Countable ? count( $events ) : 0 ) > 1 ) {
 			if ( $model->has_method( 'mass_insert' ) ) {

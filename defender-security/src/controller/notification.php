@@ -14,6 +14,16 @@ use WP_Defender\Model\Notification as Model_Notification;
 class Notification extends Event {
 	use User, Formats;
 
+	/**
+	 * @var string
+	 */
+	public const SLUG_SUBSCRIBE = 'defender_listen_user_subscribe';
+
+	/**
+	 * @var string
+	 */
+	public const SLUG_UNSUBSCRIBE = 'defender_listen_user_unsubscribe';
+
 	public $slug = 'wdf-notification';
 
 	/**
@@ -35,10 +45,10 @@ class Notification extends Event {
 		$this->service = wd_di()->get( \WP_Defender\Component\Notification::class );
 		add_action( 'defender_enqueue_assets', [ &$this, 'enqueue_assets' ] );
 		// We use custom ajax endpoint here as the nonce would fail with other user.
-		add_action( 'wp_ajax_defender_listen_user_subscribe', [ &$this, 'verify_subscriber' ] );
-		add_action( 'wp_ajax_nopriv_defender_listen_user_subscribe', [ &$this, 'verify_subscriber' ] );
-		add_action( 'wp_ajax_defender_listen_user_unsubscribe', [ &$this, 'unsubscribe_and_send_email' ] );
-		add_action( 'wp_ajax_nopriv_defender_listen_user_unsubscribe', [ &$this, 'unsubscribe_and_send_email' ] );
+		add_action( 'wp_ajax_' . self::SLUG_SUBSCRIBE, [ &$this, 'verify_subscriber' ] );
+		add_action( 'wp_ajax_nopriv_' . self::SLUG_SUBSCRIBE, [ &$this, 'verify_subscriber' ] );
+		add_action( 'wp_ajax_' . self::SLUG_UNSUBSCRIBE, [ &$this, 'unsubscribe_and_send_email' ] );
+		add_action( 'wp_ajax_nopriv_' . self::SLUG_UNSUBSCRIBE, [ &$this, 'unsubscribe_and_send_email' ] );
 		add_action( 'defender_notify', [ &$this, 'send_notify' ], 10, 2 );
 		// We will schedule the time to send reports.
 		if ( ! wp_next_scheduled( 'wdf_maybe_send_report' ) ) {

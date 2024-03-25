@@ -46,7 +46,7 @@ class Remote_Address {
 		 * @param string $http_ip_header HTTP header for identifying client's IP.
 		 * @since 4.5.1
 		 */
-		$http_ip_header = apply_filters( 'wpdef_firewall_ip_detection', $this->http_ip_header );
+		$http_ip_header = (string) apply_filters( 'wpdef_firewall_ip_detection', $this->http_ip_header );
 		switch ( $http_ip_header ) {
 			case 'HTTP_X_FORWARDED_FOR':
 			case 'HTTP_X_REAL_IP':

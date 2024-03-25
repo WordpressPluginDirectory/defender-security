@@ -39,8 +39,11 @@ class Email_Track extends DB {
 	public static function count( $source, $email, $date_from, $date_to ) {
 		$orm = self::get_orm();
 
-		return $orm->get_repository( self::class )->where( 'source', $source )
-				->where( 'to', $email )->where( 'timestamp', '>=', $date_from )
-				->where( 'timestamp', '<=', $date_to )->count();
+		return $orm->get_repository( self::class )
+			->where( 'source', $source )
+			->where( 'to', $email )
+			->where( 'timestamp', '>=', $date_from )
+			->where( 'timestamp', '<=', $date_to )
+			->count();
 	}
 }

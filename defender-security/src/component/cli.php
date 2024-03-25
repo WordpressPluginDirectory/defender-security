@@ -575,7 +575,7 @@ class Cli {
 		}
 		switch ( $command ) {
 			case 'clear':
-				$this->clear_firewall( $type, $field, $options );
+				$this->clear_firewall( $type, $field );
 				break;
 			case 'unblock':
 				$this->unblock_firewall( $type, $field, $options );
@@ -627,7 +627,10 @@ class Cli {
 	}
 
 	/**
-	 * Clear the firewall data with different options.
+	 * Clear the firewall data depending on the field passed.
+	 *
+	 * @param string $type
+	 * @param string $field
 	 */
 	private function clear_firewall( $type, $field ) {
 		$type_default = [ 'ip', 'files', 'user_agent' ];
@@ -682,6 +685,10 @@ class Cli {
 
 	/**
 	 * Unblock the IP(s) from block list.
+	 *
+	 * @param string $type
+	 * @param string $field
+	 * @param array $options
 	 */
 	private function unblock_firewall( $type, $field, $options ) {
 		$type_default = [ 'ip' ];

@@ -712,7 +712,6 @@ class Mask_Login extends Event {
 	 * @return string
 	 */
 	public function update_report_logs_link( string $logs_url, string $email ): string {
-
 		return add_query_arg( 'redirect_to', $logs_url, $this->get_model()->get_new_login_url() );
 	}
 

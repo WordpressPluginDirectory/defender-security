@@ -2,9 +2,9 @@
 # This file is distributed under the GNU General Public License (Version 2 - GPLv2).
 msgid ""
 msgstr ""
-"Project-Id-Version: Defender Pro 4.5.1\n"
+"Project-Id-Version: Defender Pro 4.6.0\n"
 "Report-Msgid-Bugs-To: https://wpmudev.com\n"
-"POT-Creation-Date: 2024-02-26 07:58:50+00:00\n"
+"POT-Creation-Date: 2024-03-18 08:43:53+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -241,7 +241,7 @@ msgstr ""
 msgid "7 days"
 msgstr ""
 
-#: languages/vue-js.php:168 src/controller/mask-login.php:1178
+#: languages/vue-js.php:168 src/controller/mask-login.php:1177
 #: src/model/setting/mask-login.php:169
 msgid ""
 "A page already exists at this URL. Please enter a unique URL for your login "
@@ -308,15 +308,15 @@ msgid "Activate WAF"
 msgstr ""
 
 #: languages/vue-js.php:247 src/component/backup-settings.php:1159
-#: src/component/backup-settings.php:1361 src/controller/audit-logging.php:525
-#: src/controller/audit-logging.php:550
+#: src/component/backup-settings.php:1361 src/controller/audit-logging.php:531
+#: src/controller/audit-logging.php:556
 #: src/controller/blocklist-monitor.php:201
-#: src/controller/blocklist-monitor.php:217 src/controller/mask-login.php:846
-#: src/controller/mask-login.php:859 src/controller/password-protection.php:309
+#: src/controller/blocklist-monitor.php:217 src/controller/mask-login.php:845
+#: src/controller/mask-login.php:858 src/controller/password-protection.php:309
 #: src/controller/password-protection.php:326 src/controller/recaptcha.php:1058
 #: src/controller/scan.php:895 src/controller/scan.php:931
-#: src/controller/security-headers.php:218 src/controller/two-factor.php:1106
-#: src/controller/two-factor.php:1118
+#: src/controller/security-headers.php:218 src/controller/two-factor.php:1093
+#: src/controller/two-factor.php:1105
 msgid "Active"
 msgstr ""
 
@@ -1244,7 +1244,7 @@ msgstr ""
 msgid "Connect site"
 msgstr ""
 
-#: languages/vue-js.php:970 src/controller/audit-logging.php:118
+#: languages/vue-js.php:970 src/controller/audit-logging.php:119
 msgid "Context"
 msgstr ""
 
@@ -1432,7 +1432,7 @@ msgstr ""
 msgid "Date"
 msgstr ""
 
-#: languages/vue-js.php:1121 src/controller/audit-logging.php:117
+#: languages/vue-js.php:1121 src/controller/audit-logging.php:118
 #: src/controller/firewall-logs.php:201
 msgid "Date / Time"
 msgstr ""
@@ -1675,8 +1675,8 @@ msgstr ""
 msgid "disabled"
 msgstr ""
 
-#: languages/vue-js.php:1326 src/controller/notification.php:764
-#: src/controller/notification.php:770
+#: languages/vue-js.php:1326 src/controller/notification.php:774
+#: src/controller/notification.php:780
 msgid "Disabled"
 msgstr ""
 
@@ -1845,7 +1845,7 @@ msgstr ""
 msgid "enabled"
 msgstr ""
 
-#: languages/vue-js.php:1452 src/controller/notification.php:764
+#: languages/vue-js.php:1452 src/controller/notification.php:774
 msgid "Enabled"
 msgstr ""
 
@@ -2005,7 +2005,8 @@ msgid "Finnish"
 msgstr ""
 
 #: languages/vue-js.php:1582 src/component/backup-settings.php:1231
-#: src/component/mail.php:50 src/controller/firewall.php:45
+#: src/component/mail.php:50 src/controller/firewall.php:47
+#: src/controller/firewall.php:421
 #: src/model/notification/firewall-notification.php:219
 #: src/model/notification/firewall-report.php:127
 msgid "Firewall"
@@ -2400,16 +2401,16 @@ msgstr ""
 #: languages/vue-js.php:1888 src/component/backup-settings.php:1155
 #: src/component/backup-settings.php:1157
 #: src/component/backup-settings.php:1163
-#: src/component/backup-settings.php:1373 src/controller/audit-logging.php:535
-#: src/controller/audit-logging.php:559
+#: src/component/backup-settings.php:1373 src/controller/audit-logging.php:541
+#: src/controller/audit-logging.php:565
 #: src/controller/blocklist-monitor.php:203
-#: src/controller/blocklist-monitor.php:217 src/controller/mask-login.php:846
-#: src/controller/mask-login.php:859 src/controller/password-protection.php:309
+#: src/controller/blocklist-monitor.php:217 src/controller/mask-login.php:845
+#: src/controller/mask-login.php:858 src/controller/password-protection.php:309
 #: src/controller/password-protection.php:321
 #: src/controller/password-protection.php:327 src/controller/recaptcha.php:1058
 #: src/controller/scan.php:897 src/controller/scan.php:932
-#: src/controller/security-headers.php:218 src/controller/two-factor.php:1106
-#: src/controller/two-factor.php:1118
+#: src/controller/security-headers.php:218 src/controller/two-factor.php:1093
+#: src/controller/two-factor.php:1105
 msgid "Inactive"
 msgstr ""
 
@@ -2833,7 +2834,7 @@ msgstr ""
 
 #: languages/vue-js.php:2243 src/component/ip/global-ip.php:232
 #: src/component/ip/global-ip.php:235 src/component/notification.php:392
-#: src/component/notification.php:407 src/controller/firewall.php:429
+#: src/component/notification.php:407 src/controller/firewall.php:631
 #: src/model/notification/malware-report.php:130 src/model/notification.php:334
 #: src/model/notification.php:349
 msgid "Never"
@@ -3069,7 +3070,7 @@ msgstr ""
 msgid "Notification"
 msgstr ""
 
-#: languages/vue-js.php:2406 src/controller/notification.php:26
+#: languages/vue-js.php:2406 src/controller/notification.php:36
 msgid "Notifications"
 msgstr ""
 
@@ -4331,7 +4332,7 @@ msgid ""
 "authentication."
 msgstr ""
 
-#: languages/vue-js.php:3425 src/controller/audit-logging.php:119
+#: languages/vue-js.php:3425 src/controller/audit-logging.php:120
 #: src/controller/firewall-logs.php:202 src/model/lockout-log.php:566
 #: src/model/lockout-log.php:583 src/view/two-fa/user-options.php:88
 #: src/view/two-fa/user-options.php:102
@@ -4484,7 +4485,7 @@ msgid ""
 "applied with recommended settings and shouldn't break your site."
 msgstr ""
 
-#: languages/vue-js.php:3533 src/controller/audit-logging.php:121
+#: languages/vue-js.php:3533 src/controller/audit-logging.php:122
 msgid "User"
 msgstr ""
 
@@ -5203,9 +5204,9 @@ msgstr ""
 msgid "Invalid API request."
 msgstr ""
 
-#: src/central.php:88 src/controller/notification.php:155
-#: src/controller/notification.php:159 src/controller/notification.php:530
-#: src/controller/notification.php:534
+#: src/central.php:88 src/controller/notification.php:165
+#: src/controller/notification.php:169 src/controller/notification.php:540
+#: src/controller/notification.php:544
 msgid "You shall not pass."
 msgstr ""
 
@@ -6066,7 +6067,7 @@ msgstr ""
 msgid "Something wrong happen, please try again!"
 msgstr ""
 
-#: src/component/backup-settings.php:581 src/upgrader.php:682
+#: src/component/backup-settings.php:581 src/upgrader.php:685
 msgid "Basic Config"
 msgstr ""
 
@@ -6076,23 +6077,23 @@ msgstr ""
 
 #: src/component/backup-settings.php:1014
 #: src/component/backup-settings.php:1333
-#: src/component/backup-settings.php:1378 src/controller/audit-logging.php:518
-#: src/controller/audit-logging.php:565
+#: src/component/backup-settings.php:1378 src/controller/audit-logging.php:524
+#: src/controller/audit-logging.php:571
 #: src/controller/blocklist-monitor.php:194
 #: src/controller/blocklist-monitor.php:222
 #. translators: %s: Html for Pro-tag.
 msgid "Inactive %s"
 msgstr ""
 
-#: src/component/backup-settings.php:1115 src/controller/firewall.php:563
-#: src/controller/firewall.php:612 src/controller/scan.php:903
-#: src/controller/scan.php:935 src/controller/security-tweaks.php:915
-#: src/controller/security-tweaks.php:942
+#: src/component/backup-settings.php:1115 src/controller/firewall.php:767
+#: src/controller/firewall.php:816 src/controller/scan.php:903
+#: src/controller/scan.php:935 src/controller/security-tweaks.php:918
+#: src/controller/security-tweaks.php:945
 msgid "Email notifications active"
 msgstr ""
 
 #: src/component/backup-settings.php:1235 src/controller/two-factor.php:70
-#: src/controller/two-factor.php:1302
+#: src/controller/two-factor.php:1289
 msgid "2FA"
 msgstr ""
 
@@ -6200,7 +6201,7 @@ msgid "Lockout occurred: Too many failed login attempts"
 msgstr ""
 
 #: src/component/mail.php:30 src/traits/defender-dashboard-client.php:70
-#: src/view/ip-lockout/locked.php:135
+#: src/view/ip-lockout/locked.php:216
 msgid "Defender"
 msgstr ""
 
@@ -6824,7 +6825,7 @@ msgid "Not banned"
 msgstr ""
 
 #: src/component/table-lockout.php:39 src/component/table-lockout.php:72
-#: src/model/lockout-ip.php:178
+#: src/model/lockout-ip.php:219
 msgid "Banned"
 msgstr ""
 
@@ -6917,7 +6918,7 @@ msgid "Generate non-expirable backup codes that can be used to log in once."
 msgstr ""
 
 #: src/component/two-factor/providers/backup-codes.php:76
-#: src/controller/two-factor.php:1236
+#: src/controller/two-factor.php:1223
 msgid "Each backup code can only be used to log in once."
 msgstr ""
 
@@ -6951,7 +6952,7 @@ msgid "Generate Backup Codes"
 msgstr ""
 
 #: src/component/two-factor/providers/backup-codes.php:232
-#: src/controller/two-factor.php:1235
+#: src/controller/two-factor.php:1222
 msgid "Get New Codes"
 msgstr ""
 
@@ -7124,6 +7125,10 @@ msgid_plural "The <strong>%s extensions</strong> are not active on your server. 
 msgstr[0] ""
 msgstr[1] ""
 
+#: src/component/unlock-me.php:185
+msgid "Unlock Me"
+msgstr ""
+
 #: src/component/user-agent-lockout.php:74
 msgid "Locked out due to empty User-Agent and Referer headers"
 msgstr ""
@@ -7137,31 +7142,31 @@ msgstr ""
 msgid "You have been blocked from accessing this website."
 msgstr ""
 
-#: src/controller/audit-logging.php:116
+#: src/controller/audit-logging.php:117
 msgid "Summary"
 msgstr ""
 
-#: src/controller/audit-logging.php:120 src/controller/firewall-logs.php:203
+#: src/controller/audit-logging.php:121 src/controller/firewall-logs.php:203
 msgid "IP address"
 msgstr ""
 
-#: src/controller/audit-logging.php:200 src/controller/notification.php:221
-#: src/controller/notification.php:501
+#: src/controller/audit-logging.php:201 src/controller/notification.php:231
+#: src/controller/notification.php:511
 msgid "Invalid data."
 msgstr ""
 
-#: src/controller/audit-logging.php:395 src/controller/blacklist.php:171
-#: src/controller/firewall.php:181 src/controller/main-setting.php:111
-#: src/controller/mask-login.php:360 src/controller/mask-login.php:1167
+#: src/controller/audit-logging.php:396 src/controller/blacklist.php:171
+#: src/controller/firewall.php:188 src/controller/main-setting.php:111
+#: src/controller/mask-login.php:360 src/controller/mask-login.php:1166
 #: src/controller/password-protection.php:224
 #: src/controller/password-reset.php:202 src/controller/scan.php:507
-#: src/controller/security-headers.php:113 src/controller/two-factor.php:847
+#: src/controller/security-headers.php:113 src/controller/two-factor.php:834
 #: src/traits/setting.php:19 src/traits/setting.php:24
 msgid "Your settings have been updated."
 msgstr ""
 
-#: src/controller/audit-logging.php:530 src/controller/audit-logging.php:554
-#: src/controller/firewall.php:568 src/controller/firewall.php:618
+#: src/controller/audit-logging.php:536 src/controller/audit-logging.php:560
+#: src/controller/firewall.php:772 src/controller/firewall.php:822
 #: src/controller/scan.php:908 src/controller/scan.php:940
 #. translators: %s: Frequency value.
 msgid "Email reports sending %s"
@@ -7309,29 +7314,33 @@ msgstr ""
 msgid "Wrong start and end date."
 msgstr ""
 
-#: src/controller/firewall.php:107
+#: src/controller/firewall.php:114
 msgid "NEW"
 msgstr ""
 
-#: src/controller/firewall.php:276
+#: src/controller/firewall.php:284
 msgid "Demo"
 msgstr ""
 
-#: src/controller/firewall.php:404
+#: src/controller/firewall.php:406
+msgid "Request to Unblock IP Address"
+msgstr ""
+
+#: src/controller/firewall.php:606
 msgid "Your logs have been successfully deleted."
 msgstr ""
 
-#: src/controller/firewall.php:413 src/controller/firewall.php:734
+#: src/controller/firewall.php:615 src/controller/firewall.php:936
 msgid "Failed remove!"
 msgstr ""
 
-#: src/controller/firewall.php:574 src/controller/firewall.php:624
+#: src/controller/firewall.php:778 src/controller/firewall.php:828
 #: src/controller/scan.php:914 src/controller/scan.php:946
 #. translators: %s: Html for Pro-tag.
 msgid "Email report inactive %s"
 msgstr ""
 
-#: src/controller/firewall.php:725
+#: src/controller/firewall.php:927
 msgid "Deleted lockout records successfully."
 msgstr ""
 
@@ -7446,70 +7455,70 @@ msgstr ""
 msgid "This feature is forbidden temporarily for security reason. Try login again."
 msgstr ""
 
-#: src/controller/notification.php:74
+#: src/controller/notification.php:84
 #. translators: 1. Module title. 2. Unsubscribed link.
 msgid ""
 "You are now subscribed to receive %1$s. Made a mistake? <a "
 "href=\"%2$s\">Unsubscribe</a>"
 msgstr ""
 
-#: src/controller/notification.php:81
+#: src/controller/notification.php:91
 #. translators: %s: Module title.
 msgid "You are now unsubscribed from %s."
 msgstr ""
 
-#: src/controller/notification.php:91
+#: src/controller/notification.php:101
 msgid "Dismiss this notice."
 msgstr ""
 
-#: src/controller/notification.php:143
+#: src/controller/notification.php:153
 msgid "Invalid email address."
 msgstr ""
 
-#: src/controller/notification.php:168 src/controller/two-factor.php:257
+#: src/controller/notification.php:178 src/controller/two-factor.php:257
 msgid "Invalid request."
 msgstr ""
 
-#: src/controller/notification.php:253
+#: src/controller/notification.php:263
 msgid ""
 "You have activated the notification successfully. Note, recipients will "
 "need to confirm their subscriptions to begin receiving notifications."
 msgstr ""
 
-#: src/controller/notification.php:296
+#: src/controller/notification.php:306
 msgid ""
 "Your settings have been updated successfully. Any new recipients will "
 "receive an email to confirm their subscription."
 msgstr ""
 
-#: src/controller/notification.php:476
+#: src/controller/notification.php:486
 msgid "You have deactivated the notifications successfully."
 msgstr ""
 
-#: src/controller/notification.php:512
+#: src/controller/notification.php:522
 msgid "You have deactivated the notification successfully."
 msgstr ""
 
-#: src/controller/notification.php:732 src/controller/scan.php:813
+#: src/controller/notification.php:742 src/controller/scan.php:813
 #. translators: 1. Timezone. 2. Time.
 #. translators: %s - timezone, %s - time
 msgid "Your timezone is set to %1$s, so your current time is %2$s."
 msgstr ""
 
-#: src/controller/notification.php:759
+#: src/controller/notification.php:769
 #. translators: %s - module title, %s - module status
 msgid "%1$s: %2$s"
 msgstr ""
 
-#: src/controller/notification.php:811
+#: src/controller/notification.php:821
 msgid "Module not found."
 msgstr ""
 
-#: src/controller/notification.php:826
+#: src/controller/notification.php:836
 msgid "Invitation sent successfully."
 msgstr ""
 
-#: src/controller/notification.php:831
+#: src/controller/notification.php:841
 msgid "Sorry! We could not send the invitation, Please try again later."
 msgstr ""
 
@@ -7686,37 +7695,37 @@ msgid ""
 msgstr ""
 
 #: src/controller/security-tweaks.php:594
-#: src/controller/security-tweaks.php:815
-#: src/controller/security-tweaks.php:845
+#: src/controller/security-tweaks.php:818
+#: src/controller/security-tweaks.php:848
 #. translators: 1: Security tweak title, 2: Error message
 msgid "There is an error while processing recommendation %1$s, error message: %2$s"
 msgstr ""
 
-#: src/controller/security-tweaks.php:903
-#: src/controller/security-tweaks.php:930
+#: src/controller/security-tweaks.php:906
+#: src/controller/security-tweaks.php:933
 msgid "All available recommendations activated"
 msgstr ""
 
-#: src/controller/security-tweaks.php:907
-#: src/controller/security-tweaks.php:934
+#: src/controller/security-tweaks.php:910
+#: src/controller/security-tweaks.php:937
 #. translators: 1: Total security tweaks activated, 2: Total security tweaks
 msgid "%1$d/%2$d recommendations activated"
 msgstr ""
 
-#: src/controller/security-tweaks.php:961
-#: src/controller/security-tweaks.php:1003
+#: src/controller/security-tweaks.php:964
+#: src/controller/security-tweaks.php:1006
 msgid "An error occurred, try again."
 msgstr ""
 
-#: src/controller/security-tweaks.php:968
+#: src/controller/security-tweaks.php:971
 msgid "Security key/salt autogenerate enabled."
 msgstr ""
 
-#: src/controller/security-tweaks.php:971
+#: src/controller/security-tweaks.php:974
 msgid "Security key/salt autogenerate disabled."
 msgstr ""
 
-#: src/controller/security-tweaks.php:1007
+#: src/controller/security-tweaks.php:1010
 msgid "User enumeration option(s) updated successfully."
 msgstr ""
 
@@ -7763,24 +7772,24 @@ msgstr ""
 msgid "Your OTP code is incorrect. Please try again."
 msgstr ""
 
-#: src/controller/two-factor.php:946
+#: src/controller/two-factor.php:933
 msgid "Test email has been sent to your email."
 msgstr ""
 
-#: src/controller/two-factor.php:951
+#: src/controller/two-factor.php:938
 msgid "Test email failed."
 msgstr ""
 
-#: src/controller/two-factor.php:1232
+#: src/controller/two-factor.php:1219
 #. translators: %s: count
 msgid "2FA Backup Codes for %s:"
 msgstr ""
 
-#: src/controller/two-factor.php:1258 src/controller/two-factor.php:1259
+#: src/controller/two-factor.php:1245 src/controller/two-factor.php:1246
 msgid "Save changes"
 msgstr ""
 
-#: src/controller/two-factor.php:1334
+#: src/controller/two-factor.php:1321
 msgid "Two-Factor settings updated successfully."
 msgstr ""
 
@@ -7958,11 +7967,11 @@ msgstr ""
 msgid "Checkout"
 msgstr ""
 
-#: src/model/lockout-ip.php:180
+#: src/model/lockout-ip.php:221
 msgid "In Allowlist"
 msgstr ""
 
-#: src/model/lockout-ip.php:182
+#: src/model/lockout-ip.php:223
 msgid "Not banned or in allowlist"
 msgstr ""
 
@@ -8637,7 +8646,7 @@ msgstr ""
 msgid "Polynesia"
 msgstr ""
 
-#: src/traits/defender-bootstrap.php:521
+#: src/traits/defender-bootstrap.php:547
 msgid "UPGRADE TO PRO"
 msgstr ""
 
@@ -8779,41 +8788,41 @@ msgstr ""
 msgid "Hub"
 msgstr ""
 
-#: src/upgrader.php:681
+#: src/upgrader.php:684
 msgid "Basic config"
 msgstr ""
 
-#: src/upgrader.php:1277
+#: src/upgrader.php:1280
 msgid "Scan of {SITE_URL} complete."
 msgstr ""
 
-#: src/upgrader.php:1278
+#: src/upgrader.php:1281
 msgid "Malware Scan of {SITE_URL} is complete."
 msgstr ""
 
-#: src/upgrader.php:1283
+#: src/upgrader.php:1286
 msgid "{ISSUES_COUNT} issues found."
 msgstr ""
 
-#: src/upgrader.php:1284
+#: src/upgrader.php:1287
 msgid "{ISSUES_COUNT} issue(s) found."
 msgstr ""
 
-#: src/upgrader.php:1318
+#: src/upgrader.php:1321
 msgid ""
 "{ISSUES_COUNT} vulnerabilities were identified for {SITE_URL} during a "
 "Malware Scan."
 msgstr ""
 
-#: src/upgrader.php:1319
+#: src/upgrader.php:1322
 msgid "Malware Scan identified {ISSUES_COUNT} issue(s) on {SITE_URL}."
 msgstr ""
 
-#: src/upgrader.php:1324
+#: src/upgrader.php:1327
 msgid "See details for each issue below."
 msgstr ""
 
-#: src/upgrader.php:1325
+#: src/upgrader.php:1328
 msgid "The identified issue(s) is/are listed below."
 msgstr ""
 
@@ -8846,7 +8855,8 @@ msgid "View Full Report"
 msgstr ""
 
 #: src/view/email/confirm.php:7 src/view/email/login-lockout.php:4
-#: src/view/email/subscribed.php:7 src/view/email/unsubscribe.php:7
+#: src/view/email/subscribed.php:7 src/view/email/unlockout.php:4
+#: src/view/email/unsubscribe.php:7
 #. translators: %s: Name.
 msgid "Hi %s"
 msgstr ""
@@ -8958,6 +8968,29 @@ msgid ""
 "site security, and ignoring anything you don't want to address."
 msgstr ""
 
+#: src/view/email/unlockout.php:8
+msgid ""
+"We have received a request to unblock an IP address that appears to be "
+"locked out of your site."
+msgstr ""
+
+#: src/view/email/unlockout.php:13
+#. translators: %s: Generated time.
+msgid "This request was generated on %s."
+msgstr ""
+
+#: src/view/email/unlockout.php:25
+#. translators: %s: Unlocked link.
+msgid ""
+"Please note that this link is only valid for 30 minutes from the time of "
+"generation."
+msgstr ""
+
+#: src/view/email/unlockout.php:30
+#. translators: %s: Unlocked link.
+msgid "Unlock me"
+msgstr ""
+
 #: src/view/email/unsubscribe.php:13
 msgid "resubscribe"
 msgstr ""
@@ -8969,11 +9002,42 @@ msgid ""
 "continue receiving these emails, you can %2$s."
 msgstr ""
 
-#: src/view/ip-lockout/locked.php:127
+#: src/view/ip-lockout/locked.php:144
+msgid "Access Denied"
+msgstr ""
+
+#: src/view/ip-lockout/locked.php:149
+msgid "If you are a site admin, click on the %1$s button below to unlock yourself."
+msgstr ""
+
+#: src/view/ip-lockout/locked.php:168
+msgid "Enter your registered username or email"
+msgstr ""
+
+#: src/view/ip-lockout/locked.php:173
+msgid "Enter your username or email."
+msgstr ""
+
+#: src/view/ip-lockout/locked.php:190
+msgid ""
+"If the username/email exists, an email will be sent to your registered "
+"email address."
+msgstr ""
+
+#: src/view/ip-lockout/locked.php:194
+msgid "Try again"
+msgstr ""
+
+#: src/view/ip-lockout/locked.php:198
+#. translators: %s: Resend link.
+msgid "Didn't get the email? %s."
+msgstr ""
+
+#: src/view/ip-lockout/locked.php:208
 msgid "You will be able to attempt to access again in:"
 msgstr ""
 
-#: src/view/ip-lockout/locked.php:134
+#: src/view/ip-lockout/locked.php:215
 msgid "Powered by"
 msgstr ""
 

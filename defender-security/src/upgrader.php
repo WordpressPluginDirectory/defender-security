@@ -364,6 +364,9 @@ class Upgrader {
 		if ( version_compare( $db_version, '4.5.1', '<' ) ) {
 			$this->upgrade_4_5_1();
 		}
+		if ( version_compare( $db_version, '4.6.0', '<' ) ) {
+			$this->upgrade_4_6_0();
+		}
 		// This is not a new installation. Make a mark.
 		defender_no_fresh_install();
 		// Don't run any function below this line.
@@ -1492,7 +1495,6 @@ Your temporary password is {{passcode}}. To finish logging in, copy and paste th
 			 * @var Bootstrap
 			 */
 			$bootstrap = wd_di()->get( Bootstrap::class );
-
 			$bootstrap->create_table_quarantine();
 		}
 
@@ -1575,5 +1577,16 @@ Your temporary password is {{passcode}}. To finish logging in, copy and paste th
 		$service = wd_di()->get( Firewall::class );
 		$service->auto_switch_ip_detection_option();
 		$service->maybe_show_misconfigured_ip_detection_option_notice();
+	}
+
+	/**
+	 * Upgrade to 4.6.0.
+	 *
+	 * @return void
+	 */
+	private function upgrade_4_6_0(): void {
+		// Create Unlockout table.
+		$bootstrap = wd_di()->get( Bootstrap::class );
+		$bootstrap->create_table_unlockout();
 	}
 }

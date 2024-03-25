@@ -21,7 +21,9 @@ use WP_Defender\Model\Setting\Notfound_Lockout;
 use WP_Defender\Model\Setting\User_Agent_Lockout;
 use WP_Defender\Model\Setting\Blacklist_Lockout as Blacklist_Model;
 use WP_Defender\Model\Setting\Global_Ip_Lockout;
+use WP_Defender\Model\Unlockout;
 use WP_Defender\Behavior\WPMUDEV;
+use WP_Defender\Component\Unlock_Me;
 
 class Firewall extends Event {
 	use \WP_Defender\Traits\IP;
@@ -80,6 +82,11 @@ class Firewall extends Event {
 			wp_schedule_event( time() + 10, 'weekly', 'wpdef_firewall_clean_up_lockout' );
 		}
 		add_action( 'wpdef_firewall_clean_up_lockout', [ &$this, 'clean_up_firewall_lockout' ] );
+		// Clean old Unlockouts.
+		if ( ! wp_next_scheduled( 'wpdef_firewall_clean_up_unlockout' ) ) {
+			wp_schedule_event( time() + 20, 'weekly', 'wpdef_firewall_clean_up_unlockout' );
+		}
+		add_action( 'wpdef_firewall_clean_up_unlockout', [ &$this, 'clean_up_unlockout' ] );
 
 		// Additional hooks.
 		add_action( 'defender_enqueue_assets', [ &$this, 'enqueue_assets' ], 11 );
@@ -167,7 +174,7 @@ class Firewall extends Event {
 	 * @return Response
 	 * @defender_route
 	 */
-	public function save_settings( Request $request ) {
+	public function save_settings( Request $request ): Response {
 		$data = $request->get_data_by_model( $this->model );
 		$this->model->import( $data );
 		if ( $this->model->validate() ) {
@@ -271,15 +278,154 @@ class Firewall extends Event {
 				case 'ua-lockout':
 					$settings = wd_di()->get( User_Agent_Lockout::class );
 					$message = $settings->message;
+					$remaining_time = 3600;
 					break;
 				default:
 					$message = __( 'Demo', 'defender-security' );
 					break;
 			}
 
-			$this->actions_for_blocked( $message, $remaining_time );
+			$this->actions_for_blocked( $message, $remaining_time, 'demo', $this->get_user_ip() );
 			exit;
 		}
+	}
+
+	/**
+	 * @param string $blocked_ip
+	 *
+	 * @return bool
+	 */
+	private function check_attempt_counter_by( $blocked_ip ): bool {
+		$blocked_ip = $this->check_ip_by_remote_addr( $blocked_ip );
+		$request_count = get_transient( $blocked_ip );
+		$disabled = false;
+		if ( false === $request_count ) {
+			set_transient( $blocked_ip, 1, Unlock_Me::EXPIRED_COUNTER_TIME );
+		} elseif ( (int) $request_count >= Unlock_Me::get_attempt_limit() ) {
+			$disabled = true;
+		} else {
+			$request_count++;
+			set_transient( $blocked_ip, $request_count, Unlock_Me::EXPIRED_COUNTER_TIME );
+		}
+
+		return $disabled;
+	}
+
+	/**
+	 * @param Request $request
+	 *
+	 * @return Response
+	 * @defender_route
+	 * @is_public
+	 */
+	public function verify_blocked_user( Request $request ): Response {
+		$data = $request->get_data(
+			[
+				'user_data' => [
+					'type' => 'string',
+					'sanitize' => 'sanitize_text_field',
+				],
+			]
+		);
+		$maybe_email = $data['user_data'];
+		if ( empty( $maybe_email ) ) {
+			return new Response( false, [] );
+		}
+		$ips = $this->get_user_ip();
+		//Check if at least one IP is blocked.
+		$blocked_ip = $this->service->get_blocked_ip( $ips );
+		// If nothing, just return.
+		if ( '' === $blocked_ip ) {
+			return new Response( false, [] );
+		}
+		// Maybe is it an user email?
+		$user = get_user_by( 'email', $maybe_email );
+		if ( ! is_object( $user ) ) {
+			// Maybe is it an user name?
+			$user = get_user_by( 'login', $maybe_email );
+			if ( ! is_object( $user ) ) {
+				$this->check_attempt_counter_by( $blocked_ip );
+
+				return new Response( false, [] );
+			}
+		}
+		// Send email only for admins.
+		if ( ! $this->is_admin( $user ) ) {
+			// No need to count attempts for existed user but non-admin.
+			return new Response( false, [] );
+		}
+		//Create Unlockout records.
+		$arr_uids = [];
+		foreach ( $ips as $ip ) {
+			// Collect blocked IP's.
+			$created_id = wd_di()->get( Unlockout::class )->create( $ip, $user->user_email );
+			if ( $created_id ) {
+				$arr_uids[] = $created_id;
+			}
+		}
+
+		$this->send_unlock_email( $user->user_email, $user->user_login, $arr_uids );
+
+		return new Response( true, [] );
+	}
+
+	/**
+	 * Send again if the attempt limit has not expired.
+	 *
+	 * @return Response
+	 * @defender_route
+	 * @is_public
+	 */
+	public function send_again(): Response {
+		//Check if at least one IP is blocked.
+		$blocked_ip = $this->service->get_blocked_ip( $this->get_user_ip() );
+		if ( '' === $blocked_ip ) {
+			return new Response( false, [] );
+		}
+		$request_count = get_transient( $this->check_ip_by_remote_addr( $blocked_ip ) );
+		$is_expired = false !== $request_count && $request_count >= Unlock_Me::get_attempt_limit();
+
+		return new Response(
+			! $is_expired,
+			[]
+		);
+	}
+
+	/**
+	 * @param string $user_email
+	 * @param string $user_login
+	 * @param array $arr_uids
+	 *
+	 * @return bool
+	 */
+	protected function send_unlock_email( $user_email, $user_login, $arr_uids ): bool {
+		$headers = wd_di()->get( \WP_Defender\Component\Mail::class )->get_headers(
+			defender_noreply_email( 'wd_unlock_noreply_email' ),
+			Unlock_Me::SLUG_UNLOCK
+		);
+		$subject = __( 'Request to Unblock IP Address', 'defender-security' );
+
+		$content_body = $this->render_partial(
+			'email/unlockout',
+			[
+				'subject' => $subject,
+				'name' => $user_login,
+				'unlocked_link' => Unlock_Me::create_url( $user_email, $user_login, $arr_uids ),
+				'generated_time' => $this->get_local_human_date( time() ),
+			],
+			false
+		);
+		$content = $this->render_partial(
+			'email/index',
+			[
+				'title' => __( 'Firewall', 'defender-security' ),
+				'content_body' => $content_body,
+				'unsubscribe_link' => '',
+			],
+			false
+		);
+		// Send email.
+		return wp_mail( $user_email, $subject, $content, $headers );
 	}
 
 	/**
@@ -287,10 +433,32 @@ class Firewall extends Event {
 	 *
 	 * @param string $message        The message to show.
 	 * @param int    $remaining_time Remaining countdown time in seconds.
+	 * @param string $reason         Block's reason.
+	 * @param array  $ips            Array of blocked IP's.
 	 *
 	 * @return void
 	 */
-	private function actions_for_blocked( string $message, int $remaining_time = 0 ): void {
+	private function actions_for_blocked(
+		string $message,
+		int $remaining_time = 0,
+		string $reason = '',
+		array $ips = []
+	): void {
+		$action = HTTP::get('action', false);
+
+		if ( defender_base_action() === $action ) {
+			$nonce = HTTP::get( '_def_nonce', false );
+			$route = HTTP::get( 'route', '' );
+			$route = wp_unslash( $route );
+			if ( wp_verify_nonce( $nonce, $route ) ) {
+				return;
+			}
+		}
+		// Maybe unblock the request?
+		if ( Unlock_Me::SLUG_UNLOCK === $action && wd_di()->get( Unlock_Me::class )->maybe_unlock() ) {
+			return;
+		}
+
 		ob_start();
 
 		if ( ! headers_sent() ) {
@@ -304,12 +472,43 @@ class Firewall extends Event {
 			header( 'Expires: ' . gmdate('D, d M Y H:i:s', time()-3600) . ' GMT' ); // Proxies.
 			header( 'Clear-Site-Data: "cache"' ); // Clear cache of the current request.
 
+			$is_displayed = Unlock_Me::is_displayed( $reason, $ips );
+			$params = [
+				'message' => $message,
+				'remaining_time' => $remaining_time,
+				'is_unlock_me' => $is_displayed,
+			];
+			// Only for "Unlock me".
+			if ( $is_displayed ) {
+				$list = $this->dump_routes_and_nonces();
+				$routes = $list['routes'];
+				$nonces = $list['nonces'];
+				// Prepare data.
+				$args = [
+					'action' => defender_base_action(),
+					'_def_nonce' => $nonces['verify_blocked_user'],
+					'route' => $this->check_route( $routes['verify_blocked_user'] ),
+				];
+				$params['action_verify_blocked_user'] = add_query_arg( $args, admin_url( 'admin-ajax.php' ) );
+				// Rewrite args for another action.
+				$args['_def_nonce'] = $nonces['send_again'];
+				$args['route'] = $this->check_route( $routes['send_again'] );
+				$params['action_send_again'] = add_query_arg( $args, admin_url( 'admin-ajax.php' ) );
+
+				$params['button_title'] = Unlock_Me::get_feature_title();
+				$button_disabled = false;
+				if ( ! empty( $ips ) ) {
+					// Get IP's.
+					$request_count = get_transient( $this->check_ip_by_remote_addr( $ips[0] ) );
+					$button_disabled = false !== $request_count && $request_count >= Unlock_Me::get_attempt_limit();
+				}
+
+				$params['button_disabled'] = $button_disabled;
+			}
+
 			$this->render_partial(
 				'ip-lockout/locked',
-				[
-					'message' => $message,
-					'remaining_time' => $remaining_time,
-				]
+				$params
 			);
 		}
 
@@ -331,11 +530,12 @@ class Firewall extends Event {
 			return;
 		}
 
-		if ( $this->service->is_blocklisted_ip( $ip ) ) {
+		$is_blocklisted = $this->service->is_blocklisted_ip( $ip );
+		if ( $is_blocklisted['result'] ) {
 			// Get Blacklist_Lockout instance.
 			$blacklist_model = wd_di()->get( Blacklist_Model::class );
 			// This one is get blacklisted.
-			$this->actions_for_blocked( $blacklist_model->ip_lockout_message );
+			$this->actions_for_blocked( $blacklist_model->ip_lockout_message, 0, $is_blocklisted['reason'], [ $ip ] );
 		}
 		// Get an instance of UA component.
 		$service_ua = wd_di()->get( User_Agent_Component::class );
@@ -344,6 +544,7 @@ class Firewall extends Event {
 			$user_agent = $service_ua->sanitize_user_agent();
 			if ( $service_ua->is_bad_post( $user_agent ) ) {
 				$service_ua->block_user_agent_or_ip( $user_agent, $ip, User_Agent_Component::REASON_BAD_POST );
+
 				return $service_ua->get_message();
 			}
 			if ( ! empty( $user_agent )
@@ -365,6 +566,7 @@ class Firewall extends Event {
 			) {
 				// Todo: if we use a hook then we should extend cases with a custom reason and send it for log.
 				$service_ua->block_user_agent_or_ip( $user_agent, $ip, User_Agent_Component::REASON_BAD_USER_AGENT );
+
 				return $service_ua->get_message();
 			}
 		}
@@ -382,7 +584,7 @@ class Firewall extends Event {
 		$model = Lockout_Ip::get( $ip );
 		if ( is_object( $model ) && $model->is_locked() ) {
 			$remaining_time = $model->remaining_release_time();
-			$this->actions_for_blocked( $model->lockout_message, $remaining_time );
+			$this->actions_for_blocked( $model->lockout_message, $remaining_time, 'blacklist', [ $ip ] );
 		}
 	}
 
@@ -463,12 +665,14 @@ class Firewall extends Event {
 		Array_Cache::remove( 'countries', 'ip_lockout' );
 		// Remove Global IP data.
 		( new \WP_Defender\Controller\Global_Ip() )->remove_data();
-
+		// Clear Trusted Proxy data.
 		$trusted_proxy_preset = wd_di()->get( Trusted_Proxy_Preset::class );
 		foreach ( $this->model->trusted_proxy_preset_list as $preset ) {
 			$trusted_proxy_preset->set_proxy_preset( $preset );
 			$trusted_proxy_preset->delete_ips();
 		}
+		// Remove Unlockouts.
+		Unlockout::truncate();
 	}
 
 	/**
@@ -641,7 +845,6 @@ class Firewall extends Event {
 		}
 
 		$clear = get_site_option( 'wpdef_clear_schedule_firewall_cleanup_temp_blocklist_ips', false );
-
 		if ( $clear ) {
 			wp_clear_scheduled_hook( 'firewall_cleanup_temp_blocklist_ips' );
 		}
@@ -651,7 +854,6 @@ class Firewall extends Event {
 		}
 
 		$interval = $this->model->ip_blocklist_cleanup_interval;
-
 		if ( ! $interval || 'never' === $interval ) {
 			return;
 		}
@@ -820,8 +1022,19 @@ class Firewall extends Event {
 		}
 
 		if ( ! empty( $msg ) ) {
-			$this->actions_for_blocked( $msg );
+			$this->actions_for_blocked( $msg, 0, 'blacklist', $ips );
 		}
+	}
+
+	/**
+	 * Clean up old records.
+	 *
+	 * @since 4.6.0
+	 * @return void
+	 */
+	public function clean_up_unlockout(): void {
+		$timestamp = $this->local_to_utc( Unlock_Me::get_expired_time() );
+		Unlockout::remove_records( $timestamp, 100 );
 	}
 
 	/**

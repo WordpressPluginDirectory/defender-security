@@ -388,4 +388,17 @@ trait IP {
 
 		return array_unique( $ips_filtered );
 	}
+
+	/**
+	 * Use $_SERVER['REMOTE_ADDR'] as the first protection layer to avoid spoofed headers.
+	 *
+	 * @param string $blocked_ip
+	 *
+	 * @return string
+	 */
+	public function check_ip_by_remote_addr( $blocked_ip ): string {
+		return isset( $_SERVER['REMOTE_ADDR'] ) && ! empty( $_SERVER['REMOTE_ADDR'] )
+			? $_SERVER['REMOTE_ADDR']
+			: $blocked_ip;
+	}
 }

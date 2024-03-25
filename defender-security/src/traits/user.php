@@ -215,4 +215,27 @@ trait User {
 
 		return $editable_roles;
 	}
+
+	/**
+	 * Does the current user have admin credentials?
+	 *
+	 * @param $user
+	 *
+	 * @return bool
+	 */
+	public function is_admin( $user ): bool {
+		if ( $user ) {
+			if ( is_multisite() ) {
+				if ( user_can( $user, 'manage_network' ) ) {
+					return true;
+				}
+			} else {
+				if ( user_can( $user, 'manage_options' ) ) {
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
 }

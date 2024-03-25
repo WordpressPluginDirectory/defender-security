@@ -169,4 +169,17 @@ abstract class Controller extends \Calotes\Base\Controller {
 			'nonces' => $nonces,
 		];
 	}
+
+	/**
+	 * Check if DEFENDER_DEBUG is enabled for the route.
+	 *
+	 * @param string $route
+	 *
+	 * @return string|array
+	 */
+	public function check_route( string $route ) {
+		return defined( 'DEFENDER_DEBUG' ) && true === constant( 'DEFENDER_DEBUG' )
+			? wp_slash( $route )
+			: $route;
+	}
 }

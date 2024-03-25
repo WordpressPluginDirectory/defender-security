@@ -4,6 +4,7 @@ namespace WP_Defender\Controller;
 
 use Calotes\Component\Request;
 use Calotes\Component\Response;
+use Calotes\Helper\Array_Cache;
 use Calotes\Helper\HTTP;
 use WP_Defender\Component\Audit;
 use WP_Defender\Component\Config\Config_Hub_Helper;
@@ -426,6 +427,11 @@ class Audit_Logging extends Event {
 	 */
 	public function remove_data(): void {
 		Audit_Log::truncate();
+		// Remove cached data.
+		Array_Cache::remove( 'sockets', 'audit' );
+		Array_Cache::remove( 'logs', 'audit' );
+		Array_Cache::remove( 'menu_updated', 'audit' );
+		Array_Cache::remove( 'post_updated', 'audit' );
 		delete_site_option( Audit::CACHE_LAST_CHECKPOINT );
 	}
 
