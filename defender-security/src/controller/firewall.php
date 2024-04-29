@@ -24,6 +24,7 @@ use WP_Defender\Model\Setting\Global_Ip_Lockout;
 use WP_Defender\Model\Unlockout;
 use WP_Defender\Behavior\WPMUDEV;
 use WP_Defender\Component\Unlock_Me;
+use WP_Defender\Component\Firewall as Firewall_Component;
 
 class Firewall extends Event {
 	use \WP_Defender\Traits\IP;
@@ -39,7 +40,7 @@ class Firewall extends Event {
 	protected $model;
 
 	/**
-	 * @var \WP_Defender\Component\Firewall
+	 * @var Firewall_Component
 	 */
 	public $service;
 
@@ -54,7 +55,7 @@ class Firewall extends Event {
 			$this->menu_title( $title )
 		);
 		$this->model = wd_di()->get( \WP_Defender\Model\Setting\Firewall::class );
-		$this->service = wd_di()->get( \WP_Defender\Component\Firewall::class );
+		$this->service = wd_di()->get( Firewall_Component::class );
 		$this->register_routes();
 		$this->maybe_show_demo_lockout();
 		$this->maybe_lockout_gathered_ips();
@@ -176,11 +177,29 @@ class Firewall extends Event {
 	 */
 	public function save_settings( Request $request ): Response {
 		$data = $request->get_data_by_model( $this->model );
+		// Before updating Trusted Proxy Preset (TPP) IP's, check the current option is a custom header, no blank TPP value and there's TPP change.
+		$is_preset_update = false;
+		if (
+			in_array(
+				$data['http_ip_header'],
+				Firewall_Component::custom_http_headers(),
+				true
+			)
+			&& ! empty( $data['trusted_proxy_preset'] )
+			&& $data['trusted_proxy_preset'] !== $this->model->trusted_proxy_preset
+		) {
+			$is_preset_update = true;
+		}
+
 		$this->model->import( $data );
 		if ( $this->model->validate() ) {
 			$this->service->update_cron_schedule_interval( $data['ip_blocklist_cleanup_interval'] );
 			$this->model->save();
 			Config_Hub_Helper::set_clear_active_flag();
+			// Fetch trusted proxy ips.
+			if ( $is_preset_update ) {
+				$this->service->update_trusted_proxy_preset_ips();
+			}
 
 			return new Response(
 				true,
@@ -667,7 +686,7 @@ class Firewall extends Event {
 		( new \WP_Defender\Controller\Global_Ip() )->remove_data();
 		// Clear Trusted Proxy data.
 		$trusted_proxy_preset = wd_di()->get( Trusted_Proxy_Preset::class );
-		foreach ( $this->model->trusted_proxy_preset_list as $preset ) {
+		foreach ( array_keys( Firewall_Component::trusted_proxy_presets() ) as $preset ) {
 			$trusted_proxy_preset->set_proxy_preset( $preset );
 			$trusted_proxy_preset->delete_ips();
 		}
@@ -715,6 +734,7 @@ class Firewall extends Event {
 			'ua_lockout' => wd_di()->get( User_Agent_Lockout::class )->enabled,
 			'user_ip' => implode( ', ', $user_ip ),
 			'user_ip_header' => $http_ip_header_value,
+			'trusted_proxy_presets' => Firewall_Component::trusted_proxy_presets(),
 		];
 
 		return array_merge( $data, $this->dump_routes_and_nonces() );

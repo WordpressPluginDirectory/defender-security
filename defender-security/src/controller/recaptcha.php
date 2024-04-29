@@ -479,10 +479,6 @@ class Recaptcha extends Event {
 		if ( defined( 'XMLRPC_REQUEST' ) ) {
 			return $user;
 		}
-		// Check response.
-		if ( ! isset( $_POST['g-recaptcha-response'] ) ) {
-			return $user;
-		}
 		// Is Recaptcha-request from 'Ultimate Member' plugin?
 		if ( isset( $_POST['um_request'] ) && function_exists( 'um_recaptcha_validate' ) ) {
 			return $user;

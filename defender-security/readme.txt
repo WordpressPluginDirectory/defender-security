@@ -1,13 +1,13 @@
 === Defender Security - Malware Scanner, Login Security & Firewall ===
 Plugin Name: Defender Security - Malware Scanner, Login Security & Firewall
-Version: 4.6.0
+Version: 4.7.0
 Author: WPMU DEV
 Author URI: https://wpmudev.com/
 Contributors: WPMUDEV
 Tags: security plugin, malware, firewall, malware scanner, login security
 Requires at least: 5.2
-Tested up to: 6.5
-Stable tag: 4.6.0
+Tested up to: 6.5.2
+Stable tag: 4.7.0
 Requires PHP: 7.4
 License: GPL v2 - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 
@@ -237,6 +237,15 @@ Please open a new thread in Defender's [support forum](https://wordpress.org/sup
 
 == Changelog ==
 
+= 4.7.0 ( 2024-04-22 ) =
+
+- Enhance: Create a dropdown for Trusted Proxy Preset
+- Enhance: Add .well-known to scan allowlist
+- Fix: Undefined array key 'path' after update
+- Fix: Fix Validation gets bypassed in Google reCAPTCHA
+- Fix: Add malware signature
+- Fix: Unlock time overlaps with the Defender logo in the footer
+
 = 4.6.0 ( 2024-03-18 ) =
 
 - New: Introducing the "Unlock Me" feature to unblock admin on lockout
@@ -278,11 +287,9 @@ Please open a new thread in Defender's [support forum](https://wordpress.org/sup
 - Fix: PHP warning after activating Defender Security Headers
 - Fix: Remove Translation Link when the Whitelabel Hide Links option is enabled
 
-= 4.3.1 ( 2023-12-06 ) =
-
-- Enhance: Minor code improvements and fixes
-
 [Changelog for previous versions](https://wpmudev.com/project/wp-defender/#view-changelog).
+
+== Upgrade Notice ==
 
 == About Us ==
 WPMU DEV is a premium supplier of quality WordPress plugins and themes. For premium support with any WordPress-related issues you can join us here:

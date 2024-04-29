@@ -335,10 +335,10 @@ class Firewall extends Component {
 				update_site_option( self::IP_DETECTION_CF_SHOW_SLUG, true );
 			}
 
-			$model->trusted_proxy_preset = 'cloudflare';
+			$model->trusted_proxy_preset = \WP_Defender\Component\Trusted_Proxy_Preset\Cloudflare_Proxy::PROXY_SLUG;
 			$model->save();
 
-			// Fetch trusted proxy ips
+			// Fetch trusted proxy ips.
 			$this->update_trusted_proxy_preset_ips();
 		}
 	}
@@ -352,7 +352,7 @@ class Firewall extends Component {
 		$model = wd_di()->get( Model_Firewall::class );
 		if ( ! empty( $model->trusted_proxy_preset ) ) {
 			/**
-			 * @var Trusted_Proxy_Preset $trusted_proxy_preset ;
+			 * @var Trusted_Proxy_Preset $trusted_proxy_preset
 			 */
 			$trusted_proxy_preset = wd_di()->get( Trusted_Proxy_Preset::class );
 			$trusted_proxy_preset->set_proxy_preset( $model->trusted_proxy_preset );
@@ -446,5 +446,25 @@ class Firewall extends Component {
 		}
 
 		return $blocked_ip;
+	}
+
+	/**
+	 * @return array
+	 */
+	public static function custom_http_headers(): array {
+		return [
+			'HTTP_X_FORWARDED_FOR',
+			'HTTP_X_REAL_IP',
+			'HTTP_CF_CONNECTING_IP',
+		];
+	}
+
+	/**
+	 * @return array
+	 */
+	public static function trusted_proxy_presets(): array {
+		return [
+			\WP_Defender\Component\Trusted_Proxy_Preset\Cloudflare_Proxy::PROXY_SLUG => __( 'Cloudflare', 'defender-security' ),
+		];
 	}
 }

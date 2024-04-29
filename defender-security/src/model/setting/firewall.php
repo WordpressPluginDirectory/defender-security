@@ -50,14 +50,6 @@ class Firewall extends Setting {
 	public $trusted_proxy_preset = '';
 
 	/**
-	 * Trusted proxy preset list.
-	 *
-	 * @var array
-	 * @defender_property
-	 */
-	public $trusted_proxy_preset_list = ['cloudflare'];
-
-	/**
 	 * Define settings labels.
 	 *
 	 * @return array
@@ -126,20 +118,18 @@ class Firewall extends Setting {
 	 * @return array Return an array with mandatory boolean index error and optional index message which describes the error.
 	 */
 	private function validate_trusted_proxies(): array {
-		$custom_headers = [
-			'HTTP_X_FORWARDED_FOR',
-			'HTTP_X_REAL_IP',
-			'HTTP_CF_CONNECTING_IP',
-		];
-
-		if ( in_array( $this->http_ip_header, $custom_headers, true ) ) {
+		if (
+			in_array(
+				$this->http_ip_header,
+				\WP_Defender\Component\Firewall::custom_http_headers(),
+				true
+			)
+		) {
 			$trusted_proxies_ip = $this->get_trusted_proxies_ip();
 
 			if ( empty( $trusted_proxies_ip ) ) {
-				return [
-					'error' => true,
-					'message' => __( 'Trusted proxies should not be empty', 'defender-security' ),
-				];
+				// Nothing to check.
+				return [ 'error' => false ];
 			}
 
 			foreach ( $trusted_proxies_ip as $ip ) {
@@ -156,8 +146,6 @@ class Firewall extends Setting {
 			}
 		}
 
-		return [
-			'error' => false,
-		];
+		return [ 'error' => false ];
 	}
 }

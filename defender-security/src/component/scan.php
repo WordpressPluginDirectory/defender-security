@@ -20,7 +20,7 @@ class Scan extends Component {
 	/**
 	 * Cache the current scan.
 	 *
-	 * @var \WP_Defender\Model\Scan
+	 * @var Model_Scan
 	 */
 	public $scan;
 
@@ -144,7 +144,7 @@ class Scan extends Component {
 	}
 
 	/**
-	 * @param \WP_Defender\Model\Scan $model
+	 * @param Model_Scan $model
 	 */
 	private function reindex_ignored_issues( $model ) {
 		$issues = $model->get_issues( null, Scan_Item::STATUS_IGNORE );
@@ -544,7 +544,7 @@ class Scan extends Component {
 			return;
 		}
 
-		$last = \WP_Defender\Model\Scan::get_last();
+		$last = Model_Scan::get_last();
 		if ( is_object( $last ) && ! is_wp_error( $last ) ) {
 			$vulnerability_issues = $last->get_issues( Scan_Item::TYPE_VULNERABILITY );
 			if ( empty( $vulnerability_issues ) ) {

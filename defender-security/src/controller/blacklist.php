@@ -13,7 +13,6 @@ use WP_Defender\Traits\IP;
 use WP_Defender\Traits\Continent;
 use WP_Defender\Integrations\MaxMind_Geolocation;
 use WP_Defender\Behavior\WPMUDEV;
-use WP_Error;
 
 /**
  * Class Blacklist
@@ -391,7 +390,7 @@ class Blacklist extends Controller {
 	 * @defender_route
 	 */
 	public function query_locked_ips( Request $request ) {
-		$results = \WP_Defender\Model\Lockout_Ip::query_locked_ip();
+		$results = Lockout_Ip::query_locked_ip();
 		$locked_ips = [];
 		if ( ! empty( $results ) ) {
 			foreach ( $results as $key => $locked_ip ) {

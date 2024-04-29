@@ -607,7 +607,7 @@ class Scan extends DB {
 			'.htaccess',
 			'nginx.conf',
 			// Hidden system files and directories.
-			'.well_known',
+			'.well-known',
 			'.idea',
 			'.DS_Store',
 			'.svn',

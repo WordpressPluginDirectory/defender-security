@@ -18,77 +18,70 @@
 		body {
 			margin: 0;
 			padding: 0;
-			min-width: 100%;
-			width: 100%;
-			max-width: 100%;
-			min-height: 100%;
-			height: 100%;
-			max-height: 100%;
 		}
 
 		.wp-defender {
-			height: 100%;
-			display: flex;
-			align-items: center;
-			font-family: Roboto;
+			display: grid;
+			place-content: center;
+			font-family: Roboto, sans-serif;
 			color: #000;
 			font-size: 13px;
 			line-height: 18px;
+			min-height: 100vh; /* Ensure content fills at least the viewport height */
 		}
 
 		.container {
-			margin: 0 auto;
-			text-align: center;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			gap: 30px;
+			max-width: 100%; /* Ensure container doesn't overflow on smaller screens */
+			padding: 0 20px; /* Add padding for better readability and spacing */
+		}
+
+		.image,
+		.plugin-icon {
+			border-radius: 50%;
+			background-repeat: no-repeat;
+			background-size: contain;
+			background-position: center;
+			max-width: 100%; /* Ensure image doesn't overflow its container */
 		}
 
 		.image {
 			width: 128px;
 			height: 128px;
-			background-color: #F2F2F2;
-			margin: 0 auto;
-			border-radius: 50%;
-			background-image: url("<?php echo $devman_img; ?>");
-			background-repeat: no-repeat;
-			background-size: contain;
-			background-position: center;
-			margin-bottom: 30px;
+			background-image: url("<?php echo esc_url_raw( $devman_img ); ?>");
 		}
 
 		.plugin-icon {
 			width: 30px;
 			height: 30px;
-			margin: 0 auto;
-			background-image: url("<?php echo $devman_icon; ?>");
-			background-repeat: no-repeat;
-			background-size: contain;
-			background-position: center;
-			margin-bottom: 10px;
+			background-image: url("<?php echo esc_url_raw( $devman_icon ); ?>");
 		}
 
 		.powered {
-			position: absolute;
-			bottom: 20px;
-			display: block;
-			text-align: center;
-			width: 100%;
-			font-size: 10px;
-			color: #C0C0C0;
+            display: grid;
+            justify-content: center;
+            gap: 10px;
+            font-size: 10px;
+            color: #C0C0C0;
+            justify-items: center;
 		}
 
 		.powered strong {
 			color: #8A8A8A;
-			font-weight: normal;
 		}
 
-		.locked_page_header {
-			color: #333333;
-		}
+        .locked_page_header {
+            color: #333333;
+        }
 
 		.message {
+			text-align: center;
 			font-size: 15px;
 			line-height: 30px;
-			text-align: center;
-			letter-spacing: -0.25px;
 			color: #666666;
 		}
 
@@ -96,9 +89,9 @@
 			font-weight: bold;
 			font-size: 28px;
 			line-height: 40px;
-			text-align: center;
-			letter-spacing: -0.5px;
 			color: #666666;
+			display: inline-flex;
+			gap: 6px;
 		}
 
 		#remaining-time {
@@ -212,8 +205,10 @@
 		<?php if ( ! $info['hide_doc_link'] ) { ?>
 			<div class="powered">
 				<div class="plugin-icon"></div>
-				<?php esc_html_e("Powered by", 'defender-security') ?>
-				<strong><?php esc_html_e("Defender", 'defender-security') ?></strong>
+				<div>
+					<?php esc_html_e("Powered by", 'defender-security') ?>
+					<strong><?php esc_html_e("Defender", 'defender-security') ?></strong>
+				</div>
 			</div>
 		<?php
 		}

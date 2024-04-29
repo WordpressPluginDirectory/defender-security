@@ -1,4 +1,5 @@
 <?php
+
 /**
  * The trusted proxy preset class.
  *
@@ -29,10 +30,10 @@ class Trusted_Proxy_Preset {
 	 */
 	private function instance() {
 		switch ( $this->proxy_preset ) {
-			case 'cloudflare':
+			case Cloudflare_Proxy::PROXY_SLUG:
 				return wd_di()->get( Cloudflare_Proxy::class );
 			default:
-				throw new \InvalidArgumentException("Unknown proxy type: $this->proxy_preset");
+				throw new \InvalidArgumentException( 'Unknown proxy type: ' . $this->proxy_preset );
 		}
 	}
 
@@ -65,7 +66,7 @@ class Trusted_Proxy_Preset {
 	/**
 	 * Delete trusted preset IPs.
 	 *
-	 * @return false
+	 * @return bool
 	 */
 	public function delete_ips() {
 		try {

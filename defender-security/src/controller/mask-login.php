@@ -419,7 +419,7 @@ class Mask_Login extends Event {
 			}
 
 			if (
-				'wp-login.php' === trim( $parsed_url['path'], '/' ) &&
+				isset( $parsed_url['path'] ) && 'wp-login.php' === trim( $parsed_url['path'], '/' ) &&
 				isset( $parsed_query['checkemail'] ) && 'registered' === $parsed_query['checkemail']
 			) {
 				return str_replace( 'wp-login.php', $this->model->mask_url, $current_url );

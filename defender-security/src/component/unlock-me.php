@@ -102,7 +102,7 @@ class Unlock_Me extends \WP_Defender\Component {
 		$bl = wd_di()->get( \WP_Defender\Model\Setting\Blacklist_Lockout::class );
 		foreach ( $ips as $ip ) {
 			$bl->remove_from_list( $ip, 'blocklist' );
-			$this->log( 'Unlock Me. Success. IP ' . $ip . ' have been unblocked.', Firewall::FIREWALL_LOG );
+			$this->log( 'Unlock Me. Success. IP ' . $ip . ' have been unblocked from the blocklist.', Firewall::FIREWALL_LOG );
 		}
 		// Maybe IP(-s) in Active lockouts? Then unlock it or them.
 		if ( count( $ips ) > 1 ) {
@@ -110,12 +110,12 @@ class Unlock_Me extends \WP_Defender\Component {
 			foreach ( $models as $model ) {
 				$model->status = Lockout_Ip::STATUS_NORMAL;
 				$model->save();
-				$this->log( 'Unlock Me. Success. IP ' . $ip . ' have been unblocked.', Firewall::FIREWALL_LOG );
+				$this->log( 'Unlock Me. Success. IP ' . $ip . ' have been unblocked from Active lockouts.', Firewall::FIREWALL_LOG );
 			}
 		} else {
 			$ip = Lockout_Ip::get_unlocked_ip_by( $first_ip );
 			if ( ! empty( $ip ) ) {
-				$this->log( 'Unlock Me. Success. IP ' . $ip . ' have been unblocked.', Firewall::FIREWALL_LOG );
+				$this->log( 'Unlock Me. Success. IP ' . $ip . ' have been unblocked from Active lockouts.', Firewall::FIREWALL_LOG );
 			}
 		}
 		// Remove the old counter.

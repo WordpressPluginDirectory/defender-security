@@ -12,6 +12,7 @@ use Calotes\Base\Component;
 use WP_Defender\Controller\Firewall;
 
 class Cloudflare_Proxy extends Component implements Trusted_Proxy_Preset_Strategy_Interface {
+	public const PROXY_SLUG = 'cloudflare';
 	public const OPTION_NAME = 'wpdef_cloudflare_ips';
 	public const PROXY_API = 'https://api.cloudflare.com/client/v4/ips';
 
@@ -48,6 +49,7 @@ class Cloudflare_Proxy extends Component implements Trusted_Proxy_Preset_Strateg
 
 		if ( ! $data || ! ( isset( $data['result']['ipv4_cidrs'] ) || isset( $data['result']['ipv6_cidrs'] ) ) ) {
 			$this->log( 'Invalid response from Cloudflare API', Firewall::FIREWALL_LOG );
+
 			return false;
 		}
 

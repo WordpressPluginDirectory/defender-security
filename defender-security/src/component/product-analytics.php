@@ -5,6 +5,7 @@ namespace WP_Defender\Component;
 use Calotes\Base\Component;
 use WP_Defender\Component\Security_Tweaks\Servers\Server;
 use WP_Defender\Traits\Device;
+use WPMUDEV_Analytics;
 
 /**
  * Class Product_Analytics.
@@ -18,7 +19,7 @@ class Product_Analytics extends Component {
 	private const PROJECT_TOKEN = '5d545622e3a040aca63f2089b0e6cae7';
 
 	/**
-	 * @var null|\Mixpanel
+	 * @var null|WPMUDEV_Analytics
 	 */
 	private $mixpanel = null;
 
@@ -36,7 +37,7 @@ class Product_Analytics extends Component {
 	/**
 	 * Get configured mixpanel instance.
 	 *
-	 * @return \Mixpanel
+	 * @return WPMUDEV_Analytics
 	 */
 	public function get_mixpanel() {
 		return $this->mixpanel;
@@ -56,28 +57,22 @@ class Product_Analytics extends Component {
 
 	/**
 	 * Prepare Mixpanel instance.
-	 * @method identify(int $user_id)
-	 * @method register(string $property, mixed $value)
-	 * @method registerAll(array $properties)
-	 * @method track(string $event, array $properties = array())
 	 *
-	 * @return \Mixpanel
+	 * @return WPMUDEV_Analytics
 	 */
 	private function prepare_mixpanel_instance() {
-		if ( is_null( $this->mixpanel ) ) {
-			$this->mixpanel = \Mixpanel::getInstance(
-				self::PROJECT_TOKEN,
-				[
-					'error_callback' => [ $this, 'handle_error' ],
-					'consumers' => [
-						'file' => 'ConsumerStrategies_FileConsumer',
-						'curl' => 'ConsumerStrategies_CurlConsumer',
-						'socket' => 'ConsumerStrategies_SocketConsumer',
-					],
-					'consumer' => 'socket',
-				]
-			);
+		if ( ! class_exists( 'WPMUDEV_Analytics' ) ) {
+			require_once defender_path( 'extra/wpmudev-analytics/autoload.php' );
 		}
+		$extra_options = [
+			'consumers' => [
+				'file' => 'ConsumerStrategies_FileConsumer',
+				'curl' => 'ConsumerStrategies_CurlConsumer',
+				'socket' => 'ConsumerStrategies_SocketConsumer',
+			],
+			'consumer' => 'socket',
+		];
+		$this->mixpanel = new WPMUDEV_Analytics( 'defender', 'Defender', 55, self::PROJECT_TOKEN, $extra_options );
 
 		return $this->mixpanel;
 	}
