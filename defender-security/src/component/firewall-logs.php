@@ -10,8 +10,8 @@ class Firewall_Logs extends Component {
 	/**
 	 * Fetch compact Firewall logs.
 	 *
-     * @param int $from  Fetch Logs from this time to current time.
-     *
+	 * @param int $from Fetch Logs from this time to current time.
+	 *
 	 * @return array
 	 */
 	public function get_compact_logs( int $from ): array {
@@ -19,39 +19,40 @@ class Firewall_Logs extends Component {
 
 		$table = $wpdb->base_prefix . ( new Lockout_Log() )->get_table();
 		$sql = $wpdb->prepare(
-			"SELECT IP, `type`, COUNT(*) AS frequency, country_iso_code FROM {$table}" .
+			"SELECT IP, `type`, COUNT(*) AS frequency FROM {$table}" .
 			" WHERE `date` >= %s AND type IN ('auth_fail', '404_error', 'ua_lockout')" .
 			" GROUP BY IP, `type`",
 			$from
-        );
-        $results = $wpdb->get_results( $sql, ARRAY_A );
+		);
+		$results = $wpdb->get_results( $sql, ARRAY_A );
 
-        $logs = [];
-        if ( is_array( $results ) ) {
-            foreach ( $results as $row ) {
-                $ip = $row['IP'];
-                if ( ! isset( $logs[ $ip ] ) ) {
-                    $logs[ $ip ] = ['ip' => $ip];
-                }
+		$logs = [];
+		if ( is_array( $results ) ) {
+			foreach ( $results as $row ) {
+				$ip = $row['IP'];
+				if ( ! isset( $logs[ $ip ] ) ) {
+					$logs[ $ip ] = [ 'ip' => $ip ];
+				}
 
-                $type = '';
-                if( 'auth_fail' === $row['type'] ) {
-                    $type = 'login';
-                } else if ( '404_error' === $row['type'] ) {
-                    $type = 'nf';
-                } else if ( 'ua_lockout' === $row['type'] ) {
-                    $type = 'ua';
-                }
+				$type = '';
+				switch ( $row['type'] ) {
+					case 'auth_fail':
+						$type = 'login';
+						break;
+					case '404_error':
+						$type = 'not_found';
+						break;
+					case 'ua_lockout':
+						$type = 'user_agent';
+						break;
+					default:
+						continue 2;
+				}
 
-                if ( empty( $type ) ) {
-                    continue;
-                }
+				$logs[ $ip ]['reason'][ $type ] = (int) $row['frequency'];
+			}
+		}
 
-                $logs[ $ip ]['reason'][ $type ] = $row['frequency'];
-                $logs[ $ip ][ 'country_code' ] = $row['country_iso_code'];
-            }
-        }
-
-        return array_values( $logs );
+		return array_values( $logs );
 	}
 }

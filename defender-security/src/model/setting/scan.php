@@ -159,10 +159,30 @@ class Scan extends Setting {
 		}
 	}
 
+	/**
+	 * @since 4.7.1 Implement Dynamic Scan Scheduling to avoid event spikes on MP.
+	 */
 	protected function before_load(): void {
+		// Get current day and time.
+		$date = new \DateTime( 'now', \wp_timezone() );
+		$result = explode( '--', $date->format( 'l--H--i' ) );
+		$day = strtolower( $result[0] );
+		$current_hours = (int) $result[1];
+		$current_mins = (int) $result[2];
+		// We have a 30 minute span, so XX:00-15 => XX:00, XX:16-45 => XX:30, XX:46-59 => (XX+1):00.
+		if ( $current_mins > 15 && $current_mins <= 45 ) {
+			$mins = '30';
+		} elseif ( $current_mins >= 0 && $current_mins < 16 ) {
+			$mins = '00';
+		} else {
+			++$current_hours;
+			$current_hours >= 24 ? '00' : $current_hours;
+			$mins = '00';
+		}
+
 		$this->frequency = 'weekly';
-		$this->day = 'sunday';
+		$this->day = $day;
 		$this->day_n = '1';
-		$this->time = '4:00';
+		$this->time = $current_hours . ':' . $mins;
 	}
 }

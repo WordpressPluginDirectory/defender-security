@@ -485,6 +485,7 @@ class ComposerStaticInitf0eb055c08a2deead8b913944120dc0a
         'WP_Defender\\Extra\\IP_Helper' => __DIR__ . '/../..' . '/src/extra/ip-helper.php',
         'WP_Defender\\Helper\\Analytics\\Scan' => __DIR__ . '/../..' . '/src/helper/analytics/scan.php',
         'WP_Defender\\Helper\\File' => __DIR__ . '/../..' . '/src/helper/file.php',
+        'WP_Defender\\Integrations\\Blocklist_Client' => __DIR__ . '/../..' . '/src/integrations/class-blocklist-client.php',
         'WP_Defender\\Integrations\\Buddypress' => __DIR__ . '/../..' . '/src/integrations/class-buddypress.php',
         'WP_Defender\\Integrations\\Dashboard_Whitelabel' => __DIR__ . '/../..' . '/src/integrations/class-dashboard-whitelabel.php',
         'WP_Defender\\Integrations\\MaxMind_Geolocation' => __DIR__ . '/../..' . '/src/integrations/class-maxmind-geolcation.php',

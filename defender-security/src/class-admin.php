@@ -53,14 +53,12 @@ class Admin {
 			// For submenu callout.
 			add_action( 'admin_head', [ $this, 'retarget_submenu_callout' ] );
 
-			$message = __( 'Upgrade For 80% Off!', 'defender-security' );
 			add_submenu_page(
 				'wp-defender',
-				$message,
-				'<strong id="wpdef_menu_callout" style="color: #FECF2F; font-weight: 700;">' . $message . '</strong>',
+				__( 'Upgrade For 80% Off!', 'defender-security' ),
+				__( 'Upgrade For 80% Off!', 'defender-security' ),
 				is_multisite() ? 'manage_network_options' : 'manage_options',
-				'wdf-upsell',
-				[ $this, 'menu_nope' ]
+				$this->get_link( 'upsell', 'defender_submenu_upsell' )
 			);
 		}
 		// Display IP detection notice.
@@ -73,23 +71,41 @@ class Admin {
 
 	/**
 	 * The method is a stub without content.
-	*/
+	 */
 	private function menu_nope(): void {}
 
 	public function retarget_submenu_callout(): void {
-		$href = $this->get_link( 'upsell', 'defender_submenu_upsell' );
-		echo "<script type='text/javascript'>
-jQuery(document).ready(function($) {
-	$('#wpdef_menu_callout').closest('a').attr('target', '_blank').attr('rel', 'noopener noreferrer').attr('href', '" . $href . "');
-});
-</script>";
+		?>
+		<style>
+			#toplevel_page_wp-defender > ul > li:last-child > a[href^="https://wpmudev.com/"],
+			#toplevel_page_wp-defender > ul > li:last-child > a[href^="https://wpmudev.com/"]:hover,
+			#toplevel_page_wp-defender > ul > li:last-child > a[href^="https://wpmudev.com/"]:active,
+			#toplevel_page_wp-defender > ul > li:last-child > a[href^="https://wpmudev.com/"]:focus {
+				background: #8D00B1;
+				color: #ffffff;
+				font-weight: 700;
+			}
+
+			#toplevel_page_wp-defender.wp-not-current-submenu > ul > li:last-child > a[href^="https://wpmudev.com/"],
+			#toplevel_page_wp-defender.wp-not-current-submenu > ul > li:last-child > a[href^="https://wpmudev.com/"]:hover,
+			#toplevel_page_wp-defender.wp-not-current-submenu > ul > li:last-child > a[href^="https://wpmudev.com/"]:active,
+			#toplevel_page_wp-defender.wp-not-current-submenu > ul > li:last-child > a[href^="https://wpmudev.com/"]:focus {
+				margin-left: -4px;
+			}
+		</style>
+		<script type='text/javascript'>
+			jQuery(function($) {
+                $('#toplevel_page_wp-defender > ul > li:last-child > a[href^="https://wpmudev.com/"]').attr("target", "_blank");
+            });
+		</script>
+		<?php
 	}
 
 	/**
 	 * Fired when the scan issue is fixed.
 	 *
 	 * @return void
-	*/
+	 */
 	public function after_scan_fix(): void {
 		\WP_Defender\Component\Rate::run_counter_of_fixed_scans();
 	}
@@ -186,7 +202,7 @@ jQuery(document).ready(function($) {
 				__( 'WPMU DEV', 'defender-security' )
 			);
 			$links[1] = sprintf(
-				/* translators: %s: Author URI. */
+			/* translators: %s: Author URI. */
 				__( 'By %s', 'defender-security' ),
 				$author_uri
 			);
@@ -299,22 +315,22 @@ jQuery(document).ready(function($) {
 				<p style="color: #72777C; line-height: 22px;">
 					<?php
 					/* translators: %s: Link. */
-						printf(
+					printf(
 						__( 'We have switched to using the CF-Connecting-IP HTTP header for IP detection, offering enhanced compatibility for users behind Cloudflare Proxy. If you wish to change this setting, you can do so from <a href="%s">here</a>.', 'defender-security' ),
 						esc_url( network_admin_url( 'admin.php?page=wdf-ip-lockout&view=settings#detect-ip-addresses' ) )
 					);
 					?>
 				</p>
 				<p>
-				<button type="button" class="button button-primary button-large defender_ip_detection_action_hide"
-					data-prop="defender_ip_detection_notice_success"><?php esc_html_e( 'Ok, I understand', 'defender-security' ); ?>
-				</button>
+					<button type="button" class="button button-primary button-large defender_ip_detection_action_hide"
+							data-prop="defender_ip_detection_notice_success"><?php esc_html_e( 'Ok, I understand', 'defender-security' ); ?>
+					</button>
 				</p>
 			<?php } elseif ( 'xff' === $is_show ) { ?>
 				<p style="color: #72777C; line-height: 22px;">
 					<?php
 					/* translators: %s: Link. */
-						printf(
+					printf(
 						__( 'Based on your server configuration, we recommend switching to the X-Forwarded-For method for accurate IP detection and to prevent firewall blocks. Easily modify your settings <a href="%s">here</a>.', 'defender-security' ),
 						esc_url( network_admin_url( 'admin.php?page=wdf-ip-lockout&view=settings#detect-ip-addresses' ) )
 					);
@@ -322,7 +338,7 @@ jQuery(document).ready(function($) {
 				</p>
 				<p>
 					<button type="button" class="button button-primary button-large" id="defender_ip_detection_action_switch"
-						data-prop="defender_ip_detection_notice_success"><?php esc_html_e( 'Switch to X-Forwarded-For', 'defender-security' ); ?></button>
+							data-prop="defender_ip_detection_notice_success"><?php esc_html_e( 'Switch to X-Forwarded-For', 'defender-security' ); ?></button>
 					<a href="#" class="defender_ip_detection_action_hide"
 						style="margin-left: 11px; line-height: 16px; text-decoration: none;"
 						data-prop="defender_ip_detection_notice_dismiss"><?php esc_html_e( 'Dismiss', 'defender-security' ); ?></a>
@@ -386,7 +402,7 @@ jQuery(document).ready(function($) {
 		if ( 'notice-for-cf' === $notice_type ) {
 			update_site_option( Firewall::IP_DETECTION_CF_DISMISS_SLUG, true );
 			wp_send_json_success();
-		} elseif( 'notice-for-xff' === $notice_type  ) {
+		} elseif ( 'notice-for-xff' === $notice_type ) {
 			update_site_option( Firewall::IP_DETECTION_XFF_DISMISS_SLUG, true );
 			wp_send_json_success();
 		} else {

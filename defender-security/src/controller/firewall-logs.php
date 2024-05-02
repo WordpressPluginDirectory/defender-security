@@ -16,6 +16,7 @@ use WP_Defender\Component\User_Agent;
 use WP_Defender\Component\IP\Global_IP;
 use WP_Defender\Component\Firewall_Logs as Firewall_Logs_Component;
 use WP_Defender\Behavior\WPMUDEV;
+use WP_Defender\Integrations\Blocklist_Client;
 
 class Firewall_Logs extends Controller {
 	use Formats;
@@ -30,11 +31,18 @@ class Firewall_Logs extends Controller {
 	 */
 	private $wpmudev;
 
-	public function __construct() {
+	/**
+	 * @var Blocklist_Client
+	 */
+	private $blocklist_client;
+
+	public function __construct( Blocklist_Client $blocklist_client ) {
 		$this->register_routes();
 		add_action( 'defender_enqueue_assets', [ &$this, 'enqueue_assets' ] );
 
 		$this->wpmudev = wd_di()->get( WPMUDEV::class );
+
+		$this->blocklist_client = $blocklist_client;
 
 		/**
 		 * Send Firewall logs to Blocklist API.
@@ -67,7 +75,7 @@ class Firewall_Logs extends Controller {
 		$ids = $data['ids'];
 		$ips = [];
 		$logs = [];
-		if ( is_array($ids) || $ids instanceof \Countable ? count( $ids ) : 0 ) {
+		if ( is_array( $ids ) || $ids instanceof \Countable ? count( $ids ) : 0 ) {
 			foreach ( $ids as $id ) {
 				$model = Lockout_Log::find_by_id( $id );
 				if ( is_object( $model ) ) {
@@ -235,7 +243,7 @@ class Firewall_Logs extends Controller {
 	 * @throws \Exception
 	 * @defender_route
 	 */
-	public function toggle_ip_to_list( Request $request ):Response {
+	public function toggle_ip_to_list( Request $request ): Response {
 		$data = $request->get_data(
 			[
 				'ip' => [
@@ -606,7 +614,7 @@ class Firewall_Logs extends Controller {
 		$count = Lockout_Log::count( $filters['from'], $filters['to'], $filters['type'], $filters['ip'], $conditions );
 		$logs  = Lockout_Log::get_logs_and_format( $filters, $paged, $order_by, $order, $per_page );
 
-		if( -1 === (int) $per_page ) {
+		if ( -1 === (int) $per_page ) {
 			$per_page = Lockout_Log::INFINITE_SCROLL_SIZE;
 		}
 
@@ -674,7 +682,7 @@ class Firewall_Logs extends Controller {
 
 		$from = time() - ( 7 * DAY_IN_SECONDS );
 
-		$last_run_time = get_site_option('wpdef_ip_blocklist_sync_last_run_time');
+		$last_run_time = get_site_option( 'wpdef_ip_blocklist_sync_last_run_time' );
 		if ( $last_run_time ) {
 			$time_difference = time() - $last_run_time;
 
@@ -691,24 +699,19 @@ class Firewall_Logs extends Controller {
 			return;
 		}
 
-		$this->attach_behavior( WPMUDEV::class, WPMUDEV::class );
-
 		$offset = 0;
 		$length = 1000;
-		$domain = network_site_url();
-		while( $logs_chunk = array_slice( $logs, $offset, $length ) ) {
-			$args = [
-				'domain' => $domain,
+		while ( $logs_chunk = array_slice( $logs, $offset, $length ) ) {
+			$data = [
 				'logs' => $logs_chunk,
 			];
-			$data = $this->make_wpmu_request(
-				WPMUDEV::API_IP_BLOCKLIST_SUBMIT_LOGS,
-				$args,
-				[ 'method' => 'POST' ]
-			);
 
-			if ( is_wp_error( $data ) ) {
-				$this->log( sprintf( 'IP Blocklist API Error: %s', $data->get_error_message() ), Firewall::FIREWALL_LOG );
+			$response = $this->blocklist_client->send_reports( $data );
+
+			if ( is_wp_error( $response ) ) {
+				$this->log( sprintf( 'IP Blocklist API Error: %s', $response->get_error_message() ), Firewall::FIREWALL_LOG );
+			} elseif ( isset( $response['status'] ) && 'error' === $response['status'] ) {
+				$this->log( sprintf( 'IP Blocklist API Error: %s', $response['message'] ), Firewall::FIREWALL_LOG );
 			}
 
 			$offset += $length;

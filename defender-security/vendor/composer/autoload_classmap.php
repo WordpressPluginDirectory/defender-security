@@ -180,6 +180,7 @@ return array(
     'WP_Defender\\Extra\\IP_Helper' => $baseDir . '/src/extra/ip-helper.php',
     'WP_Defender\\Helper\\Analytics\\Scan' => $baseDir . '/src/helper/analytics/scan.php',
     'WP_Defender\\Helper\\File' => $baseDir . '/src/helper/file.php',
+    'WP_Defender\\Integrations\\Blocklist_Client' => $baseDir . '/src/integrations/class-blocklist-client.php',
     'WP_Defender\\Integrations\\Buddypress' => $baseDir . '/src/integrations/class-buddypress.php',
     'WP_Defender\\Integrations\\Dashboard_Whitelabel' => $baseDir . '/src/integrations/class-dashboard-whitelabel.php',
     'WP_Defender\\Integrations\\MaxMind_Geolocation' => $baseDir . '/src/integrations/class-maxmind-geolcation.php',
