@@ -305,22 +305,30 @@ class Mapper extends Component {
 	public function save( Model &$model ) {
 		global $wpdb;
 		$data = $model->export();
+		$data_type = [];
+		$exported_type = $model->export_type();
 		unset( $data['table'] );
 		unset( $data['safe'] );
 		foreach ( $data as $key => &$val ) {// phpcs:ignore
 			if ( is_array( $val ) ) {
 				$val = json_encode( $val );
+			} elseif ( is_bool( $val ) ) {
+				$val = $val ? 1 : 0;
 			}
+
+			$data_type[] = $exported_type[ $key ] ?? '%s';
 		}
 		$table = self::table( $model );
 		if ( $model->id ) {
 			$ret = $wpdb->update(
 				$table,
 				$data,
-				[ 'id' => $model->id ]
+				[ 'id' => $model->id ],
+				$data_type,
+				[ '%d' ]
 			);
 		} else {
-			$ret = $wpdb->insert( $table, $data );
+			$ret = $wpdb->insert( $table, $data, $data_type );
 			// Bind this for later use.
 			$model->id = $wpdb->insert_id;
 		}

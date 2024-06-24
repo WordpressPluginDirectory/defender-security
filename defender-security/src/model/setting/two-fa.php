@@ -136,7 +136,8 @@ class Two_Fa extends \Calotes\Model\Setting {
 			'email_sender' => 'admin',
 			'email_body' => 'Hi {{display_name}},
 
-Your temporary password is {{passcode}}. To finish logging in, copy and paste the temporary password into the Password field on the login screen.',
+Your temporary password is {{passcode}}
+To complete your login, copy and paste the temporary password into the Password field on the login screen.',
 			'app_title' => '',
 			'message' => __( 'You are required to setup two-factor authentication to use this site.', 'defender-security' ),
 		];

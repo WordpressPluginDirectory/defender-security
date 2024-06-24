@@ -197,4 +197,13 @@ class Mask_Login extends Component {
 			return wp_login_url();
 		}
 	}
+
+	/**
+	 * Is user hit the recovery link?
+	 *
+	 * @return bool
+	 */
+	public function is_recovery_mode(): bool {
+		return isset( $_GET['action'] ) && \WP_Recovery_Mode_Link_Service::LOGIN_ACTION_ENTER === $_GET['action'];
+	}
 }

@@ -598,12 +598,11 @@ SQL;
 	public function includes(): void {
 		// Initialize modules.
 		add_action(
-			'init',
-			function() {
+			'setup_theme',
+			function () {
 				add_filter( 'cron_schedules', [ $this, 'cron_schedules' ] );
 				$this->init_modules();
-			},
-			8
+			}
 		);
 		// Register routes.
 		add_action(

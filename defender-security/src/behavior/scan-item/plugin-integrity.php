@@ -7,13 +7,14 @@ use WP_Defender\Component\Error_Code;
 use WP_Defender\Component\Quarantine as Quarantine_Component;
 use WP_Defender\Model\Scan;
 use WP_Defender\Model\Scan_Item;
+use WP_Defender\Traits\File_Operations;
 use WP_Defender\Traits\Formats;
 use WP_Defender\Traits\IO;
 use WP_Defender\Traits\Plugin;
 use WP_Error;
 
 class Plugin_Integrity extends Behavior {
-	use Formats, IO, Plugin;
+	use Formats, IO, Plugin, File_Operations;
 
 	/**
 	 * Return general data so we can output on frontend.
@@ -142,26 +143,14 @@ class Plugin_Integrity extends Behavior {
 	public function delete() {
 		$data = $this->owner->raw_data;
 		$scan = Scan::get_last();
-		if ( 'unversion' === $data['type'] && unlink( $data['file'] ) ) {
-			$scan->remove_issue( $this->owner->id );
-			$this->log( sprintf( '%s is deleted', $data['file'] ), 'scan.log' );
-
-			do_action( 'wpdef_fixed_scan_issue', 'plugin_integrity', 'delete' );
-
-			return [ 'message' => __( 'This item has been permanently removed.', 'defender-security' ) ];
-		} elseif ( 'dir' === $data['type'] && $this->delete_dir( $data['file'] ) ) {
-			$scan->remove_issue( $this->owner->id );
-			$this->log( sprintf( '%s is deleted', $data['file'] ), 'scan.log' );
-
-			do_action( 'wpdef_fixed_scan_issue', 'plugin_integrity', 'delete' );
-
-			return [ 'message' => __( 'This item has been permanently removed.', 'defender-security' ) ];
+		$file = $data['file'];
+		if ( 'unversion' === $data['type'] && $this->delete_infected_file( $file ) ) {
+			return $this->after_delete( $file, $scan, 'plugin_integrity' );
+		} elseif ( 'dir' === $data['type'] && $this->delete_dir( $file ) ) {
+			return $this->after_delete( $file, $scan, 'plugin_integrity' );
 		}
 
-		return new WP_Error(
-			Error_Code::NOT_WRITEABLE,
-			__( 'Defender doesn\'t have enough permission to remove this file.', 'defender-security' )
-		);
+		return $this->get_permission_error( $file );
 	}
 
 	/**

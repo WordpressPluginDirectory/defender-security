@@ -37,6 +37,7 @@ function defender_init_routes() {
 			'update_settings' => 'save_settings',
 			'download_geo_db' => 'download_geo_db',
 			'import_ips' => 'import_ips',
+			'get_listed_ips' => 'get_listed_ips',
 			'query_locked_ips' => 'query_locked_ips',
 			'ip_action' => 'ip_action',
 			'export_ips' => 'export_ips',

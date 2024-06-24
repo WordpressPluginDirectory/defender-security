@@ -44,9 +44,13 @@ class Scan extends Component {
 	 */
 	private $malware_scan;
 
+	/**
+	 * @var Gather_Fact|null
+	 */
+	private ?Gather_Fact $gather_fact;
+
 	public function __construct() {
 		$this->attach_behavior( WPMUDEV::class, WPMUDEV::class );
-		$this->attach_behavior( Gather_Fact::class, Gather_Fact::class );
 		$this->attach_behavior( Core_Integrity::class, Core_Integrity::class );
 		$this->attach_behavior( Plugin_Integrity::class, Plugin_Integrity::class );
 	}
@@ -58,7 +62,7 @@ class Scan extends Component {
 		$this->reindex_ignored_issues( $model );
 		$this->clean_up();
 
-		if ( wd_di()->get( \WP_Defender\Admin::class )->is_wp_org_version()  ) {
+		if ( wd_di()->get( \WP_Defender\Admin::class )->is_wp_org_version() ) {
 			\WP_Defender\Component\Rate::run_counter_of_completed_scans();
 		}
 	}
@@ -197,8 +201,15 @@ class Scan extends Component {
 	 */
 	private function task_handler( $task ) {
 		switch ( $task ) {
+			case 'gather_info':
+				if ( empty( $this->gather_fact ) && class_exists( Gather_Fact::class ) ) {
+					$this->set_gather_fact(
+						wd_di()->make( Gather_Fact::class, [ 'scan' => $this->scan ] )
+					);
+				}
+				return $this->gather_info( $this->gather_fact );
 			case 'vuln_check':
-				if ( class_exists( Known_Vulnerability::class ) ) {
+				if ( empty( $this->known_vulnerability ) && class_exists( Known_Vulnerability::class ) ) {
 					$this->set_known_vulnerability(
 						wd_di()->make( Known_Vulnerability::class, [ 'scan' => $this->scan ] )
 					);
@@ -587,9 +598,9 @@ class Scan extends Component {
 
 		$table_count = (int) $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT count(*)
+				'SELECT count(*)
 				 FROM information_schema.tables
-				 WHERE table_schema = %s AND table_name IN (%s, %s);",
+				 WHERE table_schema = %s AND table_name IN (%s, %s);',
 				$wpdb->dbname,
 				$table_actions,
 				$table_logs
@@ -622,5 +633,30 @@ class Scan extends Component {
 		}
 
 		return [ 'success' => __( 'Malware scan logs are cleared', 'defender-security' ) ];
+	}
+
+	/**
+	 * Set the Gather_Fact object.
+	 *
+	 * @param Gather_Fact $gather_fact The Gather_Fact object to set.
+	 */
+	public function set_gather_fact( Gather_Fact $gather_fact ) {
+		if ( class_exists( Gather_Fact::class ) ) {
+			$this->gather_fact = $gather_fact;
+		}
+	}
+
+	/**
+	 * Gather info from the Gather_Fact class if method exists, otherwise return true.
+	 *
+	 * @param Gather_Fact $gather_fact
+	 *
+	 * @return bool
+	 */
+	public function gather_info( Gather_Fact $gather_fact ): bool {
+		if ( method_exists( $gather_fact, 'gather_info' ) ) {
+			return $gather_fact->gather_info();
+		}
+		return true;
 	}
 }

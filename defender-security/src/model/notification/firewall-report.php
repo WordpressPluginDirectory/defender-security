@@ -167,6 +167,6 @@ class Firewall_Report extends \WP_Defender\Model\Notification {
 	 * @since 3.1.0
 	 */
 	public function type_casting( $configs ): array {
-		return $configs;
+		return is_array( $configs ) ? $configs : array();
 	}
 }

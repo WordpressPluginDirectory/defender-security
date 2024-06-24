@@ -203,7 +203,6 @@
 				targetEvent = false;
 
 			if ( form.length ) {
-				storeEvents( form );
 				form.find( 'button, input:submit' ).each( function() {
 					storeEvents( $( this ) );
 				} );

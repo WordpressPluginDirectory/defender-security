@@ -105,7 +105,7 @@ class Mask_Login extends \Calotes\Model\Setting {
 			$domain = site_url();
 		}
 
-		return $domain . '/' . ltrim( $this->mask_url, '/' );
+		return $domain . '/' . ltrim( $this->get_mask_url(), '/' );
 	}
 
 	/**
@@ -164,11 +164,9 @@ class Mask_Login extends \Calotes\Model\Setting {
 			$this->mask_url = ltrim( $this->mask_url, '/\\' );
 			if ( in_array( $this->mask_url, $forbidden, true ) ) {
 				$this->errors[] = __( 'The slug you have provided cannot be used for masking your login area. Please try a new one.', 'defender-security' );
-			}
-			elseif ( $this->is_mask_url_page_post_exists() ) {
+			} elseif ( $this->is_mask_url_page_post_exists() ) {
 				$this->errors[] = __( 'A page already exists at this URL. Please enter a unique URL for your login area.', 'defender-security' );
-			}
-			elseif ( $this->mask_url === $this->redirect_traffic_url ) {
+			} elseif ( $this->mask_url === $this->redirect_traffic_url ) {
 				$this->errors[] = __( 'Redirect URL must different from Login URL', 'defender-security' );
 			}
 		}
@@ -200,7 +198,13 @@ class Mask_Login extends \Calotes\Model\Setting {
 		if ( is_multisite() ) {
 			$offset = 0;
 			$limit = 100;
-			while ( $blog_ids = get_sites( ['fields' => 'ids', 'number' => $limit, 'offset' => $offset] ) ) {
+			while ( $blog_ids = get_sites(
+				[
+					'fields' => 'ids',
+					'number' => $limit,
+					'offset' => $offset,
+				]
+			) ) {
 				if ( is_array( $blog_ids ) ) {
 					foreach ( $blog_ids as $blog_id ) {
 						switch_to_blog( $blog_id );
@@ -228,5 +232,29 @@ class Mask_Login extends \Calotes\Model\Setting {
 	 */
 	public static function get_module_name(): string {
 		return __( 'Mask Login Area', 'defender-security' );
+	}
+
+	/**
+	 * Check if the permalink structure is empty.
+	 *
+	 * @return bool
+	 */
+	public function is_permalink_structure_empty(): bool {
+		$permalink_structure = get_option( 'permalink_structure' );
+
+		return empty( $permalink_structure );
+	}
+
+	/**
+	 * Retrieves the mask URL based on the permalink structure option.
+	 *
+	 * @return string The mask URL.
+	 */
+	public function get_mask_url(): string {
+		if ( $this->is_permalink_structure_empty() ) {
+			return '?' . $this->mask_url;
+		} else {
+			return $this->mask_url;
+		}
 	}
 }

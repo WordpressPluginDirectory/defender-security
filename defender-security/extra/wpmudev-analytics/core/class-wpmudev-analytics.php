@@ -12,7 +12,7 @@ if ( class_exists( 'WPMUDEV_Analytics' ) ) {
  * @method registerAll( array $properties )
  */
 class WPMUDEV_Analytics {
-	const DATA_TRANSIENT = 'wpmudev_analytics_%s_data';
+	const DATA_OPTION_ID = 'wpmudev_analytics_%s_data';
 	const EXCEEDED_EVENT_NAME = 'exceeded_daily_limit';
 
 	private $plugin_slug;
@@ -136,19 +136,19 @@ class WPMUDEV_Analytics {
 	/**
 	 * @return string
 	 */
-	private function get_transient_key(): string {
-		return sprintf( self::DATA_TRANSIENT, $this->plugin_slug );
+	private function get_option_key(): string {
+		return sprintf( self::DATA_OPTION_ID, $this->plugin_slug );
 	}
 
 	private function get_data() {
-		return get_transient( $this->get_transient_key() );
+		return get_option( $this->get_option_key() );
 	}
 
 	private function set_data( $data ) {
 		if ( empty( $data ) ) {
-			delete_transient( $this->get_transient_key() );
+			delete_option( $this->get_option_key() );
 		} else {
-			set_transient( $this->get_transient_key(), $data );
+			update_option( $this->get_option_key(), $data );
 		}
 	}
 }

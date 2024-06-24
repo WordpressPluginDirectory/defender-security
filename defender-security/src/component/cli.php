@@ -543,8 +543,8 @@ class Cli {
 	 * syntax: wp defender firewall <command> <args_1> <args_2>
 	 * <command> clear|unblock|list|activate|deactivate
 	 *
-	 * <args_1> Allowed values are: ip, user_agent and files
-	 * <args_2> Allowed values are: allowlist, blocklist, country_allowlist, country_blocklist and lockout
+	 * <args_1> Allowed values are: ip, user_agent, files and maxmind
+	 * <args_2> Allowed values are: allowlist, blocklist, country_allowlist, country_blocklist, lockout and license_key
 	 *
 	 * example: wp defender firewall clear ip allowlist
 	 * example: wp defender firewall unblock ip lockout --ips=127.0.0.1,236.211.38.221
@@ -633,8 +633,8 @@ class Cli {
 	 * @param string $field
 	 */
 	private function clear_firewall( $type, $field ) {
-		$type_default = [ 'ip', 'files', 'user_agent' ];
-		$field_default = [ 'blocklist', 'allowlist', 'country_allowlist', 'country_blocklist' ];
+		$type_default = [ 'ip', 'files', 'user_agent', 'maxmind' ];
+		$field_default = [ 'blocklist', 'allowlist', 'country_allowlist', 'country_blocklist', 'license_key' ];
 
 		if ( ! in_array( $type, $type_default, true ) ) {
 			\WP_CLI::log( sprintf( 'Invalid option %s. See below...', $type ) );
@@ -678,6 +678,18 @@ class Cli {
 			$data[ $original_field ] = '';
 			$model->import( $data );
 			$model->save();
+		} elseif ( 'maxmind' === $type ) {
+			try {
+				$model = wd_di()->get( \WP_Defender\Model\Setting\Blacklist_Lockout::class);
+				if ( ! is_null( $model->geodb_path ) && is_file( $model->geodb_path ) ) {
+					unlink( $model->geodb_path );
+				}
+				$model->maxmind_license_key = '';
+				$model->geodb_path = null;
+				$model->save();
+			} catch (\Throwable $th) {
+				\WP_CLI::log( $th->getMessage() );
+			}
 		}
 
 		\WP_CLI::log( sprintf( 'Firewall %s %s is cleared.', str_replace( '_', ' ', $field ), $type ) );
@@ -918,7 +930,7 @@ class Cli {
 			case 'delete':
 				$rotation_logger = wd_di()->get( \WP_Defender\Component\Logger\Rotation_Logger::class );
 				$rotation_logger->purge_old_log();
-				\WP_CLI::log( 'Old logs are deleted.' );
+				\WP_CLI::log( 'Logs older than a week have been deleted.' );
 				break;
 			default:
 				\WP_CLI::error( sprintf( 'Unknown command %s', $command ) );

@@ -1,28 +1,49 @@
 <?php
+/**
+ * The advanced tools class.
+ *
+ * @package WP_Defender\Controller
+ */
 
 namespace WP_Defender\Controller;
 
 use WP_Defender\Event;
 use WP_Defender\Integrations\MaxMind_Geolocation;
+use WP_Filesystem_Base;
 
 /**
  * Since advanced tools will have many submodules, this just using for render.
  *
  * Class Advanced_Tools
- * @package WP_Defender\Controller
  */
 class Advanced_Tools extends Event {
+	/**
+	 * Menu slug name.
+	 *
+	 * @var string
+	 */
 	public $slug = 'wdf-advanced-tools';
 
+	/**
+	 * Constructor method
+	 */
 	public function __construct() {
-		$this->register_page( esc_html__( 'Tools', 'defender-security' ), $this->slug, [
-			&$this,
-			'main_view'
-		], $this->parent_slug );
+		$this->register_page(
+			esc_html__( 'Tools', 'defender-security' ),
+			$this->slug,
+			array(
+				&$this,
+				'main_view',
+			),
+			$this->parent_slug
+		);
 		$this->register_routes();
-		add_action( 'defender_enqueue_assets', [ &$this, 'enqueue_assets' ] );
+		add_action( 'defender_enqueue_assets', array( &$this, 'enqueue_assets' ) );
 	}
 
+	/**
+	 * Enqueue assets.
+	 */
 	public function enqueue_assets() {
 		if ( ! $this->is_page_active() ) {
 			return;
@@ -95,28 +116,109 @@ class Advanced_Tools extends Event {
 		foreach ( $arr_deleted_files as $deleted_file ) {
 			$wp_filesystem->delete( $deleted_file );
 		}
+
+		$this->handle_log_file_deletion();
 	}
 
 	/**
+	 * Handle log file deletion.
+	 *
+	 * @since 4.7.2
+	 * @return void
+	 */
+	public function handle_log_file_deletion(): void {
+		if ( is_multisite() ) {
+			global $wpdb;
+
+			$offset = 0;
+			$limit  = 100;
+			while ( $blogs = $wpdb->get_results( // phpcs:ignore
+				$wpdb->prepare(
+					"SELECT blog_id FROM {$wpdb->blogs} LIMIT %d, %d",
+					$offset,
+					$limit
+				),
+				ARRAY_A
+			) ) {
+				if ( ! empty( $blogs ) && is_array( $blogs ) ) {
+					foreach ( $blogs as $blog ) {
+						switch_to_blog( $blog['blog_id'] );
+
+						$this->delete_log_files();
+
+						restore_current_blog();
+					}
+				}
+				$offset += $limit;
+			}
+		} else {
+			$this->delete_log_files();
+		}
+	}
+
+	/**
+	 * Delete log files.
+	 *
+	 * @since 4.7.2
+	 * @return void
+	 */
+	private function delete_log_files(): void {
+		global $wp_filesystem;
+
+		if ( ! $wp_filesystem instanceof WP_Filesystem_Base ) {
+			if ( ! function_exists( 'WP_Filesystem' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/file.php';
+			}
+
+			WP_Filesystem();
+		}
+
+		$upload_dir  = wp_upload_dir();
+		$upload_path = $upload_dir['basedir'] . DIRECTORY_SEPARATOR . 'wp-defender';
+
+		if ( is_dir( $upload_path ) ) {
+			$files = glob( $upload_path . '/*.log' );
+
+			foreach ( $files as $file ) {
+				if ( $wp_filesystem->is_file( $file ) ) {
+					$wp_filesystem->delete( $file );
+				}
+			}
+		}
+	}
+
+	/**
+	 * Get data for frontend
+	 *
 	 * @return array
 	 */
 	public function data_frontend(): array {
-		return [
-			'mask_login' => wd_di()->get( Mask_Login::class )->data_frontend(),
+		return array(
+			'mask_login'       => wd_di()->get( Mask_Login::class )->data_frontend(),
 			'security_headers' => wd_di()->get( Security_Headers::class )->data_frontend(),
-			'pwned_passwords' => wd_di()->get( Password_Protection::class )->data_frontend(),
-			'recaptcha' => wd_di()->get( Recaptcha::class )->data_frontend(),
-		];
+			'pwned_passwords'  => wd_di()->get( Password_Protection::class )->data_frontend(),
+			'recaptcha'        => wd_di()->get( Recaptcha::class )->data_frontend(),
+		);
 	}
 
+	/**
+	 * Export to array
+	 */
 	public function to_array() {}
 
+	/**
+	 * Import data
+	 *
+	 * @param array $data The data to import.
+	 */
 	public function import_data( $data ) {}
 
 	/**
+	 * Export strings
+	 *
 	 * @return array
 	 */
 	public function export_strings() {
-		return [];
+		return array();
 	}
 }

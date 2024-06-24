@@ -91,7 +91,7 @@ class Audit_Report extends \WP_Defender\Model\Notification {
 	private function send_to_user( $name, $email, $data, $list, $service ) {
 		$site_url = network_site_url();
 		$subject = sprintf(
-		/* translators: %s: Site URL. */
+			/* translators: %s: Site URL. */
 			__( "Here's what's been happening at %s", 'defender-security' ),
 			$site_url
 		);
@@ -103,7 +103,7 @@ class Audit_Report extends \WP_Defender\Model\Notification {
 			// Need for activated Mask Login feature.
 			$logs_url = apply_filters( 'report_email_logs_link', $logs_url, $email );
 			$header = sprintf(
-			/* translators: 1. Plugin label. 2. Site URL. */
+				/* translators: 1. Plugin label. 2. Site URL. */
 				__( 'Audit Update From %1$s! %2$s', 'defender-security' ),
 				$plugin_label,
 				$site_url
@@ -172,6 +172,6 @@ class Audit_Report extends \WP_Defender\Model\Notification {
 	 * @since 3.1.0
 	 */
 	public function type_casting( $configs ): array {
-		return $configs;
+		return is_array( $configs ) ? $configs : array();
 	}
 }

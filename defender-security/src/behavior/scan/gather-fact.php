@@ -2,10 +2,13 @@
 
 namespace WP_Defender\Behavior\Scan;
 
+use Calotes\Base\Component;
 use Calotes\Base\File;
-use Calotes\Component\Behavior;
-use WP_Defender\Model\Setting\Scan;
+use WP_Defender\Behavior\WPMUDEV;
 use WP_Defender\Component\Timer;
+use WP_Defender\Model\Scan;
+use WP_Defender\Model\Setting\Scan as Scan_Settings;
+use WP_Defender\Traits\IO;
 
 /**
  * We will gather core files & content files, for using in core integrity.
@@ -13,10 +16,31 @@ use WP_Defender\Component\Timer;
  * Class Gather_Fact
  * @package WP_Defender\Behavior\Scan
  */
-class Gather_Fact extends Behavior {
-	use \WP_Defender\Traits\IO;
+class Gather_Fact extends Component {
+	use IO;
 
 	public const CACHE_CORE = 'wdfcore', CACHE_CONTENT = 'wdfcontent';
+
+	/**
+	 * @var Scan|null
+	 */
+	private ?Scan $scan;
+
+	/**
+	 * @var WPMUDEV|null
+	 */
+	private ?WPMUDEV $wpmudev;
+
+	/**
+	 * @var Scan_Settings|null
+	 */
+	private ?Scan_Settings $settings;
+
+	public function __construct( WPMUDEV $wpmudev, Scan $scan, Scan_Settings $scan_settings ) {
+		$this->wpmudev  = $wpmudev;
+		$this->scan     = $scan;
+		$this->settings = $scan_settings;
+	}
 
 	/**
 	 * Gather core files & content files.
@@ -24,12 +48,11 @@ class Gather_Fact extends Behavior {
 	 * @return bool
 	 */
 	public function gather_info(): bool {
-		$timer = new Timer();
-		$model = $this->owner->scan;
+		$timer       = new Timer();
+		$model       = $this->scan;
 		$need_to_run = empty( $model->task_checkpoint ) ? 'get_core_files' : 'get_content_files';
 		if ( 'get_core_files' === $need_to_run ) {
-			$settings = new Scan();
-			if ( $settings->integrity_check && $settings->check_core ) {
+			if ( $this->settings->integrity_check && $this->settings->check_core ) {
 				$this->get_core_files();
 			}
 			$model->calculate_percent( 50, 1 );
@@ -115,7 +138,7 @@ class Gather_Fact extends Behavior {
 			[],
 			true,
 			true,
-			$this->owner->settings->filesize
+			$this->settings->filesize
 		);
 
 		$files = $content->get_dir_tree();

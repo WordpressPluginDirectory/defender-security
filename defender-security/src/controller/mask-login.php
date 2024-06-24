@@ -62,68 +62,62 @@ class Mask_Login extends Event {
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
 			$is_jetpack_sso = $auth_component->is_jetpack_sso();
 			$is_tml = $auth_component->is_tml();
-			if ( ! $is_jetpack_sso && ! $is_tml ) {
-				// Never catch if from cli.
-				if ( ! defender_is_wp_cli() ) {
-					add_action( 'init', [ &$this, 'before_mask_login_handle' ], 99 );
-				}
-				// Monitor wp-admin, wp-login.php.
-				add_action( 'init', [ &$this, 'handle_login_request' ], 99 );
-				add_filter( 'wp_redirect', [ &$this, 'filter_wp_redirect' ], 10 );
-				// Filter site_url & network_site_url so people won't get block screen.
-				add_filter( 'site_url', [ &$this, 'filter_site_url' ], 100, 2 );
-				add_filter( 'network_site_url', [ &$this, 'filter_site_url' ], 100, 2 );
-				// If this is enabled, then we should filter all the email links.
-				add_filter( 'wp_mail', [ &$this, 'replace_login_url_in_email' ], 10 );
-				// For prevent admin redirect.
-				remove_action( 'template_redirect', 'wp_redirect_admin_locations' );
-				// If Pro site is activated and user email is not defined, we need to update the email to match the new login URL.
-				add_filter( 'update_welcome_email', [ &$this, 'update_welcome_email_prosite_case' ], 10, 6 );
-				// Change password link for new user.
-				add_filter( 'wp_new_user_notification_email', [ &$this, 'change_new_user_notification_email' ], 10, 3 );
-				add_filter( 'lostpassword_redirect', [ &$this, 'change_lostpassword_redirect' ], 10 );
-				// Log links in email.
-				add_filter( 'report_email_logs_link', [ &$this, 'update_report_logs_link' ], 10, 2 );
-				if ( class_exists( 'bbPress' ) ) {
-					add_filter( 'bbp_redirect_login', [ &$this, 'make_sure_wpadmin_after_login' ], 10, 3 );
-				}
-
-				if ( 'flywheel' === \WP_Defender\Component\Security_Tweaks\Servers\Server::get_current_server() ) {
-					if ( ! is_user_logged_in() ) {
-						add_action( 'login_form_rp', [ $this, 'handle_password_reset' ] );
-						add_action( 'login_form_resetpass', [ $this, 'handle_password_reset' ] );
-					}
-					add_filter( 'retrieve_password_message', [ &$this, 'flywheel_change_password_message' ], 10, 4 );
-				} else {
-					// Change password link for exist user.
-					add_filter( 'retrieve_password_message', [ &$this, 'change_password_message' ], 10, 4 );
-				}
-
-				global $pagenow;
-				if ( is_network_admin() && 'sites.php' === $pagenow ) {
-					// Add 4th parameter $scheme when the plugin will support WP at least v5.8.
-					add_filter( 'admin_url', [ $this, 'change_subsites_admin_url' ], 10, 3 );
-				}
-
-				if ( is_admin() && 'my-sites.php' === $pagenow ) {
-					add_filter( 'myblogs_blog_actions', [ $this, 'update_myblogs_blog_actions' ], 10, 2 );
-				}
-
-				if ( is_multisite() ) {
-					add_action( 'admin_bar_menu', [ $this, 'update_admin_bar_menu' ], 100 );
-				}
-
-				if ( $this->service->is_set_locale( $this->model->mask_url ) ) {
-					add_action( 'init', [ $this, 'set_locale' ] );
-				}
-			} else {
+			if ( $is_jetpack_sso || $is_tml ) {
 				if ( $is_jetpack_sso ) {
 					$this->compatibility_notices[] = __( "We've detected a conflict with Jetpack's Wordpress.com Log In feature. Please disable it and return to this page to continue setup.", 'defender-security' );
 				}
 				if ( $is_tml ) {
 					$this->compatibility_notices[] = __( "We've detected a conflict with Theme my login. Please disable it and return to this page to continue setup.", 'defender-security' );
 				}
+				return;
 			}
+			// Monitor wp-admin, wp-login.php.
+			add_filter( 'wp_redirect', [ &$this, 'filter_wp_redirect' ], 10 );
+			// Filter site_url & network_site_url so people won't get block screen.
+			add_filter( 'site_url', [ &$this, 'filter_site_url' ], 100 );
+			add_filter( 'network_site_url', [ &$this, 'filter_site_url' ], 100 );
+			// For prevent admin redirect.
+			remove_action( 'template_redirect', 'wp_redirect_admin_locations' );
+			// If Pro site is activated and user email is not defined, we need to update the email to match the new login URL.
+			add_filter( 'update_welcome_email', [ &$this, 'update_welcome_email_prosite_case' ], 10, 6 );
+			add_filter( 'lostpassword_redirect', [ &$this, 'change_lostpassword_redirect' ], 10 );
+			// Log links in email.
+			add_filter( 'report_email_logs_link', [ &$this, 'update_report_logs_link' ], 10, 2 );
+			if ( class_exists( 'bbPress' ) ) {
+				add_filter( 'bbp_redirect_login', [ &$this, 'make_sure_wpadmin_after_login' ], 10, 3 );
+			}
+
+			if ( 'flywheel' === \WP_Defender\Component\Security_Tweaks\Servers\Server::get_current_server() ) {
+				if ( ! is_user_logged_in() ) {
+					add_action( 'login_form_rp', [ $this, 'handle_password_reset' ] );
+					add_action( 'login_form_resetpass', [ $this, 'handle_password_reset' ] );
+				}
+				add_filter( 'retrieve_password_message', [ &$this, 'flywheel_change_password_message' ], 10, 4 );
+			}
+
+			global $pagenow;
+			if ( is_network_admin() && 'sites.php' === $pagenow ) {
+				// Add 4th parameter $scheme when the plugin will support WP at least v5.8.
+				add_filter( 'admin_url', [ $this, 'change_subsites_admin_url' ], 10, 3 );
+			}
+
+			if ( is_admin() && 'my-sites.php' === $pagenow ) {
+				add_filter( 'myblogs_blog_actions', [ $this, 'update_myblogs_blog_actions' ], 10, 2 );
+			}
+
+			if ( is_multisite() ) {
+				add_action( 'admin_bar_menu', [ $this, 'update_admin_bar_menu' ], 100 );
+			}
+
+			if ( $this->service->is_set_locale( $this->model->mask_url ) ) {
+				add_action( 'init', [ $this, 'set_locale' ] );
+			}
+			// Never catch if from cli.
+			if ( ! defender_is_wp_cli() ) {
+				$this->before_mask_login_handle();
+			}
+
+			add_action( 'init', [ &$this, 'handle_login_request' ], 99 );
 		}
 	}
 
@@ -145,48 +139,16 @@ class Mask_Login extends Event {
 	}
 
 	/**
-	 * We need to filter emails and replace the normal login URL with masked one.
-	 *
-	 * @param array $attrs
-	 *
-	 * @return array
-	 */
-	public function replace_login_url_in_email( array $attrs ): array {
-		if ( ! is_array( $attrs ) || ! isset( $attrs['message'] ) ) {
-			return $attrs;
-		}
-
-		$message = $attrs['message'];
-		$site_url = str_replace( '/', '\/', HTTP::strips_protocol( site_url() ) );
-		$pattern = '/https?:\/\/' . $site_url . '\/wp-login\.php?[^\s]+/';
-
-		if ( preg_match_all( $pattern, $message, $matches ) ) {
-			foreach ( $matches as $match ) {
-				foreach ( $match as $url ) {
-					$query = wp_parse_url( $url, PHP_URL_QUERY );
-					$query = $query ?? '';
-					parse_str( $query, $queries );
-					if ( is_array( $queries ) && count( $queries ) ) {
-						$new_url = add_query_arg( $queries, $this->get_model()->get_new_login_url() );
-					} else {
-						$new_url = $this->get_model()->get_new_login_url();
-					}
-					$message = str_replace( $url, $new_url, $message );
-				}
-			}
-		}
-		$attrs['message'] = $message;
-
-		return $attrs;
-	}
-
-	/**
 	 * Show login page.
 	 *
 	 * @return void
 	 */
 	public function show_login_page(): void {
 		global $error, $interim_login, $action, $user_login, $user, $redirect_to;
+		$GLOBALS['pagenow'] = 'wp-login.php';
+		if ( $this->service->is_recovery_mode() ) {
+			( new \WP_Recovery_Mode() )->initialize();
+		}
 		require_once ABSPATH . 'wp-login.php';
 		die;
 	}
@@ -262,8 +224,13 @@ class Mask_Login extends Event {
 		// If it is not the slug, then we redirect to the 404 redirect, or 403 wp die.
 		$requested_path = $this->service->get_request_path();
 		$requested_path_without_slash = ltrim( $requested_path, '/' );
-		if ( ! $requested_path_without_slash ) {
+		if ( ! $requested_path_without_slash && ! empty( get_option( 'permalink_structure' ) ) ) {
 			return;
+		} else {
+			$params = wp_unslash( wp_parse_args( $_SERVER['QUERY_STRING'] ?? '', [] ) );
+			if ( isset( $params[ $this->model->mask_url ] ) ) {
+				$this->show_login_page();
+			}
 		}
 
 		if ( '/' . ltrim( $this->get_model()->mask_url, '/' ) === $requested_path ) {
@@ -381,11 +348,10 @@ class Mask_Login extends Event {
 	 * Filter every admin/login URL to return the masked one.
 	 *
 	 * @param string $site_url The complete URL.
-	 * @param string $path     The submitted path.
 	 *
 	 * @return string
 	 */
-	public function filter_site_url( string $site_url, string $path ): string {
+	public function filter_site_url( string $site_url ): string {
 		return $this->alter_url( $site_url, 'site_url' );
 	}
 
@@ -422,7 +388,7 @@ class Mask_Login extends Event {
 				isset( $parsed_url['path'] ) && 'wp-login.php' === trim( $parsed_url['path'], '/' ) &&
 				isset( $parsed_query['checkemail'] ) && 'registered' === $parsed_query['checkemail']
 			) {
-				return str_replace( 'wp-login.php', $this->model->mask_url, $current_url );
+				return $this->model->get_mask_url() . $this->get_permalink_separator() . build_query( $parsed_query );
 			}
 		}
 
@@ -714,50 +680,6 @@ class Mask_Login extends Event {
 	public function update_report_logs_link( string $logs_url, string $email ): string {
 		return add_query_arg( 'redirect_to', $logs_url, $this->get_model()->get_new_login_url() );
 	}
-
-	/**
-	 * Change password URL for new user.
-	 *
-	 * @param array $wp_new_user_notification_email
-	 * @param WP_User $user
-	 * @param string $blogname
-	 *
-	 * @return array
-	 */
-	public function change_new_user_notification_email( array $wp_new_user_notification_email, WP_User $user, string $blogname ): array {
-		$wp_new_user_notification_email['message'] = str_replace(
-			network_site_url( 'wp-login.php' ),
-			$this->get_model()->get_new_login_url( $this->get_site_url() ),
-			$wp_new_user_notification_email['message']
-		);
-
-		return $wp_new_user_notification_email;
-	}
-
-	/**
-	 * Change password URL for existed user if the user login has a space, e.g. 'Test user'.
-	 * Change via str_replace() without rawurlencode() doesn't work.
-	 *
-	 * @param string  $message
-	 * @param string  $key
-	 * @param string  $user_login
-	 * @param WP_User $user_data
-	 *
-	 * @return string
-	 */
-	public function change_password_message( string $message, string $key, string $user_login, WP_User $user_data ): string {
-		if ( false !== strpos( $user_login, ' ' ) ) {
-			$message = str_replace(
-				network_site_url( "wp-login.php?action=rp&key=$key&login=" . rawurlencode( $user_login ), 'login' ),
-				$this->get_model()->get_new_login_url( $this->get_site_url() )
-				. "?action=rp&key=$key&login=" . rawurlencode( $user_login ),
-				$message
-			);
-		}
-
-		return $message;
-	}
-
 	/**
 	 * @param string  $message
 	 * @param string  $key
@@ -788,7 +710,7 @@ class Mask_Login extends Event {
 	 * @return string
 	 */
 	public function change_lostpassword_redirect( string $lostpassword_redirect ): string {
-		return $this->get_model()->get_new_login_url( $this->get_site_url() ) . '?checkemail=confirm';
+		return $this->get_model()->get_new_login_url( $this->get_site_url() ) . $this->get_permalink_separator() . 'checkemail=confirm';
 	}
 
 	/**
@@ -1177,5 +1099,12 @@ class Mask_Login extends Event {
 				'error' => __('A page already exists at this URL. Please enter a unique URL for your login area.', 'defender-security'),
 			]
 		);
+	}
+
+	/**
+	 * @return string
+	 */
+	public function get_permalink_separator(): string {
+		return $this->model->is_permalink_structure_empty() ? '&' : '?';
 	}
 }

@@ -140,7 +140,7 @@ class Core_Integrity extends Behavior {
 				}
 			}
 			//Done, reset this, so we can use it later.
-			$model->task_checkpoint = null;
+			$model->task_checkpoint = '';
 		}
 		$model->save();
 

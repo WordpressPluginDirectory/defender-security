@@ -115,10 +115,32 @@ class Blacklist extends Controller {
 					'current_country' => $current_country,
 					'no_ips' => '' === $arr_model['ip_blacklist'] && '' === $arr_model['ip_whitelist'],
 					'countries_with_continents_list' => $countries_with_continents_list,
+					'geodb_license_key' => $this->mask_license_key( $this->model->maxmind_license_key ),
 				],
 			],
 			$this->dump_routes_and_nonces()
 		);
+	}
+
+	/**
+	 * Masks a license key with asterisks.
+	 *
+	 * @param mixed $maxmind_license_key The license key to be masked.
+	 *
+	 * @return string The masked license key.
+	 */
+	private function mask_license_key( $maxmind_license_key ): string {
+		if ( ! is_string( $maxmind_license_key ) || empty( $maxmind_license_key ) ) {
+			return $maxmind_license_key;
+		}
+		// Get the length of the license key.
+		$key_length = strlen( $maxmind_license_key );
+		// Decide how many characters to reveal. Revealing at least 4 characters or 25% of the key, whichever is greater.
+		$reveal_chars = max( 4, intval( $key_length / 5 ) );
+		// Calculate the number of asterisks to replace the hidden characters.
+		$num_asterisks = $key_length - $reveal_chars;
+		// Generate masked key.
+		return substr( $maxmind_license_key, 0, $reveal_chars ) . str_repeat( '*', $num_asterisks );
 	}
 
 	/**
@@ -252,6 +274,25 @@ class Blacklist extends Controller {
 
 			return new Response( false, [ 'invalid_text' => $string ] );
 		}
+	}
+
+	/**
+	 * Delete the Maxmind License key from the settings.
+	 *
+	 * @return Response
+	 * @defender_route
+	 */
+	public function delete_geodb(): Response {
+		$this->model->maxmind_license_key = '';
+		$this->model->geodb_path = '';
+		$this->model->save();
+		return new Response(
+			true,
+			[
+				'message' => __( 'Maxmind GeoLite2 database license successfully disconnected.', 'defender-security' ) ,
+				'is_geodb_deleted' => $this->service->is_geodb_downloaded(),
+			]
+		);
 	}
 
 	/**
@@ -405,6 +446,19 @@ class Blacklist extends Controller {
 		return new Response( true, [
 			'ips' => $locked_ips
 		] );
+	}
+
+	/**
+	 * Get Listed IPs.
+	 *
+	 * @param Request $request
+	 *
+	 * @return Response
+	 * @defender_route
+	 * @throws \Exception
+	 */
+	public function get_listed_ips( Request $request ): Response {
+		return new Response( true, $this->model->export() );
 	}
 
 	/**

@@ -53,6 +53,17 @@ $can_whitelabel = $dashboard_whitelabel->can_whitelabel();
                 text-transform: unset !important;
                 min-width: unset !important;
             }
+            /* OTP style */
+            span.defender-otp {
+                background: #F2F2F2;
+                padding: 20px;
+                border-radius: 10px;
+                display: block;
+                text-align: center;
+                font-weight: 500;
+                font-size: 16px;
+                line-height: 22px;
+            }
             /* Hover-cases: */
             /* 1.All links. */
             .main-content a:hover {

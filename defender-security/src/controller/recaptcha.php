@@ -160,6 +160,7 @@ class Recaptcha extends Event {
 		$locations = $this->model->locations;
 		// Default login form.
 		if ( in_array( Recaptcha_Component::DEFAULT_LOGIN_FORM, $locations, true ) ) {
+			add_filter( 'authenticate', [ $this, 'validate_login_recaptcha' ], 9999 );
 			add_action( 'login_form', [ $this, 'display_login_recaptcha' ] );
 			add_filter( 'wp_authenticate_user', [ $this, 'validate_captcha_field_on_login' ], 8 );
 		}
@@ -236,6 +237,30 @@ class Recaptcha extends Event {
 		}
 		// @since 2.5.6
 		do_action( 'wd_recaptcha_after_actions', $display_for_known_users );
+	}
+
+	/**
+	 * Validates the reCAPTCHA response for the login form.
+	 *
+	 * @param null|WP_Error $error  WP_Error object if validation fails, else null.
+	 *
+	 * @return null|WP_Error WP_Error object if validation fails else null.
+	 */
+	public function validate_login_recaptcha( $error ) {
+		// Check if the $_POST array is not empty and if 'g-recaptcha-response' key is also empty
+		if ( ! empty( $_POST ) && empty( $_POST['g-recaptcha-response'] ) ) {
+			$code    = 'recaptcha_error';
+			$message = __( 'Please verify that you are not a robot.', 'defender-security' );
+
+			if ( is_wp_error( $error ) ) {
+				$error->add( $code, $message );
+			} else {
+				// Replace $user with a new WP_Error object with an error message
+				$error = new WP_Error( $code, $message );
+			}
+		}
+		// Return the $error variable
+		return $error;
 	}
 
 	/**

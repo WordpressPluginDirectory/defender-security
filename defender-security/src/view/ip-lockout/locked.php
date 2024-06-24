@@ -62,21 +62,21 @@
 		}
 
 		.powered {
-            display: grid;
-            justify-content: center;
-            gap: 10px;
-            font-size: 10px;
-            color: #C0C0C0;
-            justify-items: center;
+			display: grid;
+			justify-content: center;
+			gap: 10px;
+			font-size: 10px;
+			color: #C0C0C0;
+			justify-items: center;
 		}
 
 		.powered strong {
 			color: #8A8A8A;
 		}
 
-        .locked_page_header {
-            color: #333333;
-        }
+		.locked_page_header {
+			color: #333333;
+		}
 
 		.message {
 			text-align: center;
@@ -97,6 +97,7 @@
 		#remaining-time {
 			margin-left: 10px;
 		}
+
 		.sui-icon-stopwatch::before {
 			color: inherit !important;
 			font-size: 24px !important;

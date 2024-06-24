@@ -224,6 +224,9 @@ class Notification extends Event {
 	 */
 	public function save( Request $request ): Response {
 		$raw_data = $request->get_data();
+		if ( empty( $raw_data['slug'] ) ) {
+			return new Response( false, [ 'message' => __( 'Invalid data.', 'defender-security' ) ] );
+		}
 		$slug = sanitize_textarea_field( $raw_data['slug'] );
 		$model = $this->service->find_module_by_slug( $slug );
 

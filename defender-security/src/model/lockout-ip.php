@@ -100,7 +100,7 @@ class Lockout_Ip extends DB {
 			$model->attempt = 0;
 			$model->status = self::STATUS_NORMAL;
 			$model->lockout_message = '';
-			$model->release_time = '';
+			$model->release_time = 0;
 			// @since 3.7.0 The lock_time column is used for both lockouts.
 			$model->lock_time = time();
 			$model->lock_time_404 = 0;

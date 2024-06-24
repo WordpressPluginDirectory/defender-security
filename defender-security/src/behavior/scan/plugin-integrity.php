@@ -226,12 +226,13 @@ class Plugin_Integrity extends Behavior {
 			$rev_file = str_replace( $abs_path, '', $file );
 			// Remove directory separator on the left.
 			$rev_file = ltrim( $rev_file, DIRECTORY_SEPARATOR );
+			$base_slug = explode( '/', $rev_file );
+			$base_slug = array_shift( $base_slug );
 
 			// Verify files only from wp.org. No Premium-things.
 			if ( isset( $checksums[ $rev_file ] ) ) {
 				if ( ! $this->compare_hashes( $file, $checksums[ $rev_file ] ) ) {
-					$base_slug = explode( '/', $rev_file );
-					$slugs_of_edited_plugins[] = array_shift( $base_slug );
+					$slugs_of_edited_plugins[] = $base_slug;
 					$this->log( sprintf( 'modified %s', $file ), 'scan.log' );
 					$model->add_item(
 						Scan_Item::TYPE_PLUGIN_CHECK,
@@ -241,7 +242,11 @@ class Plugin_Integrity extends Behavior {
 						]
 					);
 				}
+			} elseif ( ! in_array( $base_slug, $this->premium_slugs ) ) {
+				// Unknown file in a plugin directory.
+				$slugs_of_edited_plugins[] = $base_slug;
 			}
+
 			$model->calculate_percent( $plugin_files->key() * 100 / $plugin_files->count(), 3 );
 			if ( 0 === $plugin_files->key() % 100 ) {
 				// We should update the model percent each 100 files so we have some progress on the screen.
@@ -262,7 +267,7 @@ class Plugin_Integrity extends Behavior {
 				}
 			}
 			// Done, reset this, so we can use later.
-			$model->task_checkpoint = null;
+			$model->task_checkpoint = '';
 		}
 		$model->save();
 		/**

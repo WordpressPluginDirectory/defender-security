@@ -902,7 +902,11 @@ class Two_Factor extends Event {
 		];
 
 		foreach ( $params as $key => $param ) {
-			$body = str_replace( "{{{$key}}}", $param, $body );
+			if ( 'passcode' === $key ) {
+				$body = str_replace( "{{{$key}}}", '<span class="defender-otp">' . $param . '</span>', $body );
+			} else {
+				$body = str_replace( "{{{$key}}}", $param, $body );
+			}
 		}
 		$headers = [ 'Content-Type: text/html; charset=UTF-8' ];
 		if ( $sender ) {

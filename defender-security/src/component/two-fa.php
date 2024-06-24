@@ -442,7 +442,11 @@ class Two_Fa extends Component {
 		], false );
 
 		foreach ( $params as $key => $val ) {
-			$body = str_replace( '{{' . $key . '}}', $val, $body );
+			if ( 'passcode' === $key ) {
+				$body = str_replace( "{{{$key}}}", '<span class="defender-otp">' . $val . '</span>', $body );
+			} else {
+				$body = str_replace( "{{{$key}}}", $val, $body );
+			}
 		}
 		// Main email template.
 		$body = $two_fa->render_partial(

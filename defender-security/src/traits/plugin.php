@@ -131,6 +131,10 @@ trait Plugin {
 	 * @return bool
 	 */
 	public function is_likely_wporg_slug( $slug ): bool {
+		if ( in_array( $slug, $this->get_known_wporg_slug(), true ) ) {
+			return true;
+		}
+
 		// Does file readme.txt exist?
 		$readme_file = $this->get_plugin_base_dir() . $slug . '/readme.txt';
 		if ( file_exists( $readme_file ) && is_readable( $readme_file ) ) {
@@ -204,7 +208,9 @@ trait Plugin {
 	 * @return string Return plugin relative path.
 	 */
 	public function get_plugin_relative_path( $file_path ): string {
-		strtok( plugin_basename( $file_path ), DIRECTORY_SEPARATOR );
+		$file_path = str_replace( '\\', '/', $file_path );
+
+		strtok( plugin_basename( $file_path ), '/' );
 
 		return (string) strtok( '' );
 	}
@@ -314,5 +320,20 @@ trait Plugin {
 				$file_path
 			)
 		);
+	}
+
+
+	/**
+	 * Get the known WP.org slugs.
+	 *
+	 * This is a list of plugins that are known to be in the WordPress.org repository which we can't programmatically detect.
+	 *
+	 * @since 4.8.0
+	 * @return array
+	 */
+	public function get_known_wporg_slug(): array {
+		return [
+			'wp-crontrol',
+		];
 	}
 }

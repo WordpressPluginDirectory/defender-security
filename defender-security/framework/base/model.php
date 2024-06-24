@@ -338,4 +338,82 @@ abstract class Model extends \Calotes\Base\Component {
 
 		return $v;
 	}
+
+	/**
+	 * Export the data type of public properties.
+	 *
+	 * @since 4.8.0
+	 * @return array
+	 */
+	public function export_type(): array {
+		$reflection = new \ReflectionClass( $this );
+		$props = $reflection->getProperties( \ReflectionProperty::IS_PUBLIC );
+
+		if ( empty( $this->annotations ) ) {
+			return $this->export_type_oldway();
+		}
+
+		$types = [];
+		foreach ( array_keys( $this->annotations ) as $property ) {
+			if ( $this->has_property( $property ) ) {
+				$type = isset( $this->annotations[ $property ]['type'] )
+					? (string) $this->annotations[ $property ]['type']
+					: 'string';
+
+				$types[ $property ] = $this->map_format( $type );
+			}
+		}
+
+		return $types;
+	}
+
+	/**
+	 * Backward compatibility for exporting the data type of class properties.
+	 *
+	 * @since 4.8.0
+	 * @return array
+	 */
+	private function export_type_oldway(): array {
+		$types = [];
+		$reflection = new \ReflectionClass( $this );
+		$props = $reflection->getProperties( \ReflectionProperty::IS_PUBLIC );
+
+		foreach( $props as $prop ) {
+			$rp = new \ReflectionProperty( $prop->class, $prop->name );
+			if ( preg_match( '/@var\s+([^\s]+)/', $rp->getDocComment(), $matches ) ) {
+				$type = isset( $matches[1] ) ? (string) $matches[1] : 'string';
+				$types[] = $this->map_format( $type );
+			}
+		}
+
+		return $types;
+	}
+
+	/**
+	 * Map the format for a given data type.
+	 *
+	 * @param string $type The data type.
+	 *
+	 * @since 4.8.0
+	 * @return string
+	 */
+	private function map_format( string $type ): string {
+		$format = '';
+		switch ($type) {
+			case 'int':
+			case 'integer':
+			case 'bool':
+			case 'boolean':
+				$format = '%d';
+				break;
+			case 'float':
+				$format = '%f';
+				break;
+			// Handle other data types like array, object, string.
+			default:
+				$format = '%s';
+				break;
+		}
+		return $format;
+	}
 }

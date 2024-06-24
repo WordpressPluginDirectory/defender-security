@@ -22,9 +22,13 @@ class Admin {
 	public $is_pro;
 
 	public function __construct() {
-		$this->is_pro = ( new WPMUDEV() )->is_pro();
+		add_action( 'admin_init', [ $this, 'check_pro' ] );
 		add_action( 'wp_ajax_defender_ip_detection_notice_dismiss', [ $this, 'dismiss_notice' ] );
 		add_action( 'wp_ajax_defender_ip_detection_switch_to_xff', [ $this, 'switch_to_xff' ] );
+	}
+
+	public function check_pro() {
+		$this->is_pro = wd_di()->get( WPMUDEV::class )->is_pro();
 	}
 
 	/**
@@ -134,7 +138,7 @@ class Admin {
 				$link = "{$wp_org}/support/plugin/defender-security/reviews/#new-post";
 				break;
 			case 'support':
-				$link = $this->is_pro ? "{$domain}/get-support/" : "{$wp_org}/support/plugin/defender-security/";
+				$link = $this->is_wp_org_version() ? "{$wp_org}/support/plugin/defender-security/" : "{$domain}/get-support/";
 				break;
 			case 'roadmap':
 				$link = "{$domain}/roadmap/";
@@ -195,7 +199,7 @@ class Admin {
 
 		// Change AuthorURI link.
 		if ( isset( $links[1] ) ) {
-			$author_uri = $this->is_pro ? 'https://wpmudev.com/' : 'https://profiles.wordpress.org/wpmudev/';
+			$author_uri = $this->is_wp_org_version() ? 'https://profiles.wordpress.org/wpmudev/' : 'https://wpmudev.com/';
 			$author_uri = sprintf(
 				'<a href="%s" target="_blank">%s</a>',
 				$author_uri,
@@ -208,7 +212,7 @@ class Admin {
 			);
 		}
 
-		if ( ! $this->is_pro ) {
+		if ( $this->is_wp_org_version() ) {
 			// Change AuthorURI link.
 			if ( isset( $links[2] ) && false === strpos( $links[2], 'target="_blank"' ) ) {
 				if ( ! isset( $plugin_data['slug'] ) && $plugin_data['Name'] ) {

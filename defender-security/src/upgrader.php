@@ -367,6 +367,9 @@ class Upgrader {
 		if ( version_compare( $db_version, '4.6.0', '<' ) ) {
 			$this->upgrade_4_6_0();
 		}
+		if ( version_compare( $db_version, '4.7.2', '<' ) ) {
+			$this->upgrade_4_7_2();
+		}
 		// This is not a new installation. Make a mark.
 		defender_no_fresh_install();
 		// Don't run any function below this line.
@@ -1588,5 +1591,18 @@ Your temporary password is {{passcode}}. To finish logging in, copy and paste th
 		// Create Unlockout table.
 		$bootstrap = wd_di()->get( Bootstrap::class );
 		$bootstrap->create_table_unlockout();
+	}
+
+	private function upgrade_4_7_2(): void {
+		$model = wd_di()->get( Two_Fa_Settings::class );
+
+		if ( isset( $model->email_body ) ) {
+
+			$model->email_body = 'Hi {{display_name}},
+
+Your temporary password is {{passcode}}
+To complete your login, copy and paste the temporary password into the Password field on the login screen.';
+			$model->save();
+		}
 	}
 }
