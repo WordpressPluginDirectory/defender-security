@@ -1,13 +1,13 @@
 === Defender Security - Malware Scanner, Login Security & Firewall ===
 Plugin Name: Defender Security - Malware Scanner, Login Security & Firewall
-Version: 4.7.2
+Version: 4.7.3
 Author: WPMU DEV
 Author URI: https://wpmudev.com/
 Contributors: WPMUDEV
 Tags: security, malware, firewall, malware scanner, login security
 Requires at least: 5.2
 Tested up to: 6.5.4
-Stable tag: 4.7.2
+Stable tag: 4.7.3
 Requires PHP: 7.4
 License: GPL v2 - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 
@@ -35,7 +35,7 @@ Defender's one-click security hardening recommendations instantly adds layers of
 * WordPress Security Firewall - block or allowlist IPs, implement IP blocking, and Geo IP blocking, user agent banning and protect against brute force attacks
 * Two-factor authentication (2FA) - Easily set up better security with 2FA to prevent most login attacks such as brute force, App verification, backup codes, lost device email, WooCommerce 2FA, and Web Authentication
 * Login masking - change the location of WordPress's default login area to improve login security
-* Login lockout – failed login attempts lockout for even more security assurance
+* Login lockout - failed login attempts lockout for even more security assurance
 * User Agent Banning - Fortify security by blocking bad bots and user agents from accessing your site
 * Security Headers - Add an extra layer of defense security and protect against common attacks like: XSS, code injection, and more
 * 404 Detection security - automated block of bot IPs
@@ -242,6 +242,10 @@ Please open a new thread in Defender's [support forum](https://wordpress.org/sup
 
 == Changelog ==
 
+= 4.7.3 ( 2024-06-27 ) =
+
+- Fix: Broken Access Control vulnerability on the Configs page
+
 = 4.7.2 ( 2024-06-18 ) =
 
 - Enhance: Option to reset Locations on the IP Banning page
@@ -304,10 +308,6 @@ Please open a new thread in Defender's [support forum](https://wordpress.org/sup
 - Fix: Scan flagging "All in one security" files as suspicious
 - Fix: Defender Google reCAPTCHA does not work with WooCommerce Gutenberg Checkout block
 - Fix: Masked Login not working after registration
-
-= 4.4.2 ( 2024-01-22 ) =
-
-- Enhance: Recommended IP Detection method with improved accuracy, site security, and harder-to-bypass IP banning
 
 [Changelog for previous versions](https://wpmudev.com/project/wp-defender/#view-changelog).
 

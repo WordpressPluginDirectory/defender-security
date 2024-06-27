@@ -317,19 +317,8 @@ class Config_Hub_Helper {
 	 *
 	 * @return void
 	 */
-	public static function clear_config_transient() {
-		if ( ! isset( $_GET['page'], $_GET['view'], $_GET['transient'] ) ) {
-			return;
-		}
-
-		// If page is not config.
-		if ( ! ( 'wdf-setting' === defender_get_current_page() && 'configs' === sanitize_text_field( $_GET['view'] ) ) ) {
-			return;
-		}
-
-		if ( 'clear' === sanitize_text_field( $_GET['transient'] ) ) {
-			delete_site_transient( self::CONFIGS_TRANSIENT_KEY );
-		}
+	public static function clear_config_transient(): void {
+		delete_site_transient( self::CONFIGS_TRANSIENT_KEY );
 	}
 
 	/**

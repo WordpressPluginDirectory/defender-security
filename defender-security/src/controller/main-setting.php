@@ -45,12 +45,22 @@ class Main_Setting extends Event {
 		add_action( 'defender_enqueue_assets', [ &$this, 'enqueue_assets' ] );
 		$this->register_routes();
 
-		Config_Hub_Helper::clear_config_transient();
-
 		// Add cron schedule to clean out outdated logs.
 		add_action( 'wp_defender_clear_logs', [ $this, 'clear_logs' ] );
 		add_action( 'admin_init', [ $this, 'check_cron_schedule' ] );
 		add_action( 'wd_settings_update', [ $this, 'intercept_settings_update' ], 10, 2 );
+	}
+
+	/**
+	 * Check actual config data.
+	 *
+	 * @return Response
+	 * @defender_route
+	 */
+	public function check_configs(): Response {
+		Config_Hub_Helper::clear_config_transient();
+
+		return new Response( true, array() );
 	}
 
 	/**
@@ -217,7 +227,6 @@ class Main_Setting extends Event {
 				],
 				'misc' => [
 					'setting_url' => network_admin_url( is_multisite() ? 'settings.php' : 'options-general.php' ),
-					'clear_transient_url' => network_admin_url( 'admin.php?page=wdf-setting&view=configs&transient=clear' ),
 					'privacy_link' => Model_Main_Setting::PRIVACY_LINK
 				],
 				'configs' => $configs,
