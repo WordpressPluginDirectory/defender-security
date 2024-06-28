@@ -2,9 +2,9 @@
 # This file is distributed under the GNU General Public License (Version 2 - GPLv2).
 msgid ""
 msgstr ""
-"Project-Id-Version: Defender Pro 4.7.3\n"
+"Project-Id-Version: Defender Pro 4.7.4\n"
 "Report-Msgid-Bugs-To: https://wpmudev.com\n"
-"POT-Creation-Date: 2024-06-25 13:28:11+00:00\n"
+"POT-Creation-Date: 2024-06-27 13:37:29+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -2745,7 +2745,7 @@ msgstr ""
 
 #: languages/vue-js.php:2169 src/component/backup-settings.php:1227
 #: src/component/mail.php:47 src/controller/scan.php:58
-#: src/model/notification/malware-notification.php:230
+#: src/model/notification/malware-notification.php:232
 msgid "Malware Scanning"
 msgstr ""
 
@@ -3506,7 +3506,7 @@ msgstr ""
 #: languages/vue-js.php:2753 src/model/notification/audit-report.php:158
 #: src/model/notification/firewall-notification.php:248
 #: src/model/notification/firewall-report.php:157
-#: src/model/notification/malware-notification.php:264
+#: src/model/notification/malware-notification.php:266
 #: src/model/notification/malware-report.php:116
 #: src/model/notification/tweak-reminder.php:191
 msgid "Recipients"
@@ -3907,7 +3907,7 @@ msgid "Send notifications when Defender couldn’t scan the files"
 msgstr ""
 
 #: languages/vue-js.php:3083
-#: src/model/notification/malware-notification.php:256
+#: src/model/notification/malware-notification.php:258
 #: src/model/notification/malware-report.php:115
 msgid "Send notifications when no issues are detected"
 msgstr ""
@@ -4887,7 +4887,7 @@ msgid "When an issue is found"
 msgstr ""
 
 #: languages/vue-js.php:3777
-#: src/model/notification/malware-notification.php:263
+#: src/model/notification/malware-notification.php:265
 msgid "When failed to scan"
 msgstr ""
 
@@ -8187,7 +8187,7 @@ msgid "in the month"
 msgstr ""
 
 #: src/model/notification/malware-notification.php:61
-#: src/model/notification/malware-notification.php:255
+#: src/model/notification/malware-notification.php:257
 msgid "Malware Scanning - Notification"
 msgstr ""
 
@@ -8195,27 +8195,27 @@ msgstr ""
 msgid "Get email notifications when Defender has finished manual malware scans."
 msgstr ""
 
-#: src/model/notification/malware-notification.php:257
+#: src/model/notification/malware-notification.php:259
 msgid "Send notifications when Defender couldn't scan the files"
 msgstr ""
 
-#: src/model/notification/malware-notification.php:258
+#: src/model/notification/malware-notification.php:260
 msgid "Email subject when an issue is found"
 msgstr ""
 
-#: src/model/notification/malware-notification.php:259
+#: src/model/notification/malware-notification.php:261
 msgid "Email subject when no issues are found"
 msgstr ""
 
-#: src/model/notification/malware-notification.php:260
+#: src/model/notification/malware-notification.php:262
 msgid "Email subject when failed to scan"
 msgstr ""
 
-#: src/model/notification/malware-notification.php:261
+#: src/model/notification/malware-notification.php:263
 msgid "Email body when an issue is found"
 msgstr ""
 
-#: src/model/notification/malware-notification.php:262
+#: src/model/notification/malware-notification.php:264
 msgid "Email body when no issues are found"
 msgstr ""
 

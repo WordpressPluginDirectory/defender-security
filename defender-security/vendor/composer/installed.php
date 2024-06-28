@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'incsub/wp-defender',
-        'pretty_version' => 'dev-release/4.7.3',
-        'version' => 'dev-release/4.7.3',
-        'reference' => '0b26e064a02c900a95c86e26e3da7e0df110506b',
+        'pretty_version' => 'dev-release/4.7.4',
+        'version' => 'dev-release/4.7.4',
+        'reference' => '2fe5c6699d81893641c90fbe778033181f0efdaf',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -56,9 +56,9 @@
             'dev_requirement' => false,
         ),
         'incsub/wp-defender' => array(
-            'pretty_version' => 'dev-release/4.7.3',
-            'version' => 'dev-release/4.7.3',
-            'reference' => '0b26e064a02c900a95c86e26e3da7e0df110506b',
+            'pretty_version' => 'dev-release/4.7.4',
+            'version' => 'dev-release/4.7.4',
+            'reference' => '2fe5c6699d81893641c90fbe778033181f0efdaf',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
