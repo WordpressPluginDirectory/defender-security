@@ -1,26 +1,41 @@
 <?php
+/**
+ * Handles interactions with the Dashboard for white label.
+ *
+ * @package WP_Defender\Integrations
+ */
 
 namespace WP_Defender\Integrations;
+
+use WPMUDEV_Dashboard;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	die;
 }
 
 /**
- * Class Dashboard_Whitelabel
+ * Dashboard integration module for whitelabel.
  *
  * @since 3.2.0
- * @package WP_Defender\Integrations
  */
 class Dashboard_Whitelabel {
 
 	/**
-	 * @var array Holds dashboard plugin white-label filter values.
+	 * Holds dashboard plugin white-label filter values.
+	 *
+	 * @var array
 	 */
 	private $wpmudev_branding;
 
+	/**
+	 * Constructor for the class.
+	 * Initializes the object by setting the value of the $wpmudev_branding property
+	 * by applying the 'wpmudev_branding' filter to an empty array.
+	 *
+	 * @return void
+	 */
 	public function __construct() {
-		$this->wpmudev_branding = apply_filters( 'wpmudev_branding', [] );
+		$this->wpmudev_branding = apply_filters( 'wpmudev_branding', array() );
 	}
 
 	/**
@@ -35,7 +50,7 @@ class Dashboard_Whitelabel {
 	/**
 	 * Get branding logo.
 	 *
-	 * @return string URL of whitelabeled logo or default logo.
+	 * @return string URL of whitelabel logo or default logo.
 	 */
 	public function get_branding_logo(): string {
 		if ( $this->is_hide_branding() && ! empty( trim( $this->wpmudev_branding['hero_image'] ) ) ) {
@@ -70,15 +85,15 @@ class Dashboard_Whitelabel {
 	/**
 	 * Check if whitelabel feature is allowed for the membership.
 	 *
-	 * @since 4.5.0
 	 * @return bool
+	 * @since 4.5.0
 	 */
 	public function can_whitelabel(): bool {
 		if (
 			class_exists( '\WPMUDEV_Dashboard' ) &&
-			is_object( \WPMUDEV_Dashboard::$whitelabel ) &&
-			method_exists( \WPMUDEV_Dashboard::$whitelabel, 'can_whitelabel' ) &&
-			\WPMUDEV_Dashboard::$whitelabel->can_whitelabel()
+			is_object( WPMUDEV_Dashboard::$whitelabel ) &&
+			method_exists( WPMUDEV_Dashboard::$whitelabel, 'can_whitelabel' ) &&
+			WPMUDEV_Dashboard::$whitelabel->can_whitelabel()
 		) {
 			return true;
 		}
@@ -89,8 +104,8 @@ class Dashboard_Whitelabel {
 	/**
 	 * Check if whitelabel footer text is set.
 	 *
-	 * @since 4.5.0
 	 * @return bool
+	 * @since 4.5.0
 	 */
 	public function is_set_footer_text(): bool {
 		$text = $this->wpmudev_branding['footer_text'] ?? '';
@@ -101,38 +116,38 @@ class Dashboard_Whitelabel {
 	/**
 	 * Whether to custom plugin labels or not.
 	 *
-	 * @param int $plugin_id Plugin id.
+	 * @param  int $plugin_id  Plugin id.
 	 *
-	 * @since 4.5.0
 	 * @return bool
+	 * @since 4.5.0
 	 */
 	private function plugin_enabled( $plugin_id ) {
 		if (
 			! class_exists( '\WPMUDEV_Dashboard' ) ||
-			empty( \WPMUDEV_Dashboard::$whitelabel ) ||
-			! method_exists( \WPMUDEV_Dashboard::$whitelabel, 'get_settings' )
+			empty( WPMUDEV_Dashboard::$whitelabel ) ||
+			! method_exists( WPMUDEV_Dashboard::$whitelabel, 'get_settings' )
 		) {
 			return false;
 		}
-		$whitelabel_settings = \WPMUDEV_Dashboard::$whitelabel->get_settings();
+		$whitelabel_settings = WPMUDEV_Dashboard::$whitelabel->get_settings();
 
 		return ! empty( $whitelabel_settings['labels_enabled'] )
-			&& ! empty( $whitelabel_settings['labels_config'][ $plugin_id ] );
+				&& ! empty( $whitelabel_settings['labels_config'][ $plugin_id ] );
 	}
 
 	/**
 	 * Get custom plugin label.
 	 *
-	 * @param int $plugin_id Plugin id.
+	 * @param  int $plugin_id  Plugin id.
 	 *
-	 * @since 4.5.0
 	 * @return bool|string
+	 * @since 4.5.0
 	 */
 	public function get_plugin_name( $plugin_id ) {
 		if ( ! $this->plugin_enabled( $plugin_id ) ) {
 			return false;
 		}
-		$whitelabel_settings = \WPMUDEV_Dashboard::$whitelabel->get_settings();
+		$whitelabel_settings = WPMUDEV_Dashboard::$whitelabel->get_settings();
 		if ( empty( $whitelabel_settings['labels_config'][ $plugin_id ]['name'] ) ) {
 			return false;
 		}

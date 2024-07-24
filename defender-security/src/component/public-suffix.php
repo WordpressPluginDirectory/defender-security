@@ -1,4 +1,15 @@
 <?php
+/**
+ * This file contains domain's public suffixes.
+ *
+ * @package WP_Defender
+ */
+
+/**
+ * It returns an array containing various public suffixes.
+ *
+ * @return int[]
+ */
 function get_public_suffix() {
 	return array(
 		'ac'                                        => 1,

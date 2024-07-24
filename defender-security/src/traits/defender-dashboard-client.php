@@ -2,15 +2,16 @@
 /**
  * Handle Dashboard based functionalities of WPMUDEV class.
  *
- * @package WP_Defender\Behavior
+ * @package WP_Defender\Traits
  */
 
 namespace WP_Defender\Traits;
 
-/**
- * Traits to handle Dashboard based functionalities of WPMUDEV class.
- */
+use WPMUDEV_Dashboard;
+use WP_Defender\Component\Config\Config_Hub_Helper;
+
 trait Defender_Dashboard_Client {
+
 	/**
 	 * Get membership status.
 	 *
@@ -27,10 +28,10 @@ trait Defender_Dashboard_Client {
 	 */
 	public function is_member(): bool {
 		if (
-			$this->is_dash_activated() && method_exists( \WPMUDEV_Dashboard::$upgrader, 'user_can_install' )
+			$this->is_dash_activated() && method_exists( WPMUDEV_Dashboard::$upgrader, 'user_can_install' )
 		) {
-			return \WPMUDEV_Dashboard::$upgrader->user_can_install(
-				\WP_Defender\Component\Config\Config_Hub_Helper::WDP_ID,
+			return WPMUDEV_Dashboard::$upgrader->user_can_install(
+				Config_Hub_Helper::WDP_ID,
 				true
 			);
 		}
@@ -41,13 +42,12 @@ trait Defender_Dashboard_Client {
 	/**
 	 * Check if user is a WPMU DEV admin.
 	 *
-	 * @since 2.6.3
-	 *
 	 * @return bool
+	 * @since 2.6.3
 	 */
 	public function is_wpmu_dev_admin(): bool {
 		if ( $this->is_dash_activated() && method_exists( 'WPMUDEV_Dashboard_Site', 'allowed_user' ) ) {
-			return \WPMUDEV_Dashboard::$site->allowed_user( get_current_user_id() );
+			return WPMUDEV_Dashboard::$site->allowed_user( get_current_user_id() );
 		}
 
 		return false;
@@ -82,19 +82,21 @@ trait Defender_Dashboard_Client {
 		ob_start();
 		?>
 		<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-			<path fill-rule="evenodd" clip-rule="evenodd" d="M9.99999 2.08899L3 4.21792V9.99502H9.99912V18.001H10C13.47 18.001 17 13.9231 17 11.0045V9.99501H9.99999V2.08899ZM10 0L1 2.73862V11.0045C1 15.1125 5.49 20 10 20C14.51 20 19 15.1225 19 11.0045V2.73862L10 0Z" fill="#F0F6FC"/>
+			<path fill-rule="evenodd" clip-rule="evenodd"
+					d="M9.99999 2.08899L3 4.21792V9.99502H9.99912V18.001H10C13.47 18.001 17 13.9231 17 11.0045V9.99501H9.99999V2.08899ZM10 0L1 2.73862V11.0045C1 15.1125 5.49 20 10 20C14.51 20 19 15.1225 19 11.0045V2.73862L10 0Z"
+					fill="#F0F6FC"/>
 		</svg>
 		<?php
 		$svg = ob_get_clean();
 
-		return 'data:image/svg+xml;base64,' . base64_encode( $svg );
+		return 'data:image/svg+xml;base64,' . base64_encode( $svg ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
 	}
 
 	/**
 	 * Check if Dash plugin is installed and activated.
 	 *
-	 * @since 3.4.0
 	 * @return bool
+	 * @since 3.4.0
 	 */
 	public function is_dash_activated(): bool {
 		return class_exists( 'WPMUDEV_Dashboard' );
@@ -103,14 +105,14 @@ trait Defender_Dashboard_Client {
 	/**
 	 * Check if site is connected to HUB.
 	 *
-	 * @since 3.4.0
-	 * @since 3.6.0 Added changes after the implementation of TFH on the hub.
 	 * @return bool
+	 * @since 3.6.0 Added changes after the implementation of TFH on the hub.
+	 * @since 3.4.0
 	 */
 	public function is_site_connected_to_hub(): bool {
 		// The case if Pro version is activated, it is TFH account and a site is from 3rd party hosting.
 		if ( WP_DEFENDER_PRO_PATH === DEFENDER_PLUGIN_BASENAME && $this->is_another_hosted_site_connected_to_tfh() ) {
-			return ! empty( \WPMUDEV_Dashboard::$api->get_key() );
+			return ! empty( WPMUDEV_Dashboard::$api->get_key() );
 		} else {
 			$hub_site_id = $this->get_site_id();
 
@@ -132,10 +134,10 @@ trait Defender_Dashboard_Client {
 	 */
 	public function get_remote_access() {
 		// Use backward compatibility.
-		if ( \WPMUDEV_Dashboard::$version > '4.11.9' ) {
-			return \WPMUDEV_Dashboard::$site->get( 'remote_access' );
+		if ( WPMUDEV_Dashboard::$version > '4.11.9' ) {
+			return WPMUDEV_Dashboard::$site->get( 'remote_access' );
 		} else {
-			return \WPMUDEV_Dashboard::$site->get_option( 'remote_access' );
+			return WPMUDEV_Dashboard::$site->get_option( 'remote_access' );
 		}
 	}
 }

@@ -1,4 +1,9 @@
 <?php
+/**
+ * Handles image optimization and compression.
+ *
+ * @package WP_Defender\Integrations
+ */
 
 namespace WP_Defender\Integrations;
 
@@ -8,14 +13,24 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Smush integration module.
- * Class Smush
  *
  * @since 2.5.1
- * @package WP_Defender\Integrations
  */
 class Smush {
+
+	/**
+	 *  Table name.
+	 *
+	 * @var string
+	 */
 	private $table;
 
+	/**
+	 * Constructor for the class.
+	 * Initializes the table name for the Smush directory images.
+	 *
+	 * @return void
+	 */
 	public function __construct() {
 		global $wpdb;
 		$this->table = $wpdb->base_prefix . 'smush_dir_images';
@@ -29,24 +44,26 @@ class Smush {
 	public function exist_image_table() {
 		global $wpdb;
 
-		return (bool) $wpdb->get_var( $wpdb->prepare(
-			'SHOW TABLES LIKE %s',
-			$wpdb->esc_like( $this->table )
-		) );
+		return (bool) $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$wpdb->prepare(
+				'SHOW TABLES LIKE %s',
+				$wpdb->esc_like( $this->table )
+			)
+		);
 	}
 
 	/**
 	 * Check optimized image path
-	 * @param string
+	 *
+	 * @param  string $path  image path.
 	 *
 	 * @return bool
 	 */
 	public function exist_image_path( $path ) {
 		global $wpdb;
-
-		return (bool) $wpdb->get_var(
+		return (bool) $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 			$wpdb->prepare(
-				"SELECT id FROM {$this->table} WHERE path = %s",
+				"SELECT id FROM {$this->table} WHERE path = %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$path
 			)
 		);

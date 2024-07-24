@@ -48,14 +48,14 @@ function defender_drop_custom_fk_constraint( string $table_name ): void {
 	}
 }
 
-include_once __DIR__ . DIRECTORY_SEPARATOR . 'wp-defender.php';
-$settings = wd_di()->get( \WP_Defender\Model\Setting\Main_Setting::class );
-$uninstall_data = isset( $settings->uninstall_data ) && 'remove' === $settings->uninstall_data;
+require_once __DIR__ . DIRECTORY_SEPARATOR . 'wp-defender.php';
+$settings           = wd_di()->get( \WP_Defender\Model\Setting\Main_Setting::class );
+$uninstall_data     = isset( $settings->uninstall_data ) && 'remove' === $settings->uninstall_data;
 $uninstall_settings = isset( $settings->uninstall_settings ) && 'reset' === $settings->uninstall_settings;
 
 if ( $uninstall_settings || $uninstall_data ) {
 	// Turn off Audit_Logging so that hooks are not processed after deleting the table or resetting settings.
-	$audit = wd_di()->get( \WP_Defender\Model\Setting\Audit_Logging::class );
+	$audit          = wd_di()->get( \WP_Defender\Model\Setting\Audit_Logging::class );
 	$audit->enabled = false;
 	$audit->save();
 	$advanced_tools = wd_di()->get( \WP_Defender\Controller\Advanced_Tools::class );

@@ -1,4 +1,9 @@
 <?php
+/**
+ * Handles interactions with BuddyPress plugin.
+ *
+ * @package WP_Defender\Integrations
+ */
 
 namespace WP_Defender\Integrations;
 
@@ -8,12 +13,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Buddypress integration module.
- * Class Buddypress
  *
  * @since 3.3.0
- * @package WP_Defender\Integrations
  */
 class Buddypress {
+
 	public const REGISTER_FORM = 'buddypress_register', NEW_GROUP_FORM = 'buddypress_new group';
 
 	/**
@@ -26,12 +30,14 @@ class Buddypress {
 	}
 
 	/**
+	 * Get the Defender forms.
+	 *
 	 * @return array
 	 */
 	public static function get_forms(): array {
-		return [
-			self::REGISTER_FORM => __( 'Registration', 'defender-security' ),
-			self::NEW_GROUP_FORM => __( 'Add new group', 'defender-security' ),
-		];
+		return array(
+			self::REGISTER_FORM  => esc_html__( 'Registration', 'defender-security' ),
+			self::NEW_GROUP_FORM => esc_html__( 'Add new group', 'defender-security' ),
+		);
 	}
 }

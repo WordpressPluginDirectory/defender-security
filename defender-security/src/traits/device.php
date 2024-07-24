@@ -3,7 +3,7 @@
  * Device helper.
  *
  * @package WP_Defender\Traits
- * @since 4.2.0
+ * @since      4.2.0
  */
 
 namespace WP_Defender\Traits;
@@ -11,10 +11,13 @@ namespace WP_Defender\Traits;
 trait Device {
 
 	/**
-	 * @return bool|string
+	 * Detect if the device is a tablet.
+	 *
+	 * @return bool
 	 */
 	private function is_tablet() {
-		if ( empty( $_SERVER['HTTP_USER_AGENT'] ) ) {
+		$user_agent = defender_get_data_from_request( 'HTTP_USER_AGENT', 's' );
+		if ( empty( $user_agent ) ) {
 			return false;
 		}
 		/**
@@ -23,20 +26,23 @@ trait Device {
 		 */
 		$tablet_pattern = '/(tablet|ipad|playbook|kindle|silk)/i';
 
-		return preg_match( $tablet_pattern, $_SERVER['HTTP_USER_AGENT'] );
+		return preg_match( $tablet_pattern, $user_agent );
 	}
 
 	/**
+	 * Detect if the device is a mobile.
+	 *
 	 * @return bool|string
 	 */
 	private function is_mobile() {
-		if ( empty( $_SERVER['HTTP_USER_AGENT'] ) ) {
+		$user_agent = defender_get_data_from_request( 'HTTP_USER_AGENT', 's' );
+		if ( empty( $user_agent ) ) {
 			return false;
 		}
 		// Do not use wp_is_mobile() since it doesn't detect ipad/tablet.
 		$mobile_patten = '/Mobile|iP(hone|od|ad)|Android|BlackBerry|tablet|IEMobile|Kindle|NetFront|Silk|(hpw|web)OS|Fennec|Minimo|Opera M(obi|ini)|Blazer|Dolfin|Dolphin|Skyfire|Zune|playbook/i';
 
-		return preg_match( $mobile_patten, $_SERVER['HTTP_USER_AGENT'] );
+		return preg_match( $mobile_patten, $user_agent );
 	}
 
 	/**

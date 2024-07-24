@@ -1,4 +1,9 @@
 <?php
+/**
+ * Helper functions for user permissions.
+ *
+ * @package WP_Defender\Traits
+ */
 
 namespace WP_Defender\Traits;
 

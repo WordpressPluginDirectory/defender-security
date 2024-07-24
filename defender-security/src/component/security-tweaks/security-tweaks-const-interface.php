@@ -9,8 +9,6 @@ namespace WP_Defender\Component\Security_Tweaks;
 
 /**
  * Interface Security_Key_Const_Interface
- *
- * @package WP_Defender\Component\Security_Tweaks
  */
 interface Security_Key_Const_Interface {
 

@@ -7,19 +7,23 @@
 
 namespace WP_Defender\Traits;
 
+use DI\NotFoundException;
+use DI\DependencyException;
 use WP_Defender\Extra\GeoIp;
+use MaxMind\Db\Reader\InvalidDatabaseException;
+use WP_Defender\Model\Setting\Blacklist_Lockout;
 
 trait Country {
 
 	/**
 	 * Get country of the current user.
 	 *
-	 * @param string $ip IPV4 or IPV6 address.
+	 * @param  string $ip  IPV4 or IPV6 address.
 	 *
 	 * @return array|bool
-	 * @throws \DI\DependencyException                     Container exception.
-	 * @throws \DI\NotFoundException                       Thrown when DI injected class not found.
-	 * @throws \MaxMind\Db\Reader\InvalidDatabaseException Thrown for unexpected data is found in DB.
+	 * @throws DependencyException                     Container exception.
+	 * @throws NotFoundException                       Thrown when DI injected class not found.
+	 * @throws InvalidDatabaseException Thrown for unexpected data is found in DB.
 	 */
 	public function get_current_country( $ip ) {
 		if ( defender_is_wp_cli() ) {
@@ -33,12 +37,13 @@ trait Country {
 		if ( ! filter_var( $ip, FILTER_VALIDATE_IP ) ) {
 			return false;
 		}
-		$model = wd_di()->get( \WP_Defender\Model\Setting\Blacklist_Lockout::class );
+		$model = wd_di()->get( Blacklist_Lockout::class );
 		// Additional check if MaxMind dir is deleted.
 		if ( is_null( $model->geodb_path ) || ! is_file( $model->geodb_path ) ) {
 			return false;
 		}
 		$helper = new GeoIp( $model->geodb_path );
+
 		// Todo: add check for unhandled exceptions.
 		return $helper->ip_to_country( $ip );
 	}
@@ -52,7 +57,7 @@ trait Country {
 	public function countries_list(): array {
 		return apply_filters(
 			'wd_countries',
-			[
+			array(
 				'AD' => 'Andorra',
 				'AF' => 'Afghanistan',
 				'AG' => 'Antigua and Barbuda',
@@ -307,21 +312,21 @@ trait Country {
 				'A1' => 'Anonymous Proxy',
 				'A2' => 'Satellite Provider',
 				'O1' => 'Other Country',
-			]
+			)
 		);
 	}
 
 	/**
 	 * Generic method to return country detail of an IP.
 	 *
-	 * @param string $ip IPV4 or IPV6 address.
+	 * @param  string $ip  IPV4 or IPV6 address.
 	 *
 	 * @return bool|array false on failure to fetch and array on success.
 	 */
 	public function ip_to_country( $ip ) {
 		$country = $this->get_current_country( $ip );
 		if ( ! $country ) {
-			// @since 3.8.0.
+			// since 3.8.0.
 			$country = apply_filters( 'wd_ip_to_country_api', $country, $ip );
 		}
 

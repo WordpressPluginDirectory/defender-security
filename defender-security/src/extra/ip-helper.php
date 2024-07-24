@@ -61,7 +61,7 @@ class IP_Helper {
 				// $netmask is a 255.255.0.0 format
 				$netmask     = str_replace( '*', '0', $netmask );
 				$netmask_dec = ip2long( $netmask );
-				
+
 				return ( ( ip2long( $ip ) & $netmask_dec ) == ( ip2long( $range ) & $netmask_dec ) );
 			} else {
 				// $netmask is a CIDR size block
@@ -74,14 +74,14 @@ class IP_Helper {
 				$range     = sprintf( "%u.%u.%u.%u", empty( $a ) ? '0' : $a, empty( $b ) ? '0' : $b, empty( $c ) ? '0' : $c, empty( $d ) ? '0' : $d );
 				$range_dec = ip2long( $range );
 				$ip_dec    = ip2long( $ip );
-				
+
 				# Strategy 1 - Create the netmask with 'netmask' 1s and then fill it to 32 with 0s
 				#$netmask_dec = bindec(str_pad('', $netmask, '1') . str_pad('', 32-$netmask, '0'));
-				
+
 				# Strategy 2 - Use math to create it
 				$wildcard_dec = pow( 2, ( 32 - $netmask ) ) - 1;
 				$netmask_dec  = ~$wildcard_dec;
-				
+
 				return ( ( $ip_dec & $netmask_dec ) == ( $range_dec & $netmask_dec ) );
 			}
 		} else {
@@ -92,31 +92,31 @@ class IP_Helper {
 				$upper = str_replace( '*', '255', $range );
 				$range = "$lower-$upper";
 			}
-			
+
 			if ( strpos( $range, '-' ) !== false ) { // A-B format
 				list( $lower, $upper ) = explode( '-', $range, 2 );
 				$lower_dec = (float) sprintf( "%u", ip2long( $lower ) );
 				$upper_dec = (float) sprintf( "%u", ip2long( $upper ) );
 				$ip_dec    = (float) sprintf( "%u", ip2long( $ip ) );
-				
+
 				return ( ( $ip_dec >= $lower_dec ) && ( $ip_dec <= $upper_dec ) );
 			}
-			
+
 			return false;
 		}
 	}
-	
+
 	function ip2long6( $ip ) {
 		if ( substr_count( $ip, '::' ) ) {
 			$ip = str_replace( '::', str_repeat( ':0000', 8 - substr_count( $ip, ':' ) ) . ':', $ip );
 		}
-		
+
 		$ip   = explode( ':', $ip );
 		$r_ip = '';
 		foreach ( $ip as $v ) {
 			$r_ip .= str_pad( base_convert( $v, 16, 2 ), 16, 0, STR_PAD_LEFT );
 		}
-		
+
 		return base_convert( $r_ip, 2, 10 );
 	}
 
@@ -125,24 +125,24 @@ class IP_Helper {
 		$pieces      = explode( "/", $ip, 2 );
 		$left_piece  = $pieces[0];
 		$right_piece = $pieces[1];
-		
+
 		// Extract out the main IP pieces
 		$ip_pieces     = explode( "::", $left_piece, 2 );
 		$main_ip_piece = $ip_pieces[0];
 		$last_ip_piece = $ip_pieces[1];
-		
+
 		// Pad out the shorthand entries.
 		$main_ip_pieces = explode( ":", $main_ip_piece );
 		foreach ( $main_ip_pieces as $key => $val ) {
 			$main_ip_pieces[ $key ] = str_pad( $main_ip_pieces[ $key ], 4, "0", STR_PAD_LEFT );
 		}
-		
+
 		// Check to see if the last IP block (part after ::) is set
 		$last_piece = "";
 		$size       = count( $main_ip_pieces );
 		if ( trim( $last_ip_piece ) != "" ) {
 			$last_piece = str_pad( $last_ip_piece, 4, "0", STR_PAD_LEFT );
-			
+
 			// Build the full form of the IPV6 address considering the last IP block set
 			for ( $i = $size; $i < 7; $i ++ ) {
 				$main_ip_pieces[ $i ] = "0000";
@@ -154,10 +154,10 @@ class IP_Helper {
 				$main_ip_pieces[ $i ] = "0000";
 			}
 		}
-		
+
 		// Rebuild the final long form IPV6 address
 		$final_ip = implode( ":", $main_ip_pieces );
-		
+
 		return $this->ip2long6( $final_ip );
 	}
 
@@ -170,28 +170,28 @@ class IP_Helper {
 		$pieces      = explode( "/", $range_ip, 2 );
 		$left_piece  = $pieces[0];
 		$right_piece = $pieces[1];
-		
+
 		// Extract out the main IP pieces
 		$ip_pieces     = explode( "::", $left_piece, 2 );
 		$main_ip_piece = $ip_pieces[0];
 		$last_ip_piece = $ip_pieces[1];
-		
+
 		// Pad out the shorthand entries.
 		$main_ip_pieces = explode( ":", $main_ip_piece );
 		foreach ( $main_ip_pieces as $key => $val ) {
 			$main_ip_pieces[ $key ] = str_pad( $main_ip_pieces[ $key ], 4, "0", STR_PAD_LEFT );
 		}
-		
+
 		// Create the first and last pieces that will denote the IPV6 range.
 		$first = $main_ip_pieces;
 		$last  = $main_ip_pieces;
-		
+
 		// Check to see if the last IP block (part after ::) is set
 		$last_piece = "";
 		$size       = count( $main_ip_pieces );
 		if ( trim( $last_ip_piece ) != "" ) {
 			$last_piece = str_pad( $last_ip_piece, 4, "0", STR_PAD_LEFT );
-			
+
 			// Build the full form of the IPV6 address considering the last IP block set
 			for ( $i = $size; $i < 7; $i ++ ) {
 				$first[ $i ] = "0000";
@@ -205,12 +205,12 @@ class IP_Helper {
 				$last[ $i ]  = "ffff";
 			}
 		}
-		
+
 		// Rebuild the final long form IPV6 address
 		$first    = $this->ip2long6( implode( ":", $first ) );
 		$last     = $this->ip2long6( implode( ":", $last ) );
 		$in_range = ( $ip >= $first && $ip <= $last );
-		
+
 		return $in_range;
 	}
 }

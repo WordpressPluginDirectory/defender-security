@@ -2,7 +2,7 @@
 /**
  * Plugin Name:  Defender
  * Plugin URI:   https://wpmudev.com/project/wp-defender/
- * Version:      4.7.4
+ * Version:      4.8.1
  * Description:  Get regular security scans, vulnerability reports, safety recommendations and customized hardening for your site in just a few clicks. Defender is the analyst and enforcer who never sleeps.
  * Author:       WPMU DEV
  * Author URI:   https://wpmudev.com/
@@ -11,7 +11,10 @@
  * Network:      true
  * Requires PHP: 7.4
  * Requires at least: 5.2
+ *
+ * @package WP_Defender
  */
+
 /*
 Copyright 2007-2024 Incsub (https://incsub.com)
 Author - Hoang Ngo, Anton Shulga
@@ -34,10 +37,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 	die;
 }
 if ( ! defined( 'DEFENDER_VERSION' ) ) {
-	define( 'DEFENDER_VERSION', '4.7.4' );
+	define( 'DEFENDER_VERSION', '4.8.1' );
 }
 if ( ! defined( 'DEFENDER_DB_VERSION' ) ) {
-	define( 'DEFENDER_DB_VERSION', '4.7.4' );
+	define( 'DEFENDER_DB_VERSION', '4.8.1' );
 }
 if ( ! defined( 'DEFENDER_SUI' ) ) {
 	define( 'DEFENDER_SUI', '2-12-23' );
@@ -69,7 +72,9 @@ if ( ! defined( 'WP_DEFENDER_SUPPORT_LINK' ) ) {
 if ( ! defined( 'WP_DEFENDER_POT_FILENAME' ) ) {
 	define( 'WP_DEFENDER_POT_FILENAME', 'defender-security.pot' );
 }
-
+if ( ! defined( 'FS_METHOD' ) ) {
+	define( 'FS_METHOD', 'direct' );
+}
 // If PHP version is downgraded while the plugin is running, deactivate the plugin.
 if ( version_compare( PHP_VERSION, WP_DEFENDER_MIN_PHP_VERSION, '<' ) ) {
 	if ( ! function_exists( 'is_plugin_active' ) ) {
@@ -127,19 +132,19 @@ global $wp_defender_central;
 $wp_defender_central = new \WP_Defender\Central();
 do_action( 'wp_defender' );
 // Initialize bootstrap.
-require_once WP_DEFENDER_DIR . 'src/bootstrap.php';
+require_once WP_DEFENDER_DIR . 'src/class-bootstrap.php';
 $bootstrap = new \WP_Defender\Bootstrap();
 $bootstrap->check_if_table_exists();
 if ( method_exists( $bootstrap, 'includes' ) ) {
 	$bootstrap->includes();
 }
 
-add_action( 'init', [ ( new \WP_Defender\Upgrader() ), 'run' ] );
-add_action( 'admin_enqueue_scripts', [ $bootstrap, 'register_assets' ] );
-add_filter( 'admin_body_class', [ $bootstrap, 'add_sui_to_body' ], 99 );
+add_action( 'init', array( ( new \WP_Defender\Upgrader() ), 'run' ) );
+add_action( 'admin_enqueue_scripts', array( $bootstrap, 'register_assets' ) );
+add_filter( 'admin_body_class', array( $bootstrap, 'add_sui_to_body' ), 99 );
 
-register_deactivation_hook( __FILE__, [ $bootstrap, 'deactivation_hook' ] );
-register_activation_hook( __FILE__, [ $bootstrap, 'activation_hook' ] );
+register_deactivation_hook( __FILE__, array( $bootstrap, 'deactivation_hook' ) );
+register_activation_hook( __FILE__, array( $bootstrap, 'activation_hook' ) );
 
 // Declare incompatibility with WooCommerce Checkout block.
 add_action(

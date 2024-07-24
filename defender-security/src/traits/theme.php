@@ -1,6 +1,13 @@
 <?php
+/**
+ * Helper functions for theme support.
+ *
+ * @package WP_Defender\Traits
+ */
 
 namespace WP_Defender\Traits;
+
+use WP_Theme;
 
 trait Theme {
 
@@ -20,7 +27,7 @@ trait Theme {
 	 */
 	public function get_themes(): array {
 		if ( ! function_exists( 'wp_get_themes' ) ) {
-			require_once( ABSPATH . '/wp-includes/theme.php' );
+			require_once ABSPATH . '/wp-includes/theme.php';
 		}
 
 		return wp_get_themes();
@@ -29,11 +36,11 @@ trait Theme {
 	/**
 	 * Get theme's details.
 	 *
-	 * @return \WP_Theme
+	 * @return WP_Theme
 	 */
-	public function get_theme(): \WP_Theme {
+	public function get_theme(): WP_Theme {
 		if ( ! function_exists( 'wp_get_themes' ) ) {
-			require_once( ABSPATH . '/wp-includes/theme.php' );
+			require_once ABSPATH . '/wp-includes/theme.php';
 		}
 
 		return wp_get_theme();
@@ -45,7 +52,7 @@ trait Theme {
 	 * @return array
 	 */
 	public function get_theme_slugs(): array {
-		$slugs = [];
+		$slugs = array();
 		foreach ( $this->get_themes() as $slug => $theme ) {
 			if ( is_object( $theme->parent() ) ) {
 				continue;
@@ -57,9 +64,11 @@ trait Theme {
 	}
 
 	/**
-	 * @param string $file_path
+	 * Check if the given theme file path is the active theme.
 	 *
-	 * @return bool
+	 * @param  string $file_path  The absolute file path to the theme file.
+	 *
+	 * @return bool Returns true if the given theme file path is the active theme, false otherwise.
 	 */
 	public function is_active_theme( $file_path ): bool {
 		$active_theme = $this->get_theme();
@@ -67,10 +76,10 @@ trait Theme {
 			return false;
 		}
 		$theme_dir = $this->get_path_of_themes_dir();
-		$abs_path = $theme_dir;
-		$abs_path = defender_replace_line( $abs_path );
+		$abs_path  = $theme_dir;
+		$abs_path  = defender_replace_line( $abs_path );
 		// Without the first slash.
-		$rev_file = str_replace( $abs_path, '', $file_path );
+		$rev_file   = str_replace( $abs_path, '', $file_path );
 		$theme_data = explode( '/', $rev_file );
 		if ( ! empty( $theme_data ) ) {
 			$theme_slug = $theme_data[0];

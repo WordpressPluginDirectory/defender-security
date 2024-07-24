@@ -1,9 +1,14 @@
 <?php
+/**
+ * Helper functions for plugin related tasks.
+ *
+ * @package WP_Defender\Traits
+ */
 
 namespace WP_Defender\Traits;
 
-use WP_Defender\Component\Quarantine as Quarantine_Component;
 use WP_Error;
+use WP_Defender\Component\Quarantine as Quarantine_Component;
 
 trait Plugin {
 
@@ -30,6 +35,7 @@ trait Plugin {
 		if ( ! function_exists( 'get_plugins' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
 		}
+
 		// WordPress caches this internally.
 		return get_plugins();
 	}
@@ -40,10 +46,10 @@ trait Plugin {
 	 * @return array
 	 */
 	public function get_plugin_slugs(): array {
-		$slugs = [];
+		$slugs = array();
 		foreach ( $this->get_plugins() as $slug => $plugin ) {
 			$base_slug = explode( '/', $slug );
-			$slugs[] = array_shift( $base_slug );
+			$slugs[]   = array_shift( $base_slug );
 		}
 
 		return $slugs;
@@ -52,7 +58,7 @@ trait Plugin {
 	/**
 	 * Get plugin data by slug.
 	 *
-	 * @param string $plugin_slug
+	 * @param  string $plugin_slug  Plugin slug.
 	 *
 	 * @return array
 	 */
@@ -63,10 +69,12 @@ trait Plugin {
 			}
 		}
 
-		return [];
+		return array();
 	}
 
 	/**
+	 * Retrieve plugin base directory.
+	 *
 	 * @return string
 	 */
 	public function get_plugin_base_dir(): string {
@@ -80,57 +88,63 @@ trait Plugin {
 	/**
 	 * Does the plugin exist on wp.org?
 	 *
-	 * @param string $slug
+	 * @param  string $slug  Plugin slug.
 	 *
 	 * @return array Index message: describes what happened.
 	 *               Index success: true if plugin in WordPress plugin repository
 	 *               else false.
 	 */
 	public function check_plugin_on_wp_org( $slug ): array {
-		$url = 'https://api.wordpress.org/plugins/info/1.0/' . $slug . '.json';
-		$http_args = [
-			'timeout' => 15,
-			'sslverify' => false, // Many hosts have no updated CA bundle.
+		$url       = 'https://api.wordpress.org/plugins/info/1.0/' . $slug . '.json';
+		$http_args = array(
+			'timeout'    => 15,
+			'sslverify'  => false, // Many hosts have no updated CA bundle.
 			'user-agent' => 'Defender/' . DEFENDER_VERSION,
-		];
-		$response = wp_remote_get( $url, $http_args );
+		);
+		$response  = wp_remote_get( $url, $http_args );
 
 		if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
 			$body_json = json_decode( wp_remote_retrieve_body( $response ), true );
 
-			$message = __( 'Plugin unknown error.', 'defender-security' );
+			$message = esc_html__( 'Plugin unknown error.', 'defender-security' );
 			if ( is_array( $body_json ) && isset( $body_json['error'] ) ) {
 				$message = $body_json['error'];
 			}
 
-			return [
+			return array(
 				'message' => $message,
 				'success' => false,
-			];
+			);
 		}
 
 		$results = json_decode( wp_remote_retrieve_body( $response ), true );
 		if ( ! is_array( $results ) ) {
-			return [
-				'message' => __( 'Plugin response is not in expected format.', 'defender-security' ),
+			return array(
+				'message' => esc_html__( 'Plugin response is not in expected format.', 'defender-security' ),
 				'success' => false,
-			];
+			);
 		}
 
-		return [
-			'message' => __( 'Plugin exists in WordPress respository.', 'defender-security' ),
+		return array(
+			'message' => esc_html__( 'Plugin exists in WordPress respository.', 'defender-security' ),
 			'success' => true,
-		];
+		);
 	}
 
 	/**
 	 * Check the resulting plugin slug against WordPress.org plugin rules.
 	 *
-	 * @param string $slug Plugin folder name.
+	 * @param  string $slug  Plugin folder name.
 	 *
 	 * @return bool
 	 */
 	public function is_likely_wporg_slug( $slug ): bool {
+		global $wp_filesystem;
+		// Initialize the WP filesystem, no more using 'file-put-contents' function.
+		if ( empty( $wp_filesystem ) ) {
+			require_once ABSPATH . '/wp-admin/includes/file.php';
+			WP_Filesystem();
+		}
 		if ( in_array( $slug, $this->get_known_wporg_slug(), true ) ) {
 			return true;
 		}
@@ -138,7 +152,7 @@ trait Plugin {
 		// Does file readme.txt exist?
 		$readme_file = $this->get_plugin_base_dir() . $slug . '/readme.txt';
 		if ( file_exists( $readme_file ) && is_readable( $readme_file ) ) {
-			$contents = trim( (string) file_get_contents( $readme_file ) );
+			$contents = trim( (string) $wp_filesystem->get_contents( $readme_file ) );
 
 			if ( false !== strpos( $contents, '===' ) ) {
 				return true;
@@ -153,7 +167,9 @@ trait Plugin {
 	}
 
 	/**
-	 * @param string $file_path
+	 * Check if the plugin is active.
+	 *
+	 * @param  string $file_path  Absolute file path to the plugin file.
 	 *
 	 * @return bool
 	 */
@@ -179,7 +195,7 @@ trait Plugin {
 	/**
 	 * Get plugin header from any file of the plugin.
 	 *
-	 * @param string $file_path Absolute file path to the plugin file.
+	 * @param  string $file_path  Absolute file path to the plugin file.
 	 *
 	 * @return array Return plugin details as array.
 	 */
@@ -192,7 +208,7 @@ trait Plugin {
 	/**
 	 * Get plugin directory name.
 	 *
-	 * @param string $file_path Absolute file path to the plugin file.
+	 * @param  string $file_path  Absolute file path to the plugin file.
 	 *
 	 * @return string Return plugin directory name.
 	 */
@@ -203,7 +219,7 @@ trait Plugin {
 	/**
 	 * Get plugin relative path.
 	 *
-	 * @param string $file_path Absolute file path to the plugin file.
+	 * @param  string $file_path  Absolute file path to the plugin file.
 	 *
 	 * @return string Return plugin relative path.
 	 */
@@ -218,7 +234,7 @@ trait Plugin {
 	/**
 	 * Check file exists at wp.org svn.
 	 *
-	 * @param string $url URL of the file.
+	 * @param  string $url  URL of the file.
 	 *
 	 * @return boolean Return true for file exists else false.
 	 */
@@ -235,7 +251,13 @@ trait Plugin {
 	}
 
 	/**
-	 * @return string
+	 * Generates the URL for a specific version of a plugin file.
+	 *
+	 * @param  string $directory_name  The name of the directory.
+	 * @param  string $version  The version of the file.
+	 * @param  string $file_path  The path of the file.
+	 *
+	 * @return string The URL of the versioned file.
 	 */
 	private function get_version_url( string $directory_name, string $version, string $file_path ): string {
 		return sprintf(
@@ -247,7 +269,12 @@ trait Plugin {
 	}
 
 	/**
-	 * @return string
+	 * Generate the URL for the trunk of a plugin based on the directory name and file path.
+	 *
+	 * @param  string $directory_name  The name of the directory.
+	 * @param  string $file_path  The path of the file.
+	 *
+	 * @return string The URL of the trunk of the plugin.
 	 */
 	private function get_trunk_url( string $directory_name, string $file_path ): string {
 		return sprintf(
@@ -257,6 +284,15 @@ trait Plugin {
 		);
 	}
 
+	/**
+	 * Generate the URL for a file based on the directory name, version, and file path.
+	 *
+	 * @param  string $directory_name  The name of the directory.
+	 * @param  string $version  The version of the file.
+	 * @param  string $file_path  The path of the file.
+	 *
+	 * @return string The URL of the file.
+	 */
 	private function get_file_url( string $directory_name, string $version, string $file_path ): string {
 		$file_url = $this->get_version_url( $directory_name, $version, $file_path );
 
@@ -267,7 +303,20 @@ trait Plugin {
 		return $file_url;
 	}
 
+	/**
+	 * Retrieves the content of a URL by downloading it and reading the contents of the downloaded file.
+	 *
+	 * @param  string $url  The URL to download the content from.
+	 *
+	 * @return string|WP_Error The content of the URL if successful, otherwise a WP_Error object.
+	 */
 	private function get_url_content( $url ) {
+		global $wp_filesystem;
+		// Initialize the WP filesystem, no more using 'file-put-contents' function.
+		if ( empty( $wp_filesystem ) ) {
+			require_once ABSPATH . '/wp-admin/includes/file.php';
+			WP_Filesystem();
+		}
 		if ( ! function_exists( 'download_url' ) ) {
 			$ds = DIRECTORY_SEPARATOR;
 			require_once ABSPATH . 'wp-admin' . $ds . 'includes' . $ds . 'file.php';
@@ -278,14 +327,16 @@ trait Plugin {
 			return $tmp;
 		}
 
-		$content = file_get_contents( $tmp );
-		@unlink( $tmp );
+		$content = $wp_filesystem->get_contents( $tmp );
+		wp_delete_file( $tmp );
 
 		return $content;
 	}
 
 	/**
-	 * @param string $parent_action
+	 * Quarantine a plugin.
+	 *
+	 * @param  string $parent_action  Parent action.
 	 *
 	 * @return array|WP_Error
 	 */
@@ -297,9 +348,6 @@ trait Plugin {
 			);
 		}
 
-		/**
-		 * @var Quarantine_Component
-		 */
 		$quarantine_component = wd_di()->get( Quarantine_Component::class );
 
 		$action = $quarantine_component->quarantine_file( $this->owner, $parent_action );
@@ -310,7 +358,7 @@ trait Plugin {
 	/**
 	 * Detect if the plugin file is quarantinable.
 	 *
-	 * @param string $file_path File path.
+	 * @param  string $file_path  File path.
 	 *
 	 * @return bool Return true if file is in wp.org plugin else false.
 	 */
@@ -325,15 +373,15 @@ trait Plugin {
 
 	/**
 	 * Get the known WP.org slugs.
+	 * This is a list of plugins that are known to be in the WordPress.org repository which we can't programmatically
+	 * detect.
 	 *
-	 * This is a list of plugins that are known to be in the WordPress.org repository which we can't programmatically detect.
-	 *
-	 * @since 4.8.0
 	 * @return array
+	 * @since 4.8.0
 	 */
 	public function get_known_wporg_slug(): array {
-		return [
+		return array(
 			'wp-crontrol',
-		];
+		);
 	}
 }

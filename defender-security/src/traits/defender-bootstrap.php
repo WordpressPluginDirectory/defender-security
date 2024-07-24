@@ -2,47 +2,57 @@
 /**
  * Handle common bootstrap functionalities.
  *
- * @package WP_Defender
+ * @package WP_Defender\Traits
  */
 
 namespace WP_Defender\Traits;
 
+use WP_CLI;
 use Calotes\DB\Mapper;
-use Calotes\Helper\Array_Cache;
-use WP_Defender\Behavior\WPMUDEV;
+use WP_Defender\Admin;
 use WP_Defender\Component\Cli;
-use WP_Defender\Controller\Advanced_Tools;
-use WP_Defender\Controller\Dashboard;
-use WP_Defender\Controller\Audit_Logging;
-use WP_Defender\Controller\Firewall as Firewall_Controller;
+use Calotes\Helper\Array_Cache;
 use WP_Defender\Controller\HUB;
-use WP_Defender\Controller\Mask_Login;
-use WP_Defender\Controller\Notification;
-use WP_Defender\Controller\Onboard;
-use WP_Defender\Controller\Password_Protection;
-use WP_Defender\Controller\Recaptcha;
+use WP_Defender\Controller\WAF;
 use WP_Defender\Controller\Scan;
-use WP_Defender\Controller\Security_Headers;
-use WP_Defender\Controller\Security_Tweaks;
+use WP_Defender\Component\Crypt;
+use WP_Defender\Behavior\WPMUDEV;
+use WP_Defender\Controller\Onboard;
+use WP_Defender\Controller\Tutorial;
+use WP_Defender\Controller\Webauthn;
+use WP_Defender\Controller\Dashboard;
+use WP_Defender\Controller\Recaptcha;
+use WP_Defender\Controller\Mask_Login;
+use WP_Defender\Controller\Quarantine;
 use WP_Defender\Controller\Two_Factor;
 use WP_Defender\Controller\Main_Setting;
-use WP_Defender\Controller\WAF;
-use WP_Defender\Controller\Tutorial;
-use WP_Defender\Controller\Blocklist_Monitor;
-use WP_Defender\Controller\Password_Reset;
-use WP_Defender\Controller\Webauthn;
-use WP_Defender\Controller\Quarantine;
+use WP_Defender\Controller\Notification;
+use WP_Defender\Controller\Audit_Logging;
 use WP_Defender\Controller\Data_Tracking;
+use WP_Defender\Controller\Advanced_Tools;
 use WP_Defender\Controller\General_Notice;
+use WP_Defender\Controller\Password_Reset;
+use WP_Defender\Controller\Security_Tweaks;
+use WP_Defender\Controller\Security_Headers;
+use WP_Defender\Controller\Blocklist_Monitor;
+use WP_Defender\Controller\Password_Protection;
+use WP_Defender\Component\Logger\Rotation_Logger;
 use WP_Defender\Component\Firewall as Firewall_Component;
+use WP_Defender\Controller\Firewall as Firewall_Controller;
 
-/**
- * Traits to handle common (pro & free) bootstrap functionalities.
- */
 trait Defender_Bootstrap {
 
+	/**
+	 * Table name for quarantine.
+	 *
+	 * @var string
+	 */
 	private $quarantine_table = 'defender_quarantine';
-
+	/**
+	 * Table name for scan item.
+	 *
+	 * @var string
+	 */
 	private $scan_item_table = 'defender_scan_item';
 
 	/**
@@ -53,43 +63,30 @@ trait Defender_Bootstrap {
 	private function is_quarantine_dependent_tables_innodb(): bool {
 		global $wpdb;
 
-		$tables = [ $wpdb->users, $wpdb->base_prefix . $this->scan_item_table ];
+		$tables      = array( $wpdb->users, $wpdb->base_prefix . $this->scan_item_table );
 		$total_table = count( $tables );
 
-		$tables_placeholder = implode( ',', array_fill( 0, $total_table, '%s' ) );
-		$prepared_values = array_merge(
-			[
+		return $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$wpdb->prepare(
+				"SELECT COUNT(`ENGINE`) = %d FROM   information_schema.TABLES WHERE TABLE_SCHEMA = %s AND `ENGINE` = %s AND TABLE_NAME IN ( '{$wpdb->users}', '{$wpdb->base_prefix}defender_scan_item' );",
 				$total_table,
 				$wpdb->dbname,
 				'innodb',
-			],
-			$tables
-		);
-
-		$sql = <<<SQL
-			SELECT
-				COUNT(`ENGINE`) = %d
-			FROM   information_schema.TABLES
-			WHERE
-				TABLE_SCHEMA = '%s'
-				AND `ENGINE` = '%s'
-				AND TABLE_NAME IN ( $tables_placeholder );
-SQL;
-
-		$prepared_statement = $wpdb->prepare(
-			$sql,
-			$prepared_values
-		);
-
-		return $wpdb->get_var( $prepared_statement ) === '1';
+			)
+		) === '1';
 	}
 
+	/**
+	 * Creates the quarantine table if it doesn't exist.
+	 *
+	 * @return void
+	 */
 	public function create_table_quarantine() {
 		global $wpdb;
 
 		$quarantine_table = $wpdb->base_prefix . $this->quarantine_table;
-		$scan_item_table = $wpdb->base_prefix . $this->scan_item_table;
-		$charset_collate = $wpdb->get_charset_collate();
+		$scan_item_table  = $wpdb->base_prefix . $this->scan_item_table;
+		$charset_collate  = $wpdb->get_charset_collate();
 
 		if ( $this->is_quarantine_dependent_tables_innodb() ) {
 			$sql = <<<SQL
@@ -145,7 +142,7 @@ SQL;
 SQL;
 		}
 
-		$wpdb->query( $sql );
+		$wpdb->query( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 	}
 
 	/**
@@ -155,7 +152,7 @@ SQL;
 		$this->create_database_tables();
 		$this->on_activation();
 		// Create a file with a random key if it doesn't exist.
-		( new \WP_Defender\Component\Crypt() )->create_key_file();
+		( new Crypt() )->create_key_file();
 		// If this is a plugin reactivatin, then track it. No need the check by 'wd_nofresh_install' key because the option is disabled by default.
 		$settings = wd_di()->get( Main_Setting::class );
 		$settings->set_intention( 'Reactivation' );
@@ -194,6 +191,11 @@ SQL;
 		wp_clear_scheduled_hook( 'tweaksSendNotification' );
 	}
 
+	/**
+	 * Creates the 'defender_unlockout' table if it doesn't exist in the database.
+	 *
+	 * @return void
+	 */
 	public function create_table_unlockout() {
 		global $wpdb;
 
@@ -214,12 +216,14 @@ SQL;
 			KEY `status` (`status`)
 		   ) {$charset_collate};
 SQL;
-			$wpdb->query( $sql );
+		$wpdb->query( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 	}
 
 	/**
 	 * Creates Defender's tables.
-	 * @since 2.7.1 No use dbDelta because PHP v8.1 triggers an error when calling query "DESCRIBE {$table};" if the table doesn't exist.
+	 *
+	 * @since 2.7.1 No use dbDelta because PHP v8.1 triggers an error when calling query "DESCRIBE {$table};" if the
+	 *     table doesn't exist.
 	 */
 	protected function create_database_tables(): void {
 		global $wpdb;
@@ -236,7 +240,7 @@ SQL;
  PRIMARY KEY  (`id`),
  KEY `source` (`source`)
 ) $charset_collate;";
-		$wpdb->query( $sql );
+		$wpdb->query( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		// Audit log table. Though our data mainly store on API side, we will need a table for caching.
 		$sql = "CREATE TABLE IF NOT EXISTS {$wpdb->base_prefix}defender_audit_log (
@@ -259,7 +263,7 @@ SQL;
  KEY `context` (`context`),
  KEY `ip` (`ip`)
 ) $charset_collate;";
-		$wpdb->query( $sql );
+		$wpdb->query( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		// Scan item table.
 		$sql = "CREATE TABLE IF NOT EXISTS {$wpdb->base_prefix}defender_scan_item (
@@ -272,7 +276,7 @@ SQL;
  KEY `type` (`type`),
  KEY `status` (`status`)
 ) $charset_collate;";
-		$wpdb->query( $sql );
+		$wpdb->query( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		// Scan table.
 		$sql = "CREATE TABLE IF NOT EXISTS {$wpdb->base_prefix}defender_scan (
@@ -286,7 +290,7 @@ SQL;
  `is_automation` bool NOT NULL,
  PRIMARY KEY  (`id`)
 ) $charset_collate;";
-		$wpdb->query( $sql );
+		$wpdb->query( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		// Lockout log table.
 		$sql = "CREATE TABLE IF NOT EXISTS {$wpdb->base_prefix}defender_lockout_log (
@@ -305,7 +309,7 @@ SQL;
  KEY `tried` (`tried`),
  KEY `country_iso_code` (`country_iso_code`)
 ) $charset_collate;";
-		$wpdb->query( $sql );
+		$wpdb->query( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		// Lockout table.
 		$sql = "CREATE TABLE IF NOT EXISTS {$wpdb->base_prefix}defender_lockout (
@@ -325,7 +329,7 @@ SQL;
  KEY `attempt` (`attempt`),
  KEY `attempt_404` (`attempt_404`)
 ) $charset_collate;";
-		$wpdb->query( $sql );
+		$wpdb->query( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		if ( class_exists( 'WP_Defender\Controller\Quarantine' ) ) {
 			$this->create_table_quarantine();
@@ -334,6 +338,11 @@ SQL;
 		$this->create_table_unlockout();
 	}
 
+	/**
+	 * Initializes the common modules of the application.
+	 *
+	 * @return void
+	 */
 	private function init_modules_common(): void {
 		// Init main ORM.
 		Array_Cache::set( 'orm', new Mapper() );
@@ -379,19 +388,22 @@ SQL;
 	}
 
 	/**
-	 * @return bool
+	 * Checks if the site is newly created.
+	 *
+	 * @return bool Returns true if the site is newly created, false otherwise.
 	 */
 	private function maybe_show_onboarding(): bool {
 		// First we need to check if the site is newly create.
 		global $wpdb;
 		if ( ! is_multisite() ) {
-			$res = $wpdb->get_var( "SELECT option_value FROM $wpdb->options WHERE option_name = 'wp_defender_shown_activator'" );
+			$res = $wpdb->get_var( "SELECT option_value FROM $wpdb->options WHERE option_name = 'wp_defender_shown_activator'" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		} else {
-			$sql = $wpdb->prepare(
-				"SELECT meta_value FROM $wpdb->sitemeta WHERE meta_key = 'wp_defender_shown_activator' AND site_id = %d",
-				get_current_network_id()
+			$res = $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				$wpdb->prepare(
+					"SELECT meta_value FROM $wpdb->sitemeta WHERE meta_key = 'wp_defender_shown_activator' AND site_id = %d",
+					get_current_network_id()
+				)
 			);
-			$res = $wpdb->get_var( $sql );
 		}
 		// Get '1' for direct SQL request if Onboarding was already.
 		if ( empty( $res ) ) {
@@ -401,10 +413,13 @@ SQL;
 		return false;
 	}
 
+
 	/**
-	 * @param string $classes
+	 * Adds a specific class to the body tag if the current page is a Defender page.
 	 *
-	 * @return string
+	 * @param  string $classes  The existing body classes.
+	 *
+	 * @return string The modified body classes.
 	 */
 	public function add_sui_to_body( string $classes ): string {
 		if ( ! is_defender_page() ) {
@@ -415,111 +430,119 @@ SQL;
 		return $classes;
 	}
 
+	/**
+	 * Registers the necessary styles for the plugin.
+	 *
+	 * @return void
+	 */
 	private function register_styles(): void {
-		wp_enqueue_style( 'defender-menu', WP_DEFENDER_BASE_URL . 'assets/css/defender-icon.css' );
+		wp_enqueue_style( 'defender-menu', WP_DEFENDER_BASE_URL . 'assets/css/defender-icon.css', array(), DEFENDER_VERSION );
 
-		$css_files = [
+		$css_files = array(
 			'defender' => WP_DEFENDER_BASE_URL . 'assets/css/styles.css',
-		];
+		);
 
 		foreach ( $css_files as $slug => $file ) {
-			wp_register_style( $slug, $file, [], DEFENDER_VERSION );
+			wp_register_style( $slug, $file, array(), DEFENDER_VERSION );
 		}
 	}
 
+	/**
+	 * Registers the necessary scripts for the plugin.
+	 *
+	 * @return void
+	 */
 	private function register_scripts(): void {
-		$base_url = WP_DEFENDER_BASE_URL;
-		$dependencies = [ 'def-vue', 'defender', 'wp-i18n' ];
-		$js_files = [
-			'wpmudev-sui' => [
+		$base_url     = WP_DEFENDER_BASE_URL;
+		$dependencies = array( 'def-vue', 'defender', 'wp-i18n' );
+		$js_files     = array(
+			'wpmudev-sui'        => array(
 				$base_url . 'assets/js/shared-ui.js',
-			],
-			'defender' => [
+			),
+			'defender'           => array(
 				$base_url . 'assets/js/scripts.js',
-			],
-			'def-vue' => [
+			),
+			'def-vue'            => array(
 				$base_url . 'assets/js/vendor/vue.runtime.min.js',
-			],
-			'def-dashboard' => [
+			),
+			'def-dashboard'      => array(
 				$base_url . 'assets/app/dashboard.js',
 				$dependencies,
-			],
-			'def-securitytweaks' => [
+			),
+			'def-securitytweaks' => array(
 				$base_url . 'assets/app/security-tweak.js',
-				array_merge( $dependencies, [ 'clipboard', 'wpmudev-sui' ] ),
-			],
-			'def-scan' => [
+				array_merge( $dependencies, array( 'clipboard', 'wpmudev-sui' ) ),
+			),
+			'def-scan'           => array(
 				$base_url . 'assets/app/scan.js',
-				array_merge( $dependencies, [ 'clipboard', 'wpmudev-sui' ] ),
-			],
-			'def-audit' => [
+				array_merge( $dependencies, array( 'clipboard', 'wpmudev-sui' ) ),
+			),
+			'def-audit'          => array(
 				$base_url . 'assets/app/audit.js',
 				$dependencies,
-			],
-			'def-iplockout' => [
+			),
+			'def-iplockout'      => array(
 				$base_url . 'assets/app/ip-lockout.js',
-				array_merge( $dependencies, [ 'wpmudev-sui' ] ),
-			],
-			'def-advancedtools' => [
+				array_merge( $dependencies, array( 'wpmudev-sui' ) ),
+			),
+			'def-advancedtools'  => array(
 				$base_url . 'assets/app/advanced-tools.js',
 				$dependencies,
-			],
-			'def-settings' => [
+			),
+			'def-settings'       => array(
 				$base_url . 'assets/app/settings.js',
 				$dependencies,
-			],
-			'def-2fa' => [
+			),
+			'def-2fa'            => array(
 				$base_url . 'assets/app/two-fa.js',
 				$dependencies,
-			],
-			'def-notification' => [
+			),
+			'def-notification'   => array(
 				$base_url . 'assets/app/notification.js',
 				$dependencies,
-			],
-			'def-waf' => [
+			),
+			'def-waf'            => array(
 				$base_url . 'assets/app/waf.js',
 				$dependencies,
-			],
-			'def-onboard' => [
+			),
+			'def-onboard'        => array(
 				$base_url . 'assets/app/onboard.js',
 				$dependencies,
-			],
-			'def-tutorial' => [
+			),
+			'def-tutorial'       => array(
 				$base_url . 'assets/app/tutorial.js',
 				$dependencies,
-			],
-		];
+			),
+		);
 
 		foreach ( $js_files as $slug => $file ) {
 			if ( isset( $file[1] ) ) {
 				wp_register_script( $slug, $file[0], $file[1], DEFENDER_VERSION, true );
 			} else {
-				wp_register_script( $slug, $file[0], [ 'jquery' ], DEFENDER_VERSION, true );
+				wp_register_script( $slug, $file[0], array( 'jquery' ), DEFENDER_VERSION, true );
 			}
 		}
 	}
 
+	/**
+	 * Localizes the script by adding necessary data to the 'defender' object.
+	 *
+	 * @return void
+	 */
 	private function localize_script(): void {
 		$wpmu_dev = new WPMUDEV();
 		global $wp_defender_central;
 
-		$misc = [];
-
-		/**
-		 * @var Data_Tracking
-		 */
+		$misc          = array();
 		$data_tracking = wd_di()->get( Data_Tracking::class );
-		$is_tracking = $data_tracking->show_tracking_modal();
+		$is_tracking   = $data_tracking->show_tracking_modal();
 		if ( $is_tracking ) {
 			$misc = $data_tracking->get_tracking_modal();
 		}
 		$misc['high_contrast'] = defender_high_contrast();
-		/**
-		 * @var General_Notice
-		 */
-		$general_notice = wd_di()->get( General_Notice::class );
+		$general_notice        = wd_di()->get( General_Notice::class );
 		if ( $general_notice->show_notice() ) {
-			$misc['general_notice'] = $general_notice->get_notice_data();
+			$misc['general_notice']           = $general_notice->get_notice_data();
 			$misc['general_notice']['status'] = 'show';
 		} else {
 			$misc['general_notice']['status'] = 'hide';
@@ -528,25 +551,25 @@ SQL;
 		wp_localize_script(
 			'def-vue',
 			'defender',
-			[
-				'whitelabel' => defender_white_label_status(),
-				'misc' => $misc,
-				'home_url' => network_home_url(),
-				'site_url' => network_site_url(),
-				'admin_url' => network_admin_url(),
-				'defender_url' => WP_DEFENDER_BASE_URL,
-				'is_free' => $wpmu_dev->is_pro() ? 0 : 1,
-				'is_membership' => true,
-				'is_whitelabel' => $wpmu_dev->is_whitelabel_enabled() ? 'enabled' : 'disabled',
-				'wpmu_dev_url_action' => $wpmu_dev->hide_wpmu_dev_urls() ? 'hide' : 'show',
-				'opcache_save_comments' => $wp_defender_central->is_opcache_save_comments_disabled() ? 'disabled' : 'enabled',
-				'opcache_message' => $wp_defender_central->display_opcache_message(),
-				'wpmudev_url' => 'https://wpmudev.com/docs/wpmu-dev-plugins/defender/',
+			array(
+				'whitelabel'                  => defender_white_label_status(),
+				'misc'                        => $misc,
+				'home_url'                    => network_home_url(),
+				'site_url'                    => network_site_url(),
+				'admin_url'                   => network_admin_url(),
+				'defender_url'                => WP_DEFENDER_BASE_URL,
+				'is_free'                     => $wpmu_dev->is_pro() ? 0 : 1,
+				'is_membership'               => true,
+				'is_whitelabel'               => $wpmu_dev->is_whitelabel_enabled() ? 'enabled' : 'disabled',
+				'wpmu_dev_url_action'         => $wpmu_dev->hide_wpmu_dev_urls() ? 'hide' : 'show',
+				'opcache_save_comments'       => $wp_defender_central->is_opcache_save_comments_disabled() ? 'disabled' : 'enabled',
+				'opcache_message'             => $wp_defender_central->display_opcache_message(),
+				'wpmudev_url'                 => 'https://wpmudev.com/docs/wpmu-dev-plugins/defender/',
 				'wpmudev_support_ticket_text' => defender_support_ticket_text(),
-				'wpmudev_api_base_url' => $wpmu_dev->get_api_base_url(),
-				'upgrade_title' => __( 'UPGRADE TO PRO', 'defender-security' ),
-				'tracking_modal' => $is_tracking ? 'show' : 'hide',
-			]
+				'wpmudev_api_base_url'        => $wpmu_dev->get_api_base_url(),
+				'upgrade_title'               => esc_html__( 'UPGRADE TO PRO', 'defender-security' ),
+				'tracking_modal'              => $is_tracking ? 'show' : 'hide',
+			)
 		);
 
 		wp_localize_script( 'defender', 'defenderGetText', defender_gettext_translations() );
@@ -576,31 +599,37 @@ SQL;
 	private function on_activation(): void {
 		add_action(
 			'admin_init',
-			function() {
-				/**
-				 * @var Security_Tweaks
-				 */
+			function () {
 				$security_tweaks = wd_di()->get( Security_Tweaks::class );
 				$security_tweaks->get_security_key()->cron_schedule();
 			}
 		);
 	}
 
+
 	/**
-	 * @param array $schedules
+	 * Returns the cron schedules.
 	 *
-	 * @return array
+	 * @param  array $schedules  The existing cron schedules.
+	 *
+	 * @return array The updated cron schedules.
 	 */
 	public function cron_schedules( array $schedules ): array {
 		return defender_cron_schedules( $schedules );
 	}
 
+	/**
+	 * Initializes the modules and registers the routes for the plugin. Also includes the admin class, adds WP-CLI
+	 * commands,
+	 *
+	 * @return void
+	 */
 	public function includes(): void {
 		// Initialize modules.
 		add_action(
 			'setup_theme',
 			function () {
-				add_filter( 'cron_schedules', [ $this, 'cron_schedules' ] );
+				add_filter( 'cron_schedules', array( $this, 'cron_schedules' ) );
 				$this->init_modules();
 			}
 		);
@@ -613,14 +642,14 @@ SQL;
 			9
 		);
 		// Include admin class. Don't use is_admin().
-		add_action( 'admin_init', [ ( new \WP_Defender\Admin() ), 'init' ] );
+		add_action( 'admin_init', array( ( new Admin() ), 'init' ) );
 		// Add WP-CLI commands.
 		if ( defender_is_wp_cli() ) {
-			\WP_CLI::add_command( 'defender', Cli::class );
+			WP_CLI::add_command( 'defender', Cli::class );
 		}
 		// Rotational logger initialization.
-		add_action( 'init', [ ( new \WP_Defender\Component\Logger\Rotation_Logger() ), 'init' ], 99 );
+		add_action( 'init', array( ( new Rotation_Logger() ), 'init' ), 99 );
 		// Handle plugin deactivation.
-		add_action( 'deactivated_plugin', [ ( new HUB() ), 'intercept_deactivate' ] );
+		add_action( 'deactivated_plugin', array( ( new HUB() ), 'intercept_deactivate' ) );
 	}
 }

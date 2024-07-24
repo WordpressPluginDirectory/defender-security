@@ -1,23 +1,49 @@
 <?php
+/**
+ * This file contains all functions used in the plugin.
+ *
+ * @package WP_Defender
+ */
+
+use DI\Container;
+use WP_Defender\Central;
+use WP_Defender\Component\Crypt;
+use WP_Defender\Component\Two_Fa;
+use WP_Defender\Behavior\WPMUDEV;
+use WP_Defender\Component\User_Agent;
+use WP_Defender\Controller\Two_Factor;
+use WP_Defender\Model\Setting\Main_Setting;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	die;
 }
 
-/**
- * @param string $path
- *
- * @return string
- */
-function defender_asset_url( string $path ): string {
-	$base_url = plugin_dir_url( __DIR__ );
 
-	return untrailingslashit( $base_url ) . $path;
+/**
+ * Generates the URL for a given asset path in the Defender plugin.
+ *
+ * @param string $path  The path of the asset.
+ * @param bool   $print_url Whether to print the URL or return it.
+ *
+ * @return string|void The URL of the asset.
+ */
+function defender_asset_url( string $path, bool $print_url = false ) {
+	$url = untrailingslashit( WP_DEFENDER_BASE_URL ) . $path;
+
+	if ( empty( $print_url ) ) {
+		return $url;
+	}
+
+	echo esc_url_raw( $url );
 }
 
+
 /**
- * @param string $path
+ * Generates the absolute path for a given path relative to the Defender plugin directory.
  *
- * @return string
+ * @param  string $path  The relative path within the Defender plugin directory.
+ *
+ * @return string The absolute path.
  */
 function defender_path( string $path ): string {
 	$base_path = plugin_dir_path( __DIR__ );
@@ -28,12 +54,12 @@ function defender_path( string $path ): string {
 /**
  * Sanitize submitted data.
  *
- * @param array $data
+ * @param  array $data  The data to sanitize.
  *
  * @return array
  */
 function defender_sanitize_data( $data ) {
-	foreach ( $data as $key => &$value ) {// phpcs:ignore
+	foreach ( $data as $key => &$value ) {
 		if ( is_array( $value ) ) {
 			$value = defender_sanitize_data( $value );
 		} else {
@@ -55,8 +81,8 @@ function defender_wp_config_path(): string {
 	}
 
 	if (
-		@file_exists( dirname( ABSPATH ) . '/wp-config.php' )
-		&& ! @file_exists( dirname( ABSPATH ) . '/wp-settings.php' )
+		file_exists( dirname( ABSPATH ) . '/wp-config.php' )
+		&& ! file_exists( dirname( ABSPATH ) . '/wp-settings.php' )
 	) {
 		return dirname( ABSPATH ) . '/wp-config.php';
 	}
@@ -73,8 +99,11 @@ function defender_is_windows(): bool {
 	return '\\' === DIRECTORY_SEPARATOR;
 }
 
+
 /**
- * @return \DI\Container
+ * Returns the global DI container for the WP Defender plugin.
+ *
+ * @return Container The global DI container.
  */
 function wd_di() {
 	global $wp_defender_di;
@@ -83,7 +112,9 @@ function wd_di() {
 }
 
 /**
- * @return \WP_Defender\Central
+ * Returns the global Central object for the WP Defender plugin.
+ *
+ * @return Central
  */
 function wd_central() {
 	global $wp_defender_central;
@@ -92,8 +123,10 @@ function wd_central() {
 }
 
 /**
- * @since 2.8.0
+ * Get base action.
+ *
  * @return string
+ * @since 2.8.0
  */
 function defender_base_action(): string {
 	return 'wp_defender/v1/hub/';
@@ -105,27 +138,27 @@ function defender_base_action(): string {
  * @return array
  */
 function defender_backward_compatibility() {
-	$wpmu_dev = new \WP_Defender\Behavior\WPMUDEV();
+	$wpmu_dev        = new WPMUDEV();
 	$two_fa_settings = new \WP_Defender\Model\Setting\Two_Fa();
-	$controller = wd_di()->get( \WP_Defender\Controller\Two_Factor::class );
-	$list = $controller->dump_routes_and_nonces();
-	$lost_url = add_query_arg(
-		[
-			'action' => defender_base_action(),
-			'_def_nonce' => $list['nonces']['send_backup_code'],
+	$controller      = wd_di()->get( Two_Factor::class );
+	$collection      = $controller->dump_routes_and_nonces();
+	$lost_url        = add_query_arg(
+		array(
+			'action'     => defender_base_action(),
+			'_def_nonce' => $collection['nonces']['send_backup_code'],
 			// Add a dummy values to avoid displaying errors, e.g. for the case with null.
-			'route' => $controller->check_route( $list['routes']['send_backup_code'] ?? 'test' ),
-		],
+			'route'      => $controller->check_route( $collection['routes']['send_backup_code'] ?? 'test' ),
+		),
 		admin_url( 'admin-ajax.php' )
 	);
 
-	return [
-		'is_free' => ! $wpmu_dev->is_pro(),
-		'plugin_url' => defender_asset_url( '' ),
-		'two_fa_settings' => $two_fa_settings,
-		'two_fa_component' => \WP_Defender\Component\Two_Fa::class,
-		'lost_url' => $lost_url,
-	];
+	return array(
+		'is_free'          => ! $wpmu_dev->is_pro(),
+		'plugin_url'       => defender_asset_url( '' ),
+		'two_fa_settings'  => $two_fa_settings,
+		'two_fa_component' => Two_Fa::class,
+		'lost_url'         => $lost_url,
+	);
 }
 
 /**
@@ -138,9 +171,8 @@ if ( ! function_exists( 'wp_timezone_string' ) ) {
 	 * Retrieves the timezone from site settings as a string.
 	 * Uses the `timezone_string` option to get a proper timezone if available, otherwise falls back to an offset.
 	 *
-	 * @since 5.3.0
-	 *
 	 * @return string PHP timezone string or a ±HH:MM offset.
+	 * @since 5.3.0
 	 */
 	function wp_timezone_string() {
 		$timezone_string = get_option( 'timezone_string' );
@@ -149,13 +181,13 @@ if ( ! function_exists( 'wp_timezone_string' ) ) {
 			return $timezone_string;
 		}
 
-		$offset = (float) get_option( 'gmt_offset' );
-		$hours = (int) $offset;
+		$offset  = (float) get_option( 'gmt_offset' );
+		$hours   = (int) $offset;
 		$minutes = ( $offset - $hours );
 
-		$sign = ( $offset < 0 ) ? '-' : '+';
-		$abs_hour = abs( $hours );
-		$abs_mins = abs( $minutes * 60 );
+		$sign      = ( $offset < 0 ) ? '-' : '+';
+		$abs_hour  = abs( $hours );
+		$abs_mins  = abs( $minutes * 60 );
 		$tz_offset = sprintf( '%s%02d:%02d', $sign, $abs_hour, $abs_mins );
 
 		return $tz_offset;
@@ -167,9 +199,8 @@ if ( ! function_exists( 'wp_timezone' ) ) {
 	 * Retrieves the timezone from site settings as a `DateTimeZone` object.
 	 * Timezone can be based on a PHP timezone string or a ±HH:MM offset.
 	 *
-	 * @since 5.3.0
-	 *
 	 * @return DateTimeZone Timezone object.
+	 * @since 5.3.0
 	 */
 	function wp_timezone() {
 		return new DateTimeZone( wp_timezone_string() );
@@ -182,7 +213,7 @@ if ( ! function_exists( 'wp_timezone' ) ) {
  * @return string|null
  */
 function defender_get_hostname() {
-	$host = parse_url( get_site_url(), PHP_URL_HOST );
+	$host = wp_parse_url( get_site_url(), PHP_URL_HOST );
 	$host = str_replace( 'www.', '', $host );
 	$host = explode( '.', $host );
 	if ( is_array( $host ) ) {
@@ -201,12 +232,12 @@ if ( ! function_exists( 'sanitize_mask_url' ) ) {
 	 * Limits the output to alphanumeric characters, underscore (_) and dash (-).
 	 * Whitespace becomes a dash.
 	 *
-	 * @param string $title The title to be sanitized.
+	 * @param  string $title  The title to be sanitized.
 	 *
 	 * @return string The sanitized title.
 	 */
 	function sanitize_mask_url( $title ) {
-		$title = strip_tags( $title );
+		$title = wp_strip_all_tags( $title );
 		// Preserve escaped octets.
 		$title = preg_replace( '|%([a-fA-F0-9][a-fA-F0-9])|', '---$1---', $title );
 		// Remove percent signs that are not part of an octet.
@@ -232,7 +263,7 @@ if ( ! function_exists( 'sanitize_mask_url' ) ) {
  * Return the noreply email.
  * A utility function which will return common noreply from address.
  *
- * @param string $filter_tag Tag name of the filter to override email address.
+ * @param  string $filter_tag  Tag name of the filter to override email address.
  *
  * @return string Noreply email.
  */
@@ -256,24 +287,24 @@ function defender_noreply_email( string $filter_tag = '' ) {
  * Get data of the whitelabel feature from WPMUDEV Dashboard:
  * hide_branding, hide_doc_link, footer_text, hero_image, change_footer.
  *
- * @since 2.5.5
  * @return array
+ * @since 2.5.5
  */
 function defender_white_label_status() {
 	/* translators: %s: heart icon */
-	$footer_text = sprintf( __( 'Made with %s by WPMU DEV', 'defender-security' ), '<i class="sui-icon-heart"></i>' );
+	$footer_text  = sprintf( esc_html__( 'Made with %s by WPMU DEV', 'defender-security' ), '<i class="sui-icon-heart"></i>' );
 	$custom_image = apply_filters( 'wpmudev_branding_hero_image', '' );
-	$whitelabled = apply_filters( 'wpmudev_branding_hide_branding', false );
+	$whitelabled  = apply_filters( 'wpmudev_branding_hide_branding', false );
 
-	return [
+	return array(
 		'hide_branding' => apply_filters( 'wpmudev_branding_hide_branding', false ),
 		'hide_doc_link' => apply_filters( 'wpmudev_branding_hide_doc_link', false ),
-		'footer_text' => apply_filters( 'wpmudev_branding_footer_text', $footer_text ),
-		'hero_image' => $custom_image,
+		'footer_text'   => apply_filters( 'wpmudev_branding_footer_text', $footer_text ),
+		'hero_image'    => $custom_image,
 		'change_footer' => apply_filters( 'wpmudev_branding_change_footer', false ),
-		'is_unbranded' => empty( $custom_image ) && $whitelabled,
-		'is_rebranded' => ! empty( $custom_image ) && $whitelabled,
-	];
+		'is_unbranded'  => empty( $custom_image ) && $whitelabled,
+		'is_rebranded'  => ! empty( $custom_image ) && $whitelabled,
+	);
 }
 
 /**
@@ -291,6 +322,13 @@ function defender_no_fresh_install() {
  * Polyfill for PHP version < 7.3.
  */
 if ( ! function_exists( 'array_key_first' ) ) {
+	/**
+	 * Returns the first key of an array.
+	 *
+	 * @param  array $arr  The input array.
+	 *
+	 * @return mixed|null The first key of the array, or null if the array is empty.
+	 */
 	function array_key_first( array $arr ) {
 		$arr_keys = array_keys( $arr );
 
@@ -311,18 +349,18 @@ function defender_get_request_url(): string {
  * What is the current WP page?
  *
  * @return string
-*/
+ */
 function defender_get_current_page(): string {
-	return empty( $_GET['page'] ) ? '' : sanitize_text_field( $_GET['page'] );
+	return defender_get_data_from_request( 'page', 'g' );
 }
 
 /**
  * Check that current page is from Defender.
  *
  * @return bool
-*/
+ */
 function is_defender_page(): bool {
-	$pages = [
+	$pages = array(
 		'wp-defender',
 		'wdf-hardener',
 		'wdf-scan',
@@ -334,7 +372,7 @@ function is_defender_page(): bool {
 		'wdf-notification',
 		'wdf-setting',
 		'wdf-tutorial',
-	];
+	);
 
 	return in_array( defender_get_current_page(), $pages, true );
 }
@@ -342,11 +380,11 @@ function is_defender_page(): bool {
 /**
  * Return the high contrast css class if it is.
  *
- * @since 2.7.0
  * @return bool
+ * @since 2.7.0
  */
 function defender_high_contrast() {
-	$model = new \WP_Defender\Model\Setting\Main_Setting();
+	$model = new Main_Setting();
 
 	return $model->high_contrast_mode;
 }
@@ -357,62 +395,62 @@ function defender_high_contrast() {
  * cleaning temporary firewall IPs,
  * send reports,
  * update MaxMind DB.
- * @since 2.7.1
  *
- * @param array $schedules
+ * @param  array $schedules  The schedules.
  *
  * @return array
+ * @since 2.7.1
  */
 function defender_cron_schedules( $schedules ) {
 	if ( ! isset( $schedules['thirty_minutes'] ) ) {
-		$schedules['thirty_minutes'] = [
+		$schedules['thirty_minutes'] = array(
 			'interval' => 30 * MINUTE_IN_SECONDS,
-			'display' => __( 'Every Half Hour', 'defender-security' ),
-		];
+			'display'  => esc_html__( 'Every Half Hour', 'defender-security' ),
+		);
 	}
 	if ( ! isset( $schedules['weekly'] ) ) {
-		$schedules['weekly'] = [
+		$schedules['weekly'] = array(
 			'interval' => WEEK_IN_SECONDS,
-			'display' => __( 'Weekly', 'defender-security' ),
-		];
+			'display'  => esc_html__( 'Weekly', 'defender-security' ),
+		);
 	}
 	if ( ! isset( $schedules['monthly'] ) ) {
-		$schedules['monthly'] = [
+		$schedules['monthly'] = array(
 			'interval' => MONTH_IN_SECONDS,
-			'display' => __( 'Once Monthly', 'defender-security' ),
-		];
+			'display'  => esc_html__( 'Once Monthly', 'defender-security' ),
+		);
 	}
 	// Todo: find the right solution because 'monthly' (from Firewall)='thirty_days' (from Security_Key tweak).
 	// For regeneration of security keys/salts. Schedules: 30, 60, 90 days, 6 months and 1 year.
 	if ( ! isset( $schedules['thirty_days'] ) ) {
-		$schedules['thirty_days'] = [
+		$schedules['thirty_days'] = array(
 			'interval' => 2592000,
-			'display' => __( '30 days', 'defender-security' ),
-		];
+			'display'  => esc_html__( '30 days', 'defender-security' ),
+		);
 	}
 	if ( ! isset( $schedules['sixty_days'] ) ) {
-		$schedules['sixty_days'] = [
+		$schedules['sixty_days'] = array(
 			'interval' => 5184000,
-			'display' => __( '60 days', 'defender-security' ),
-		];
+			'display'  => esc_html__( '60 days', 'defender-security' ),
+		);
 	}
 	if ( ! isset( $schedules['ninety_days'] ) ) {
-		$schedules['ninety_days'] = [
+		$schedules['ninety_days'] = array(
 			'interval' => 7776000,
-			'display' => __( '90 days', 'defender-security' ),
-		];
+			'display'  => esc_html__( '90 days', 'defender-security' ),
+		);
 	}
 	if ( ! isset( $schedules['six_months'] ) ) {
-		$schedules['six_months'] = [
+		$schedules['six_months'] = array(
 			'interval' => 15780000,
-			'display' => __( '6 months', 'defender-security' ),
-		];
+			'display'  => esc_html__( '6 months', 'defender-security' ),
+		);
 	}
 	if ( ! isset( $schedules['one_year'] ) ) {
-		$schedules['one_year'] = [
+		$schedules['one_year'] = array(
 			'interval' => 31536000,
-			'display' => __( '1 year', 'defender-security' ),
-		];
+			'display'  => esc_html__( '1 year', 'defender-security' ),
+		);
 	}
 
 	return $schedules;
@@ -421,11 +459,11 @@ function defender_cron_schedules( $schedules ) {
 /**
  * Generate random string.
  *
- * @param int $length     Length of random string.
- * @param string $strings Characters to include in a random string.
+ * @param  int    $length  Length of random string.
+ * @param  string $strings  Characters to include in a random string.
  *
- * @since 3.0.0
  * @return string
+ * @since 3.0.0
  */
 function defender_generate_random_string( $length = 16, $strings = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567' ) {
 	if ( defined( 'DEFENDER_2FA_SECRET' ) ) {
@@ -437,9 +475,9 @@ function defender_generate_random_string( $length = 16, $strings = 'ABCDEFGHIJKL
 		return '';
 	}
 
-	$secret = [];
+	$secret = array();
 	for ( $i = 0; $i < $length; $i++ ) {
-		$secret[] = $strings[ \WP_Defender\Component\Crypt::random_int( 0, strlen( $strings ) - 1 ) ];
+		$secret[] = $strings[ Crypt::random_int( 0, strlen( $strings ) - 1 ) ];
 	}
 
 	return implode( '', $secret );
@@ -448,19 +486,19 @@ function defender_generate_random_string( $length = 16, $strings = 'ABCDEFGHIJKL
 /**
  * Either return array or echo json.
  *
- * @param mixed $data      A Data to be returned or echoed.
- * @param bool  $success   Is it a success or failure.
- * @param bool  $is_return True if data needs to be returned.
+ * @param  mixed $data  A Data to be returned or echoed.
+ * @param  bool  $success  Is it a success or failure.
+ * @param  bool  $is_return  True if data needs to be returned.
  *
- * @since 3.0.0
  * @return array|void
+ * @since 3.0.0
  */
 function defender_maybe_echo_json( $data, $success, $is_return ) {
 	if ( true === $is_return ) {
-		return [
+		return array(
 			'success' => $success,
-			'data' => $data,
-		];
+			'data'    => $data,
+		);
 	} else {
 		$success ? wp_send_json_success( $data ) : wp_send_json_error( $data );
 	}
@@ -476,10 +514,10 @@ function defender_gettext_translations(): array {
 	global $l10n;
 
 	if ( ! isset( $l10n['defender-security'] ) ) {
-		return [];
+		return array();
 	}
 
-	$items = [];
+	$items = array();
 
 	foreach ( $l10n['defender-security']->entries as $key => $value ) {
 		$items[ $key ] = count( $value->translations ) ? $value->translations[0] : $key;
@@ -491,23 +529,25 @@ function defender_gettext_translations(): array {
 /**
  * Get string replacement regardless of the operating system.
  *
- * @param string $path
+ * @param  string $path  The path to be replaced.
  *
- * @since 3.3.0
  * @return string
+ * @since 3.3.0
  */
 function defender_replace_line( $path ): string {
-	return str_replace( [ '/', '\\' ], DIRECTORY_SEPARATOR, $path );
+	return str_replace( array( '/', '\\' ), DIRECTORY_SEPARATOR, $path );
 }
 
 /**
- * @return string
-*/
+ * Generates the support ticket text for the Defender plugin.
+ *
+ * @return string The support ticket text, including the formatted link.
+ */
 function defender_support_ticket_text(): string {
 	return sprintf(
-	/* translators: %s: Support link. */
-		__( 'Still, having trouble? <a target="_blank" href="%s">Open a support ticket</a>.', 'defender-security' ),
-		WP_DEFENDER_SUPPORT_LINK
+		/* translators: 1. Support link. */
+		esc_html__( 'Still, having trouble? %1$s.', 'defender-security' ),
+		'<a target="_blank" href="' . WP_DEFENDER_SUPPORT_LINK . '">' . esc_html__( 'Open a support ticket', 'defender-security' ) . '</a>'
 	);
 }
 
@@ -517,21 +557,27 @@ function defender_support_ticket_text(): string {
  * @return string
  */
 function defender_quarantine_pro_only(): string {
-	return __( 'Safe Repair feature is only for Pro', 'defender-security' );
+	return esc_html__( 'Safe Repair feature is only for Pro', 'defender-security' );
 }
 
 /**
- * @return string
+ * Retrieves the user agent from the $_SERVER super global or returns a default string.
+ *
+ * @param  string $default_string  The default string to return if the user agent is empty. Default is an empty string.
+ *
+ * @return string The cleaned user agent or the default string.
  */
 function defender_get_user_agent( $default_string = '' ) {
-	return ! empty( $_SERVER['HTTP_USER_AGENT'] )
-		? \WP_Defender\Component\User_Agent::fast_cleaning( $_SERVER['HTTP_USER_AGENT'] )
-		: $default_string;
+	$user_agent = defender_get_data_from_request( 'HTTP_USER_AGENT', 's' );
+
+	return ! empty( $user_agent ) ? User_Agent::fast_cleaning( $user_agent ) : $default_string;
 }
 
 /**
- * @since 4.2.0
+ * Check if it is a CLI request.
+ *
  * @return bool
+ * @since 4.2.0
  */
 function defender_is_wp_cli() {
 	return defined( 'WP_CLI' ) && WP_CLI;
@@ -539,55 +585,128 @@ function defender_is_wp_cli() {
 
 /**
  * Check if the current request is a REST API request.
- *
  * This function checks if the current request URI contains the REST API prefix,
  * indicating that it's a request to the WordPress REST API.
- * @since 4.2.0
  *
  * @return bool Whether the current request is a REST API request.
+ * @since 4.2.0
  */
 function defender_is_rest_api_request(): bool {
-	if ( empty( $_SERVER['REQUEST_URI'] ) ) {
+	$request_uri = defender_get_data_from_request( 'REQUEST_URI', 's' );
+	if ( empty( $request_uri ) ) {
 		return false;
 	}
 
 	$rest_prefix = trailingslashit( rest_get_url_prefix() );
 
-	return false !== strpos( $_SERVER['REQUEST_URI'], $rest_prefix );
+	return false !== strpos( $request_uri, $rest_prefix );
 }
 
 /**
  * Handle deprecated functions by logging or triggering actions.
- *
  * This function is a wrapper for WordPress's _deprecated_function() function.
  * It is used to handle deprecated functions by either logging a deprecation
  * message or triggering an action. It checks if the current request is an AJAX
  * request or a REST API request and acts accordingly.
- * @since 4.2.0
  *
- * @param string $function_name The function that was called.
- * @param string $version       The version number that deprecated the function.
- * @param string $replacement   (Optional) The function that should be used instead.
+ * @param  string $function_name  The function that was called.
+ * @param  string $version  The version number that deprecated the function.
+ * @param  string $replacement  (Optional) The function that should be used instead.
  *
  * @return void
+ * @since 4.2.0
  */
 function defender_deprecated_function( string $function_name, string $version, string $replacement = '' ): void {
 	/**
 	 * Filters whether to trigger an error for deprecated functions.
 	 *
-	 * @since 4.2.1
+	 * @param  bool  $trigger  Whether to trigger the error for deprecated functions. Default false.
 	 *
-	 * @param bool $trigger Whether to trigger the error for deprecated functions. Default false.
+	 * @since 4.2.1
 	 */
 	if ( WP_DEBUG && apply_filters( 'defender_deprecated_function_trigger_error', false ) ) {
 		if ( wp_doing_ajax() || defender_is_rest_api_request() ) {
 			do_action( 'deprecated_function_run', $function_name, $replacement, $version );
 
-			$log_string = "Function {$function_name} is deprecated since version {$version}!";
+			$log_string  = "Function {$function_name} is deprecated since version {$version}!";
 			$log_string .= $replacement ? " Use {$replacement} instead." : '';
-			error_log( $log_string );
+			wp_die( esc_html( $log_string ) );
 		} else {
-			_deprecated_function( $function_name, $version, $replacement );
+			/**
+			 * Ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			 * Why?
+			 * This wrapper function doesn’t produce any output.
+			 */
+			_deprecated_function( $function_name, $version, $replacement );  // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		}
+	}
+}
+
+if ( ! function_exists( 'defender_get_data_from_request' ) ) {
+	/**
+	 * Retrieves the value of a specific server data key after sanitizing it.
+	 *
+	 * @param  string|null $key  The key of the data to retrieve from the request. If empty, the entire $_REQUEST or $_SERVER array will be returned.
+	 * @param  string      $source  The source of the data. Default is 'r' for $_REQUEST. Other options are 's' for $_SERVER, 'c' for $_COOKIE and 'f' for $_FILES.
+	 * @param  string      $nonce_key  The nonce key for verification.
+	 * @param  string      $nonce_action  The nonce action for verification.
+	 *
+	 * @return array|string|null The sanitized value of the server data key.
+	 */
+	function defender_get_data_from_request(
+		string $key = null,
+		string $source,
+		string $nonce_key = '',
+		string $nonce_action = ''
+	) {
+		if ( in_array( $source, array( 'r', 'p', 'g' ), true ) ) {
+			if (
+				! empty( $nonce_key ) && ! wp_verify_nonce(
+					sanitize_text_field( wp_unslash( $_REQUEST[ $nonce_key ] ?? '' ) ),
+					$nonce_action
+				)
+			) {
+				return null;
+			}
+		}
+		switch ( $source ) {
+			case 'r':
+				$data = $_REQUEST;
+				break;
+			case 'p':
+				$data = $_POST;
+				break;
+			case 'g':
+				$data = $_GET;
+				break;
+			case 's':
+				$data = $_SERVER;
+				break;
+			case 'c':
+				$data = $_COOKIE;
+				break;
+			case 'f':
+				$data = $_FILES;
+				break;
+			default:
+				$data = array();
+				break;
+		}
+
+		if ( empty( $key ) ) {
+			return $data;
+		} elseif ( 's' === $source ) {
+			return sanitize_text_field( wp_unslash( $data[ $key ] ?? '' ) );
+		} elseif ( 'data' === $key ) {
+			return json_decode( sanitize_text_field( wp_unslash( $data[ $key ] ?? '' ) ), true );
+		} elseif ( 'f' === $source && 'file' === $key && isset( $data[ $key ] ) ) {
+			if ( ! empty( $data[ $key ]['name'] ) ) {
+				$data[ $key ]['name'] = sanitize_file_name( $data[ $key ]['name'] );
+			}
+
+			return $data[ $key ];
+		}
+
+		return sanitize_text_field( $data[ $key ] ?? '' );
 	}
 }

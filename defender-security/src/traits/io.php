@@ -1,20 +1,34 @@
 <?php
+/**
+ * Helper functions for Input Output related tasks.
+ *
+ * @package WP_Defender\Traits
+ */
 
 namespace WP_Defender\Traits;
 
-use WP_Defender\Component\Logger\Rotation_Logger as Logger;
+use RecursiveIteratorIterator;
+use RecursiveDirectoryIterator;
 use WP_Defender\Helper\File as File_Helper;
+use WP_Defender\Component\Logger\Rotation_Logger as Logger;
 
 trait IO {
+
 	/**
 	 * A simple function to create & return the folder that we can use to write tmp files.
 	 *
-	 * @param bool $main_site_path If true then return main site's upload dir path for a multisite.
+	 * @param  bool $main_site_path  If true then return main site's upload dir path for a multisite.
 	 *
 	 * @since 4.1.0 The `$main_site_path` parameter was added.
 	 * @return string
 	 */
 	protected function get_tmp_path( bool $main_site_path = false ): string {
+		global $wp_filesystem;
+		// Initialize the WP filesystem, no more using 'file-put-contents' function.
+		if ( empty( $wp_filesystem ) ) {
+			require_once ABSPATH . '/wp-admin/includes/file.php';
+			WP_Filesystem();
+		}
 		$is_switch_to_main_site = $main_site_path && is_multisite() && ! is_main_site();
 		if ( $is_switch_to_main_site ) {
 			// Switch to the main site.
@@ -34,12 +48,9 @@ trait IO {
 		}
 
 		if ( ! is_file( $tmp_dir . DIRECTORY_SEPARATOR . 'index.php' ) ) {
-			file_put_contents( $tmp_dir . DIRECTORY_SEPARATOR . 'index.php', '' );
+			$wp_filesystem->put_contents( $tmp_dir . DIRECTORY_SEPARATOR . 'index.php', '' );
 		}
 
-		/**
-		 * @var File_Helper
-		 */
 		$file_helper = wd_di()->get( File_Helper::class );
 		$file_helper->maybe_dir_access_deny( $tmp_dir );
 
@@ -47,14 +58,16 @@ trait IO {
 	}
 
 	/**
-	 * @param $category
+	 * Returns the path to the log file for a given category.
 	 *
-	 * @return string
+	 * @param  string $category  The category of the log file. Defaults to an empty string.
+	 *
+	 * @return string The path to the log file.
 	 */
 	public function get_log_path( $category = '' ): string {
 		$file = empty( $category ) ? 'defender.log' : $category;
 
-		$logger = new Logger();
+		$logger    = new Logger();
 		$file_name = $logger->generate_file_name( $file );
 
 		return $this->get_tmp_path() . DIRECTORY_SEPARATOR . $file_name;
@@ -81,49 +94,55 @@ trait IO {
 	/**
 	 * Delete a folder with every content inside.
 	 *
-	 * @param $dir
+	 * @param  string $dir  The path to the folder.
 	 *
 	 * @return bool
 	 */
 	public function delete_dir( $dir ): bool {
+		global $wp_filesystem;
+		// Initialize the WP filesystem, no more using 'file-put-contents' function.
+		if ( empty( $wp_filesystem ) ) {
+			require_once ABSPATH . '/wp-admin/includes/file.php';
+			WP_Filesystem();
+		}
 		if ( ! is_dir( $dir ) ) {
 			return false;
 		}
-		$it = new \RecursiveDirectoryIterator( $dir, \RecursiveDirectoryIterator::SKIP_DOTS );
-		$files = new \RecursiveIteratorIterator(
+		$it    = new RecursiveDirectoryIterator( $dir, RecursiveDirectoryIterator::SKIP_DOTS );
+		$files = new RecursiveIteratorIterator(
 			$it,
-			\RecursiveIteratorIterator::CHILD_FIRST
+			RecursiveIteratorIterator::CHILD_FIRST
 		);
+		$ret   = true;
 		foreach ( $files as $file ) {
 			if ( $file->isDir() ) {
-				$ret = rmdir( $file->getPathname() );
+				$ret = $wp_filesystem->rmdir( $file->getPathname(), true );
 			} else {
-				$ret = unlink( $file->getPathname() );
+				$wp_filesystem->delete( $file->getPathname() );
 			}
 			if ( false === $ret ) {
 				return false;
 			}
 		}
-		rmdir( $dir );
 
-		return true;
+		return $wp_filesystem->rmdir( $dir, true );
 	}
 
 	/**
 	 * Not remove double quotes inside str_replace().
 	 *
-	 * @param string $data
+	 * @param  string $data  The string or array being searched and replaced on.
 	 *
 	 * @return array|string
 	 */
 	protected function convert_end_lines_dos_to_linux( $data ) {
-		return str_replace( [ "\r\n", "\r" ], "\n", $data );
+		return str_replace( array( "\r\n", "\r" ), "\n", $data );
 	}
 
 	/**
 	 * Not remove double quotes inside str_replace().
 	 *
-	 * @param string $data
+	 * @param  string $data  The string or array being searched and replaced on.
 	 *
 	 * @return array|string
 	 */
@@ -134,8 +153,8 @@ trait IO {
 	/**
 	 * Compare hashes on different OS.
 	 *
-	 * @param string       $file_path
-	 * @param string|array $file_hash
+	 * @param  string       $file_path  The filename.
+	 * @param  string|array $file_hash  The user-supplied string to compare against.
 	 *
 	 * @return bool
 	 */
@@ -154,8 +173,10 @@ trait IO {
 	}
 
 	/**
-	 * @param string $file_path       Path to file.
-	 * @param string|array $file_hash Hash or some hashes of file2, e.g. for readme.txt.
+	 * Compare hashes.
+	 *
+	 * @param  string       $file_path  Path to file.
+	 * @param  string|array $file_hash  Hash or some hashes of file2, e.g. for readme.txt.
 	 *
 	 * @return bool
 	 */
@@ -169,6 +190,7 @@ trait IO {
 					return true;
 				}
 			}
+
 			return false;
 		} else {
 			return false;
@@ -178,33 +200,33 @@ trait IO {
 	/**
 	 * Hash a file in chunks.
 	 *
-	 * @param string $file_path Path to a file.
-	 * @param string $convert_to Convert end of lines characters to linux or dos.
+	 * @param  string $file_path  Path to a file.
+	 * @param  string $convert_to  Convert end of lines characters to linux or dos.
 	 *
-	 * @since 3.10.0
 	 * @return bool|string
+	 * @since 3.10.0
 	 */
 	protected function hash_file( string $file_path, string $convert_to = '' ) {
-		$handle = @fopen( $file_path, 'rb' );
-		if ( ! $handle ) {
+		global $wp_filesystem;
+		// Initialize the WP filesystem, no more using 'file-put-contents' function.
+		if ( empty( $wp_filesystem ) ) {
+			require_once ABSPATH . '/wp-admin/includes/file.php';
+			WP_Filesystem();
+		}
+		if ( ! file_exists( $file_path ) ) {
 			return false;
 		}
 
 		$context = hash_init( 'md5' );
-		while ( ! feof( $handle ) ) {
-			$data = fread( $handle, 65536 );
-			if ( false === $data ) {
-				return false;
-			}
+		$data    = $wp_filesystem->get_contents( $file_path );
 
-			if ( 'linux' === $convert_to ) {
-				$data = $this->convert_end_lines_dos_to_linux( $data );
-			} elseif ( 'dos' === $convert_to ) {
-				$data = $this->convert_end_lines_linux_to_dos( $data );
-			}
-
-			hash_update( $context, $data );
+		if ( 'linux' === $convert_to ) {
+			$data = $this->convert_end_lines_dos_to_linux( $data );
+		} elseif ( 'dos' === $convert_to ) {
+			$data = $this->convert_end_lines_linux_to_dos( $data );
 		}
+
+		hash_update( $context, $data );
 
 		return hash_final( $context, false );
 	}

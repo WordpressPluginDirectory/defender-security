@@ -2,7 +2,7 @@
 /**
  * Hummingbird trait.
  *
- * @since 2.6.1
+ * @since      2.6.1
  * @package WP_Defender\Traits
  */
 
@@ -12,10 +12,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-/**
- * Trait Hummingbird
- */
 trait Hummingbird {
+
 	/**
 	 * Check if Hummingbird is active.
 	 *
@@ -35,7 +33,10 @@ trait Hummingbird {
 			return false;
 		}
 
-		$settings = is_multisite() ? get_site_option( 'wphb_settings', array() ) : get_option( 'wphb_settings', array() );
+		$settings = is_multisite() ? get_site_option( 'wphb_settings', array() ) : get_option(
+			'wphb_settings',
+			array()
+		);
 		if ( empty( $settings ) || ! is_array( $settings ) ) {
 			return false;
 		}

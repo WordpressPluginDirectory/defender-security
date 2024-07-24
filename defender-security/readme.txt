@@ -1,13 +1,13 @@
 === Defender Security - Malware Scanner, Login Security & Firewall ===
 Plugin Name: Defender Security - Malware Scanner, Login Security & Firewall
-Version: 4.7.4
+Version: 4.8.1
 Author: WPMU DEV
 Author URI: https://wpmudev.com/
 Contributors: WPMUDEV
 Tags: security, malware, firewall, malware scanner, login security
 Requires at least: 5.2
-Tested up to: 6.5.4
-Stable tag: 4.7.4
+Tested up to: 6.6
+Stable tag: 4.8.1
 Requires PHP: 7.4
 License: GPL v2 - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 
@@ -242,6 +242,17 @@ Please open a new thread in Defender's [support forum](https://wordpress.org/sup
 
 == Changelog ==
 
+= 4.8.1 ( 2024-07-23 ) =
+
+- Enhance: Improvements for Known vulnerabilities
+- Fix: Multiple redirects when Mask Login Redirect Traffic is set to custom/external URL
+
+= 4.8.0 ( 2024-07-15 ) =
+
+- Enhance: Compatibility with WordPress 6.6
+- Enhance: WPCS compliance
+- Fix: Editors can't close Cloudflare Usage notification
+
 = 4.7.4 ( 2024-06-27 ) =
 
 - Fix: Hide Expert Services when Whitelabel is enabled
@@ -300,18 +311,6 @@ Please open a new thread in Defender's [support forum](https://wordpress.org/sup
 - Enhance: Improve IP detection with auto-detection for Cloudflare and notices for proxy configurations
 - Enhance: Compatibility with WordPress 6.5
 - Enhance: Replace the old Twitter logo with the new logo in emails
-
-= 4.5.0 ( 2024-01-24 ) =
-
-- Enhance: Compatibility with PHP 8.3
-- Enhance: Improve white-labeled emails
-- Enhance: Redesign Quarantine page
-- Fix: Scanning Issues when suspicious files are in the plugins folder and don't have plugin headers
-- Fix: Remove redundant table creation conditional guard clause
-- Fix: Rules for Defender > 2FA > Woocommerce are not overwritten over time
-- Fix: Scan flagging "All in one security" files as suspicious
-- Fix: Defender Google reCAPTCHA does not work with WooCommerce Gutenberg Checkout block
-- Fix: Masked Login not working after registration
 
 [Changelog for previous versions](https://wpmudev.com/project/wp-defender/#view-changelog).
 

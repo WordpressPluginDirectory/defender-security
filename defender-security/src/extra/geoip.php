@@ -29,9 +29,9 @@ class GeoIp {
 			return false;
 		}
 
-		return [
-			'iso' => $info['country']['iso_code'],
+		return array(
+			'iso'  => $info['country']['iso_code'],
 			'name' => $info['country']['names']['en'],
-		];
+		);
 	}
 }

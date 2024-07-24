@@ -1,10 +1,16 @@
 <?php
+/**
+ * Helper functions for webauthn related tasks.
+ *
+ * @package WP_Defender\Traits
+ */
 
 namespace WP_Defender\Traits;
 
 use Throwable;
 
 trait Webauthn {
+
 	/**
 	 * Prefix used for option.
 	 *
@@ -18,11 +24,12 @@ trait Webauthn {
 	 * @return bool
 	 */
 	public function is_ssl(): bool {
+		$server_data = defender_get_data_from_request( null, 's' );
 		if (
-			( ! empty( $_SERVER['HTTPS'] ) && ( 'on' === strtolower( $_SERVER['HTTPS'] ) || '1' === $_SERVER['HTTPS'] ) ) ||
-			( ! empty( $_SERVER['REQUEST_SCHEME'] ) && 'https' === $_SERVER['REQUEST_SCHEME'] ) ||
-			( ! empty( $_SERVER['HTTP_X_FORWARDED_PROTO'] ) && 'https' === $_SERVER['HTTP_X_FORWARDED_PROTO'] ) ||
-			( ! empty( $_SERVER['HTTP_X_FORWARDED_SSL'] ) && 'on' === $_SERVER['HTTP_X_FORWARDED_SSL'] )
+			( ! empty( $server_data['HTTPS'] ) && ( 'on' === strtolower( $server_data['HTTPS'] ) || '1' === $server_data['HTTPS'] ) ) ||
+			( ! empty( $server_data['REQUEST_SCHEME'] ) && 'https' === $server_data['REQUEST_SCHEME'] ) ||
+			( ! empty( $server_data['HTTP_X_FORWARDED_PROTO'] ) && 'https' === $server_data['HTTP_X_FORWARDED_PROTO'] ) ||
+			( ! empty( $server_data['HTTP_X_FORWARDED_SSL'] ) && 'on' === $server_data['HTTP_X_FORWARDED_SSL'] )
 		) {
 			return true;
 		}
@@ -64,48 +71,48 @@ trait Webauthn {
 	 */
 	public function check_webauthn_requirements(): bool {
 		return $this->is_ssl() &&
-			$this->is_enabled_gmp() &&
-			$this->is_enabled_mbstring() &&
-			$this->is_enabled_sodium();
+				$this->is_enabled_gmp() &&
+				$this->is_enabled_mbstring() &&
+				$this->is_enabled_sodium();
 	}
 
 	/**
-	 * Set transient.
+	 * Sets the value of a transient with a specific name, client ID, and expiration time.
 	 *
-	 * @param string $name
-	 * @param mixed  $value
-	 * @param string $client_id
-	 * @param int    $exp
+	 * @param  string $name  The name of the transient.
+	 * @param  mixed  $value  The value to be serialized and stored in the transient.
+	 * @param  string $client_id  The client ID associated with the transient.
+	 * @param  int    $exp  The expiration time in seconds. Default is 90.
 	 *
-	 * @return bool
+	 * @return bool Returns true if the transient was successfully set, false otherwise.
 	 */
 	public function set_trans_val( string $name, $value, string $client_id, int $exp = 90 ): bool {
 		$trans_name = $this->option_prefix . $name . '_' . $client_id;
-		$trans_val = serialize( $value );
+		$trans_val  = wp_json_encode( $value );
 
 		return set_transient( $trans_name, $trans_val, $exp );
 	}
 
 	/**
-	 * Get transient.
+	 * Retrieves the value of a transient with the specified name and client ID.
 	 *
-	 * @param string $name
-	 * @param string $client_id
+	 * @param  string $name  The name of the transient.
+	 * @param  string $client_id  The client ID associated with the transient.
 	 *
-	 * @return mixed
+	 * @return mixed|false The deserialized value of the transient, or false if the transient does not exist.
 	 */
 	public function get_trans_val( string $name, string $client_id ) {
 		$trans_name = $this->option_prefix . $name . '_' . $client_id;
-		$trans_val = get_transient( $trans_name );
+		$trans_val  = get_transient( $trans_name );
 
-		return false !== $trans_val ? unserialize( $trans_val ) : false;
+		return false !== $trans_val ? json_decode( $trans_val ) : false;
 	}
 
 	/**
 	 * Delete transient.
 	 *
-	 * @param string $name
-	 * @param string $client_id
+	 * @param  string $name  The name of the transient.
+	 * @param  string $client_id  The client ID associated with the transient.
 	 *
 	 * @return bool
 	 */
@@ -118,21 +125,21 @@ trait Webauthn {
 	/**
 	 * Update user meta.
 	 *
-	 * @param int $user_id
-	 * @param string $name
-	 * @param mixed $value
+	 * @param  int    $user_id  User ID.
+	 * @param  string $name  Metadata key.
+	 * @param  mixed  $value  Metadata value. Must be serializable if non-scalar.
 	 *
 	 * @return int|bool
 	 */
 	public function update_user_meta( int $user_id, string $name, $value ) {
-		return update_user_meta( $user_id, $this->option_prefix . $name, addslashes( json_encode( $value ) ) );
+		return update_user_meta( $user_id, $this->option_prefix . $name, addslashes( wp_json_encode( $value ) ) );
 	}
 
 	/**
 	 * Get user meta.
 	 *
-	 * @param int $user_id
-	 * @param string $name
+	 * @param  int    $user_id  User ID.
+	 * @param  string $name  Metadata key.
 	 *
 	 * @return mixed
 	 */
@@ -143,10 +150,11 @@ trait Webauthn {
 			try {
 				return json_decode( $value, true );
 			} catch ( Throwable $exception ) {
-				return [];
+				return array();
 			}
 		}
-		return [];
+
+		return array();
 	}
 
 	/**
@@ -164,7 +172,7 @@ trait Webauthn {
 	 * @return string
 	 */
 	public function get_site_domain(): string {
-		$site_url = get_bloginfo( 'url' );
+		$site_url    = get_bloginfo( 'url' );
 		$site_domain = preg_replace( '#^http(s)?:\/\/#', '', $site_url );
 		$site_domain = preg_replace( '#^www\.#', '', $site_domain );
 		$site_domain = explode( '/', $site_domain );
@@ -173,11 +181,11 @@ trait Webauthn {
 	}
 
 	/**
-	 * Get user hash.
+	 * Get the hash of a user's username using SHA-256 algorithm.
 	 *
-	 * @param string $username
+	 * @param  string $username  The username of the user.
 	 *
-	 * @return string
+	 * @return string The hashed username.
 	 */
 	public function get_user_hash( string $username ): string {
 		return hash( 'sha256', $username );
@@ -186,23 +194,23 @@ trait Webauthn {
 	/**
 	 * URL safe base64 encoding.
 	 *
-	 * @param string $data
+	 * @param  string $data  The data to encode.
 	 *
 	 * @return string
 	 */
 	public function base64url_encode( string $data ): string {
-		return rtrim( strtr( base64_encode( $data ), '+/', '-_' ), '=' );
+		return rtrim( strtr( base64_encode( $data ), '+/', '-_' ), '=' ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
 	}
 
 	/**
 	 * Base64 decoding from URL safe base64 encoding.
 	 *
-	 * @param string $data
+	 * @param  string $data  The data to decode.
 	 *
 	 * @return string|bool
 	 */
 	public function base64url_decode( string $data ) {
 		// No need to add '=' at the end.
-		return base64_decode( strtr( $data, '-_', '+/' ) );
+		return base64_decode( strtr( $data, '-_', '+/' ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
 	}
 }

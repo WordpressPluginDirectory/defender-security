@@ -1,9 +1,20 @@
 <?php
+/**
+ * Helper functions for IP related tasks.
+ *
+ * @package WP_Defender\Traits
+ */
 
 namespace WP_Defender\Traits;
+
+use WP_Defender\Component\Http\Remote_Address;
+
 trait IP {
+
 	/**
-	 * @param $ip
+	 * Check if the IP is IPv4 address.
+	 *
+	 * @param  mixed $ip  IP address.
 	 *
 	 * @return mixed
 	 */
@@ -12,15 +23,19 @@ trait IP {
 	}
 
 	/**
-	 * @param $ip
+	 * Check if the given IP address is an IPv6 address.
 	 *
-	 * @return mixed
+	 * @param  string $ip  The IP address to check.
+	 *
+	 * @return bool Returns true if the IP address is an IPv6 address, false otherwise.
 	 */
 	private function is_v6( $ip ) {
 		return filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 );
 	}
 
 	/**
+	 * Check if IPv6 is supported.
+	 *
 	 * @return bool
 	 */
 	private function is_v6_support(): bool {
@@ -28,7 +43,9 @@ trait IP {
 	}
 
 	/**
-	 * @param string $ip
+	 * Convert IPv4 address to IPv6 address.
+	 *
+	 * @param  string $ip  IPv4 address.
 	 *
 	 * @return bool|string
 	 */
@@ -39,9 +56,11 @@ trait IP {
 	}
 
 	/**
-	 * @param $inet
+	 * Convert IPv6 address to binary.
 	 *
+	 * @param  string $inet  The packed data.
 	 * @src https://stackoverflow.com/a/7951507
+	 *
 	 * @return string
 	 */
 	private function ine_to_bits( $inet ): string {
@@ -56,14 +75,16 @@ trait IP {
 	}
 
 	/**
-	 * @param string $ip
-	 * @param string $first_in_range
-	 * @param string $last_in_range
+	 * Compare if an IPv4 address is within a specified range.
 	 *
-	 * @return bool
+	 * @param  string $ip  The IPv4 address to compare.
+	 * @param  string $first_in_range  The lower bound of the range.
+	 * @param  string $last_in_range  The upper bound of the range.
+	 *
+	 * @return bool Returns true if the IP address is within the range, false otherwise.
 	 */
 	private function compare_v4_in_range( $ip, $first_in_range, $last_in_range ): bool {
-		$low = sprintf( '%u', ip2long( $first_in_range ) );
+		$low  = sprintf( '%u', ip2long( $first_in_range ) );
 		$high = sprintf( '%u', ip2long( $last_in_range ) );
 
 		$cip = sprintf( '%u', ip2long( $ip ) );
@@ -75,16 +96,18 @@ trait IP {
 	}
 
 	/**
-	 * @param string $ip
-	 * @param string $first_in_range
-	 * @param string $last_in_range
+	 * Compare if an IPv6 address is within a specified range.
 	 *
-	 * @return bool
+	 * @param  string $ip  The IPv6 address to compare.
+	 * @param  string $first_in_range  The lower bound of the range.
+	 * @param  string $last_in_range  The upper bound of the range.
+	 *
+	 * @return bool Returns true if the IP address is within the range, false otherwise.
 	 */
 	private function compare_v6_in_range( $ip, $first_in_range, $last_in_range ): bool {
 		$first_in_range = inet_pton( $this->expand_ip_v6( $first_in_range ) );
-		$last_in_range = inet_pton( $this->expand_ip_v6( $last_in_range ) );
-		$ip = inet_pton( $this->expand_ip_v6( $ip ) );
+		$last_in_range  = inet_pton( $this->expand_ip_v6( $last_in_range ) );
+		$ip             = inet_pton( $this->expand_ip_v6( $ip ) );
 
 		if ( ( strlen( $ip ) === strlen( $first_in_range ) )
 			&& ( $ip >= $first_in_range && $ip <= $last_in_range ) ) {
@@ -94,40 +117,44 @@ trait IP {
 		}
 	}
 
+
 	/**
-	 * @param $ip
-	 * @param $block
+	 * Compares an IPv4 address with a CIDR block.
 	 *
-	 * @src http://stackoverflow.com/a/594134
-	 * @return bool
+	 * @param  string $ip  The IPv4 address to compare.
+	 * @param  string $block  The CIDR block to compare against.
+	 *
+	 * @return bool Returns true if the IP address is within the CIDR block, false otherwise.
 	 */
 	private function compare_cidrv4( $ip, $block ): bool {
-		[$subnet, $bits] = explode( '/', $block );
+		[ $subnet, $bits ] = explode( '/', $block );
 		if ( is_null( $bits ) ) {
 			$bits = 32;
 		}
-		$ip = ip2long( $ip );
-		$subnet = ip2long( $subnet );
-		$mask = - 1 << ( 32 - $bits );
-		$subnet &= $mask;// nb: in case the supplied subnet wasn't correctly aligned
+		$ip      = ip2long( $ip );
+		$subnet  = ip2long( $subnet );
+		$mask    = - 1 << ( 32 - $bits );
+		$subnet &= $mask;// nb: in case the supplied subnet wasn't correctly aligned.
 
-		return ( $ip & $mask ) == $subnet;// phpcs:ignore
+		return ( $ip & $mask ) === $subnet;
 	}
 
 	/**
-	 * @param $ip
-	 * @param $block
+	 * Compares an IPv6 address with a CIDR block.
 	 *
-	 * @return bool
+	 * @param  string $ip  The IPv6 address to compare.
+	 * @param  string $block  The CIDR block to compare against.
+	 *
+	 * @return bool Returns true if the IP address is within the CIDR block, false otherwise.
 	 */
 	private function compare_cidrv6( $ip, $block ): bool {
-		$ip = $this->expand_ip_v6( $ip );
-		$ip = inet_pton( $ip );
-		$b_ip = $this->ine_to_bits( $ip );
-		[$subnet, $bits] = explode( '/', $block );
-		$subnet = $this->expand_ip_v6( $subnet );
-		$subnet = inet_pton( $subnet );
-		$b_subnet = $this->ine_to_bits( $subnet );
+		$ip                = $this->expand_ip_v6( $ip );
+		$ip                = inet_pton( $ip );
+		$b_ip              = $this->ine_to_bits( $ip );
+		[ $subnet, $bits ] = explode( '/', $block );
+		$subnet            = $this->expand_ip_v6( $subnet );
+		$subnet            = inet_pton( $subnet );
+		$b_subnet          = $this->ine_to_bits( $subnet );
 
 		$ip_net_bits = substr( $b_ip, 0, $bits );
 		$subnet_bits = substr( $b_subnet, 0, $bits );
@@ -138,10 +165,10 @@ trait IP {
 	/**
 	 * Compare ip2 to ip1, true if ip2>ip1, false if not.
 	 *
-	 * @param $ip1
-	 * @param $ip2
+	 * @param  string $ip1  The first IP address to compare.
+	 * @param  string $ip2  The second IP address to compare.
 	 *
-	 * @return bool
+	 * @return bool Returns true if ip2 is greater than ip1, false otherwise.
 	 */
 	public function compare_ip( $ip1, $ip2 ): bool {
 		if ( $this->is_v4( $ip1 ) && $this->is_v4( $ip2 ) ) {
@@ -159,11 +186,13 @@ trait IP {
 	}
 
 	/**
-	 * @param $ip
-	 * @param $first_in_range
-	 * @param $last_in_range
+	 * Compare if an IP address is within a specified range.
 	 *
-	 * @return bool
+	 * @param  string $ip  The IP address to compare.
+	 * @param  string $first_in_range  The lower bound of the range.
+	 * @param  string $last_in_range  The upper bound of the range.
+	 *
+	 * @return bool Returns true if the IP address is within the range, false otherwise.
 	 */
 	public function compare_in_range( $ip, $first_in_range, $last_in_range ): bool {
 		if ( $this->is_v4( $first_in_range ) && $this->is_v4( $last_in_range ) ) {
@@ -176,13 +205,15 @@ trait IP {
 	}
 
 	/**
-	 * @param $ip
-	 * @param $block
+	 * Compares an IP address with a CIDR block.
 	 *
-	 * @return bool
+	 * @param  string $ip  The IP address to compare.
+	 * @param  string $block  The CIDR block to compare against.
+	 *
+	 * @return bool Returns true if the IP address is within the CIDR block, false otherwise.
 	 */
 	public function compare_cidr( $ip, $block ): bool {
-		[$subnet, $bits] = explode( '/', $block );
+		[ $subnet, $bits ] = explode( '/', $block );
 		if ( $this->is_v4( $ip ) && $this->is_v4( $subnet ) ) {
 			return $this->compare_cidrv4( $ip, $block );
 		} elseif ( $this->is_v6( $ip ) && $this->is_v6( $subnet ) && $this->is_v6_support() ) {
@@ -194,7 +225,8 @@ trait IP {
 
 	/**
 	 * $ip an be single ip, or a range like xxx.xxx.xxx.xxx - xxx.xxx.xxx.xxx or CIDR.
-	 * @param string $ip
+	 *
+	 * @param  string $ip  The IP address to validate.
 	 *
 	 * @return bool
 	 */
@@ -216,7 +248,7 @@ trait IP {
 				return true;
 			}
 		} elseif ( stristr( $ip, '/' ) ) {
-			[$ip, $bits] = explode( '/', $ip );
+			[ $ip, $bits ] = explode( '/', $ip );
 			if ( filter_var( $ip, FILTER_VALIDATE_IP ) && filter_var( $bits, FILTER_VALIDATE_INT ) ) {
 				if ( $this->is_v4( $ip ) && 0 <= $bits && $bits <= 32 ) {
 					return true;
@@ -235,32 +267,34 @@ trait IP {
 	 * 2) IP range,
 	 * 3) CIDR.
 	 * Ignore cases with private, reserved ranges.
+	 *
 	 * @src https://en.wikipedia.org/wiki/IPv4#Special-use_addresses
 	 * @src https://en.wikipedia.org/wiki/IPv6#Special-use_addresses
-	 * @param $ip
+	 *
+	 * @param  mixed $ip  IP address.
 	 *
 	 * @return array
-	*/
+	 */
 	public function display_validation_message( $ip ): array {
-		$errors = [];
-		// Case1: single IP.
+		$errors = array();
+		// Case 1: single IP.
 		if (
 			! stristr( $ip, '-' )
 			&& ! stristr( $ip, '/' )
 			&& ! filter_var( $ip, FILTER_VALIDATE_IP ) ) {
 			$errors[] = sprintf(
 			/* translators: %s: IP value. */
-				__( '%s – invalid format', 'defender-security' ),
+				esc_html__( '%s – invalid format', 'defender-security' ),
 				'<b>' . $ip . '</b>'
 			);
-			// Case2: IP range.
+			// Case 2: IP range.
 		} elseif ( stristr( $ip, '-' ) ) {
 			$ips = explode( '-', $ip );
 			foreach ( $ips as $ip_key ) {
 				if ( ! filter_var( $ip_key, FILTER_VALIDATE_IP ) ) {
 					$errors[] = sprintf(
 					/* translators: %s: IP value. */
-						__( '%s – invalid format', 'defender-security' ),
+						esc_html__( '%s – invalid format', 'defender-security' ),
 						'<b>' . $ip_key . '</b>'
 					);
 				}
@@ -268,47 +302,47 @@ trait IP {
 			if ( ! $this->compare_ip( $ips[0], $ips[1] ) ) {
 				$errors[] = sprintf(
 				/* translators: 1. IP value. 2. IP value. */
-					__( 'Can\'t compare %1$s with %2$s.', 'defender-security' ),
+					esc_html__( 'Can\'t compare %1$s with %2$s.', 'defender-security' ),
 					'<b>' . $ips[1] . '</b>',
 					'<b>' . $ips[0] . '</b>'
 				);
 			}
-			// Case3: CIDR.
+			// Case 3: CIDR.
 		} elseif ( stristr( $ip, '/' ) ) {
-			[$ip, $bits] = explode( '/', $ip );
+			[ $ip, $bits ] = explode( '/', $ip );
 			if ( filter_var( $ip, FILTER_VALIDATE_IP ) && filter_var( $bits, FILTER_VALIDATE_INT ) ) {
-				if ( $this->is_v4( $ip ) && 0 <= $bits && $bits <= 32 ) {
-					// IPv4 is correct.
-				} elseif ( $this->is_v6( $ip ) && 0 <= $bits && $bits <= 128 && $this->is_v6_support() ) {
-					// IPv6 is correct.
-				} else {
-					$errors[] = sprintf(
-					/* translators: %s: IP value. */
-						__( '%s – address out of range', 'defender-security' ),
-						'<b>' . $ip . '</b>'
-					);
+				if ( ! $this->is_v4( $ip ) || 0 > $bits || $bits > 32 ) {
+					if ( ! $this->is_v6( $ip ) || 0 > $bits || $bits > 128 || ! $this->is_v6_support() ) {
+						$errors[] = sprintf(
+						/* translators: %s: IP value. */
+							esc_html__( '%s – address out of range', 'defender-security' ),
+							'<b>' . $ip . '</b>'
+						);
+					}
 				}
 			} else {
 				$errors[] = sprintf(
 				/* translators: %s: IP value. */
-					__( '%s – invalid format', 'defender-security' ),
+					esc_html__( '%s – invalid format', 'defender-security' ),
 					'<b>' . $ip . '</b>'
 				);
 			}
 		}
+
 		// @since 2.6.3
 		return (array) apply_filters( 'wd_display_ip_validations', $errors );
 	}
 
 	/**
 	 * Validate IP.
-	 * @param $ip
+	 *
+	 * @param  mixed $ip  IP address.
 	 *
 	 * @return bool
 	 */
 	public function check_validate_ip( $ip ): bool {
 		// Validate the localhost IP address.
-		if ( in_array( $ip, [ '127.0.0.1', '::1' ], true ) ) {
+		if ( in_array( $ip, array( '127.0.0.1', '::1' ), true ) ) {
 			return true;
 		}
 
@@ -332,20 +366,20 @@ trait IP {
 	 * @return array
 	 */
 	public function get_user_ip(): array {
-		/**
-		 * @var \WP_Defender\Component\Http\Remote_Address
-		 */
-		$remote_addr = wd_di()->get( \WP_Defender\Component\Http\Remote_Address::class );
-		$ips = (array) $remote_addr->get_ip_address();
+
+		$remote_addr = wd_di()->get( Remote_Address::class );
+		$ips         = (array) $remote_addr->get_ip_address();
 
 		return $this->filter_user_ips( $ips );
 	}
 
 	/**
-	 * @param string $ip
-	 * @param array  $arr_ips
+	 * Checks if an IP address is in the correct format within a given array of IP addresses.
 	 *
-	 * @return bool
+	 * @param  string $ip  The IP address to check.
+	 * @param  array  $arr_ips  An array of IP addresses to check against.
+	 *
+	 * @return bool Returns true if the IP address is in the correct format within the array, false otherwise.
 	 */
 	public function is_ip_in_format( $ip, $arr_ips ): bool {
 		foreach ( $arr_ips as $wip ) {
@@ -366,22 +400,21 @@ trait IP {
 
 	/**
 	 * Filter user IPs.
-	 *
 	 * This function takes an array of user IPs, applies the 'defender_user_ip'
 	 * filter to each IP, and returns a unique array of filtered values.
 	 *
-	 * @param array $ips An array of user IPs.
+	 * @param  array $ips  An array of user IPs.
 	 *
-	 * @since 4.4.2
 	 * @return array An array of unique, filtered user IPs.
+	 * @since 4.4.2
 	 */
 	public function filter_user_ips( array $ips ): array {
-		$ips_filtered = [];
+		$ips_filtered = array();
 		foreach ( $ips as $ip ) {
 			/**
 			 * Filters the user IP.
 			 *
-			 * @param string $ip The user IP.
+			 * @param  string  $ip  The user IP.
 			 */
 			$ips_filtered[] = apply_filters( 'defender_user_ip', $ip );
 		}
@@ -392,13 +425,13 @@ trait IP {
 	/**
 	 * Use $_SERVER['REMOTE_ADDR'] as the first protection layer to avoid spoofed headers.
 	 *
-	 * @param string $blocked_ip
+	 * @param  string $blocked_ip  The IP address to check.
 	 *
 	 * @return string
 	 */
 	public function check_ip_by_remote_addr( $blocked_ip ): string {
-		return isset( $_SERVER['REMOTE_ADDR'] ) && ! empty( $_SERVER['REMOTE_ADDR'] )
-			? $_SERVER['REMOTE_ADDR']
-			: $blocked_ip;
+		$ip_addr = defender_get_data_from_request( 'REMOTE_ADDR', 's' );
+
+		return ! empty( $ip_addr ) ? $ip_addr : $blocked_ip;
 	}
 }
