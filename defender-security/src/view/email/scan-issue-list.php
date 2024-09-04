@@ -48,17 +48,6 @@
 	<?php } ?>
 	</tbody>
 </table>
-<?php if ( ! empty( $upsell['description'] ) && ! empty( $upsell['url'] ) ) : ?>
-<div style="margin-bottom: 30px; padding: 20px 25px; color:#111111; font-size:15px; background: rgba(40, 110, 250, 0.1); border-radius: 8px;">
-	<?php
-	printf(
-		esc_html( $upsell['description'] ),
-		'<a style="color: #0059FF" href="' . esc_url( $upsell['url'] ) . '" target="_blank">',
-		'</a>'
-	);
-	?>
-</div>
-<?php endif; ?>
 <p style="font-family: Roboto, Arial, sans-serif;font-size: 16px;font-weight: normal;line-height: 10px;margin: 0;padding: 0;text-align: center">
 	<a href="
 	<?php

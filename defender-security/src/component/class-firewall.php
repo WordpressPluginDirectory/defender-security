@@ -19,6 +19,8 @@ use MaxMind\Db\Reader\InvalidDatabaseException;
 use WP_Defender\Model\Setting\Firewall as Model_Firewall;
 use WP_Defender\Component\Trusted_Proxy_Preset\Cloudflare_Proxy;
 use WP_Defender\Component\Trusted_Proxy_Preset\Trusted_Proxy_Preset;
+use WP_Defender\Controller\Firewall as Firewall_Controller;
+use WP_Defender\Component\Smart_Ip_Detection;
 
 /**
  * Handles operations related to IP and country-based blacklisting and whitelisting,
@@ -86,7 +88,7 @@ class Firewall extends Component {
 		if ( $is_remote_access ) {
 			$access = $wpmu_dev->get_remote_access();
 			if ( $this->is_authenticated_staff_access() || $this->is_commencing_staff_access( $access ) ) {
-				$this->log( $access, \WP_Defender\Controller\Firewall::FIREWALL_LOG );
+				$this->log( $access, Firewall_Controller::FIREWALL_LOG );
 
 				return true;
 			}
@@ -427,7 +429,9 @@ class Firewall extends Component {
 	public static function is_xff_notice_ready(): bool {
 		return ! Onboard::maybe_show_onboarding() &&
 				self::is_switched_ip_detection_notice( self::IP_DETECTION_XFF_SHOW_SLUG )
-				&& ! self::is_switched_ip_detection_notice( self::IP_DETECTION_XFF_DISMISS_SLUG );
+				&& ! self::is_switched_ip_detection_notice( self::IP_DETECTION_XFF_DISMISS_SLUG )
+				&& ! wd_di()->get( Smart_Ip_Detection::class )->is_smart_ip_detection_enabled()
+				&& 'HTTP_X_FORWARDED_FOR' !== wd_di()->get( Model_Firewall::class )->http_ip_header;
 	}
 
 	/**
@@ -437,7 +441,8 @@ class Firewall extends Component {
 	 */
 	public static function is_cf_notice_ready(): bool {
 		return self::is_switched_ip_detection_notice( self::IP_DETECTION_CF_SHOW_SLUG )
-				&& ! self::is_switched_ip_detection_notice( self::IP_DETECTION_CF_DISMISS_SLUG );
+				&& ! self::is_switched_ip_detection_notice( self::IP_DETECTION_CF_DISMISS_SLUG )
+				&& ! wd_di()->get( Smart_Ip_Detection::class )->is_smart_ip_detection_enabled();
 	}
 
 	/**
@@ -506,5 +511,18 @@ class Firewall extends Component {
 		return array(
 			Cloudflare_Proxy::PROXY_SLUG => esc_html__( 'Cloudflare', 'defender-security' ),
 		);
+	}
+
+	/**
+	 * Dismiss the CF notice if the IP Detection is set to automatic.
+	 */
+	public function maybe_dismiss_cf_notice(): void {
+		if (
+			wd_di()->get( Smart_Ip_Detection::class )->is_smart_ip_detection_enabled()
+			&& self::is_switched_ip_detection_notice( self::IP_DETECTION_CF_SHOW_SLUG )
+			&& ! self::is_switched_ip_detection_notice( self::IP_DETECTION_CF_DISMISS_SLUG )
+		) {
+			update_site_option( self::IP_DETECTION_CF_DISMISS_SLUG, true );
+		}
 	}
 }

@@ -101,7 +101,7 @@ class Security_Headers extends Event {
 					$event      = 'def_feature_activated';
 				}
 
-				// Other conditionds without State's changes.
+				// Other conditions without State's changes.
 				if ( $need_track ) {
 					$data = array(
 						'Feature'        => 'Security Headers',

@@ -22,7 +22,7 @@ class Core_Integrity extends Behavior {
 
 	use IO;
 
-	public const CACHE_CHECKSUMS = 'wd_cache_checksums';
+	public const CACHE_CHECKSUMS = 'wd_cache_checksums', ISSUE_CHECKSUMS = 'wd_issue_checksums';
 
 	/**
 	 * Check that the folder is empty.
@@ -44,11 +44,16 @@ class Core_Integrity extends Behavior {
 
 	/**
 	 * Check if the core file is on touch.
+	 *
+	 * @return bool
 	 */
-	public function core_integrity_check() {
+	public function core_integrity_check(): bool {
+		$checksums = $this->get_checksum();
+		if ( false === $checksums ) {
+			return false;
+		}
 		$core_files = get_site_option( Gather_Fact::CACHE_CORE, array() );
 		$core_files = new ArrayIterator( $core_files );
-		$checksums  = $this->get_checksum();
 		$timer      = new Timer();
 		$model      = $this->owner->scan;
 		$pos        = (int) $model->task_checkpoint;
@@ -170,7 +175,6 @@ class Core_Integrity extends Behavior {
 	protected function get_checksum() {
 		$cache = get_site_option( self::CACHE_CHECKSUMS, false );
 		if ( is_array( $cache ) ) {
-
 			return $cache;
 		}
 		$this->log( 'Fetch checksums, should only once', 'scan.log' );
@@ -184,10 +188,14 @@ class Core_Integrity extends Behavior {
 		if ( false === $checksums ) {
 			$this->log( 'Error from fetching checksums from wp.org', 'scan.log' );
 			$scan         = $this->owner->scan;
-			$scan->status = Scan::STATUS_ERROR;
+			$scan->status = Scan::STATUS_IDLE;
+			$scan->save();
 
+			update_site_option( self::ISSUE_CHECKSUMS, time() );
+			// Todo: add MP event.
 			return false;
 		}
+
 		if ( isset( $checksums[ $wp_version ] ) ) {
 			/**
 			 * Sometimes the API returns the format [$wp_version]=>'...' when locale not right.

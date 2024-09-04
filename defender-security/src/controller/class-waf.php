@@ -102,7 +102,7 @@ class WAF extends Controller {
 	}
 
 	/**
-	 * And endpoint for removing the cache and return latest data.
+	 * Remove the cache and return latest data.
 	 *
 	 * @return Response
 	 * @defender_route

@@ -20,8 +20,8 @@ class Feature_Modal extends Component {
 	/**
 	 * Feature data for the last active "What's new" modal.
 	 */
-	public const FEATURE_SLUG    = 'wd_show_feature_quarantine';
-	public const FEATURE_VERSION = '4.0.0';
+	public const FEATURE_SLUG    = 'wd_show_feature_automatic_ip_detection';
+	public const FEATURE_VERSION = '4.9.0';
 
 	/**
 	 * Get modals that are displayed on the Dashboard page.
@@ -33,29 +33,20 @@ class Feature_Modal extends Component {
 	 * @since 2.7.0 Use one template for Welcome modal and dynamic data.
 	 */
 	public function get_dashboard_modals( $force_hide = false ): array {
-		$title = esc_html__( 'NEW: Defender Safe Repair', 'defender-security' );
-
-		$current_user = wp_get_current_user();
-
-		$desc = sprintf(
-		/* translators: 1: Name, 2: Quarantined & Deleted, 3: Replaced. */
+		$wpmudev      = wd_di()->get( WPMUDEV::class );
+		$is_displayed = $force_hide ? false : $this->display_last_modal( self::FEATURE_SLUG );
+		$title        = esc_html__( 'Enhanced Security with Automatic IP Detection', 'defender-security' );
+		$desc         = sprintf(
+		/* translators: 1. Open tag. 2. Close tag. */
 			esc_html__(
-				'Hey %1$s! With Defender\'s Safe Repair feature, you no longer have to be cautious about breaking your site when deleting suspicious files! Suspicious and modified files can now be %2$s, or %3$s with the latest file copies from their official plugin repository.',
+				'Defender now identifies IP headers with improved accuracy and can effectively avoid false blocks. This ensures enhanced site security and compatibility across different hosting environments. For more details about the %1$sAutomatic IP Detection%2$s feature, please visit the Firewall Settings page.',
 				'defender-security'
 			),
-			esc_html( $current_user->display_name ),
-			'<strong>' . esc_html__( 'Quarantined', 'defender-security' ) . '</strong>, <strong>' . esc_html__( 'Deleted', 'defender-security' ) . '</strong>',
-			'<strong>' . esc_html__( 'Replaced', 'defender-security' ) . '</strong>'
+			'<strong style="font-weight: 700;">',
+			'</strong>'
 		);
-		$wpmudev = wd_di()->get( WPMUDEV::class );
-		if ( $force_hide ) {
-			$is_displayed = false;
-		} elseif ( 'wd_show_feature_quarantine' === self::FEATURE_SLUG && ! $wpmudev->is_pro() ) {
-			// @since 4.0.0 Highlight the Safe Repair feature only for Pro users.
-			$is_displayed = false;
-		} else {
-			$is_displayed = $this->display_last_modal( self::FEATURE_SLUG );
-		}
+		$button_title      = esc_html__( 'Go to Settings', 'defender-security' );
+		$button_title_free = $button_title;
 
 		return array(
 			'show_welcome_modal' => $is_displayed,
@@ -64,9 +55,9 @@ class Feature_Modal extends Component {
 				'desc'               => $desc,
 				'banner_1x'          => defender_asset_url( '/assets/img/modal/welcome-modal.png' ),
 				'banner_2x'          => defender_asset_url( '/assets/img/modal/welcome-modal@2x.png' ),
-				'banner_alt'         => esc_html__( 'Modal for Quarantine', 'defender-security' ),
-				'button_title'       => esc_html__( 'CHECK IT OUT!', 'defender-security' ),
-				'button_title_free'  => esc_html__( 'Get it now', 'defender-security' ),
+				'banner_alt'         => esc_html__( 'Modal for Automatic IP Detection', 'defender-security' ),
+				'button_title'       => $button_title,
+				'button_title_free'  => $button_title_free,
 				// Additional information.
 				'additional_text'    => $this->additional_text(),
 				'is_disabled_option' => $wpmudev->is_disabled_hub_option(),

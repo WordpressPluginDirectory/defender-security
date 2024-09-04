@@ -106,11 +106,10 @@ class Scan extends Component {
 			// This case can be a scan get cancel.
 			return - 1;
 		}
-		$this->scan     = $scan;
-		$this->settings = new Scan_Settings();
-		$tasks          = $this->get_tasks();
-		$runner         = new ArrayIterator( $tasks );
-		$task           = $this->scan->status;
+		$this->scan = $scan;
+		$tasks      = $this->get_tasks();
+		$runner     = new ArrayIterator( $tasks );
+		$task       = $this->scan->status;
 		if ( Scan_Model::STATUS_INIT === $scan->status ) {
 			// Get the first.
 			$this->log( 'Prepare facts for a scan', 'scan.log' );
@@ -155,7 +154,6 @@ class Scan extends Component {
 					$this->scan->task_checkpoint = '';
 					$this->scan->date_end        = gmdate( 'Y-m-d H:i:s' );
 					$this->scan->save();
-
 					// Queue for next run.
 					return false;
 				}
@@ -200,7 +198,8 @@ class Scan extends Component {
 	 * @return array
 	 */
 	public function get_tasks(): array {
-		$tasks = array( Scan_Model::STEP_GATHER_INFO => 'gather_info' );
+		$this->settings = new Scan_Settings();
+		$tasks          = array( Scan_Model::STEP_GATHER_INFO => 'gather_info' );
 		if ( $this->settings->integrity_check ) {
 			// Nested options.
 			if ( $this->settings->check_core ) {
@@ -445,7 +444,7 @@ class Scan extends Component {
 	}
 
 	/**
-	 * Update the idle scan status.
+	 * Update the idle scan status due the time limit.
 	 *
 	 * @since 2.6.1
 	 */
@@ -461,13 +460,40 @@ class Scan extends Component {
 
 			as_unschedule_all_actions( 'defender/async_scan' );
 
-			$idle_scan->status = Scan_Model::STATUS_IDLE;
+			$idle_scan->status          = Scan_Model::STATUS_IDLE;
+			$idle_scan->task_checkpoint = 'time_limit';
 			$idle_scan->save();
 
 			$this->remove_lock();
 			if ( $ready_to_send ) {
 				do_action( 'defender_notify', 'malware-notification', $idle_scan );
 			}
+		}
+	}
+
+	/**
+	 * Update the idle scan status due the checksum issue.
+	 *
+	 * @param object $scan The current scan.
+	 *
+	 * @since 4.9.0
+	 */
+	public function update_idle_scan_status_by_checksum_issue( $scan ) {
+		$ready_to_send = false;
+		if ( Scan_Model::STATUS_IDLE === $scan->status ) {
+			$ready_to_send = true;
+		}
+		$this->delete_interim_data();
+
+		as_unschedule_all_actions( 'defender/async_scan' );
+
+		$scan->status          = Scan_Model::STATUS_IDLE;
+		$scan->task_checkpoint = 'checksum_issue';
+		$scan->save();
+
+		$this->remove_lock();
+		if ( $ready_to_send ) {
+			do_action( 'defender_notify', 'malware-notification', $scan );
 		}
 	}
 

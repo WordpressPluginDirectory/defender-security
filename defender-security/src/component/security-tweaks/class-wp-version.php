@@ -31,7 +31,7 @@ class WP_Version extends Component {
 	}
 
 	/**
-	 * Here is the code for processing, if the return is true, we add it to resolve list, WP_Error if any error.
+	 * Here is the code for processing.
 	 *
 	 * @return bool
 	 */

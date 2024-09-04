@@ -14,6 +14,8 @@ namespace WP_Defender\Component\Security_Tweaks\Servers;
  */
 class Server {
 
+	public const CACHE_CURRENT_SERVER = 'defender_current_server';
+
 	/**
 	 * Create a new instance of the Server_Factory class.
 	 *
@@ -79,7 +81,7 @@ class Server {
 	 */
 	public static function get_current_server() {
 		$url         = home_url();
-		$server_type = get_site_transient( 'defender_current_server' );
+		$server_type = get_site_transient( self::CACHE_CURRENT_SERVER );
 
 		if ( ! is_array( $server_type ) ) {
 			$server_type = array();
@@ -108,7 +110,7 @@ class Server {
 		}
 
 		$server_type[ $url ] = $server;
-		set_site_transient( 'defender_current_server', $server_type, 3600 );
+		set_site_transient( self::CACHE_CURRENT_SERVER, $server_type, 3600 );
 
 		return $server;
 	}

@@ -372,6 +372,7 @@ function is_defender_page(): bool {
 		'wdf-notification',
 		'wdf-setting',
 		'wdf-tutorial',
+		'wdf-expert-services',
 	);
 
 	return in_array( defender_get_current_page(), $pages, true );

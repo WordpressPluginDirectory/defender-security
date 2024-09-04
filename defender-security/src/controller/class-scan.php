@@ -20,6 +20,7 @@ use WP_Defender\Traits\Scan_Upsell;
 use WP_Defender\Model\Scan_Item;
 use WP_Defender\Behavior\WPMUDEV;
 use WP_Defender\Model\Scan as Model_Scan;
+use WP_Defender\Behavior\Scan\Core_Integrity;
 use WP_Defender\Model\Setting\Scan as Scan_Settings;
 use WP_Defender\Model\Notification\Malware_Report;
 use WP_Defender\Component\Config\Config_Hub_Helper;
@@ -210,6 +211,14 @@ class Scan extends Event {
 			$this->service->update_idle_scan_status();
 
 			return new Response( false, $idle_scan->to_array() );
+		}
+
+		$checksum_issue = get_site_option( Core_Integrity::ISSUE_CHECKSUMS, 'false' );
+		$checksum_scan  = Model_Scan::get_core_check();
+		if ( 'false' !== $checksum_issue && is_object( $checksum_scan ) ) {
+			$this->service->update_idle_scan_status_by_checksum_issue( $checksum_scan );
+
+			return new Response( false, $checksum_scan->to_array() );
 		}
 
 		$scan = Model_Scan::get_active();
@@ -850,6 +859,7 @@ class Scan extends Event {
 	 */
 	public function remove_data(): void {
 		delete_site_option( Model_Scan::IGNORE_INDEXER );
+		delete_site_option( Core_Integrity::ISSUE_CHECKSUMS );
 	}
 
 	/**
@@ -918,10 +928,6 @@ class Scan extends Event {
 			'notification' => $report->to_string(),
 			'next_run'     => $report->get_next_run_as_string(),
 			'misc'         => $misc,
-			'upsell'       => array(
-				'dashboard' => $this->get_scan_upsell( 'dashboard' ),
-				'scan'      => $this->get_scan_upsell( 'scan' ),
-			),
 		);
 
 		if ( class_exists( 'WP_Defender\Controller\Quarantine' ) ) {
@@ -1048,13 +1054,14 @@ class Scan extends Event {
 	/**
 	 * Triggers the asynchronous scan.
 	 *
-	 * @param  string $type  Denotes type of the scan from the following four possible values scan, install, hub or
-	 *                   report.
+	 * @param string $type Denotes type of the scan from the following 4 possible values: scan, install, hub or report.
 	 *
 	 * @return void
 	 */
 	public function do_async_scan( string $type ): void {
 		wd_di()->get( Model_Scan::class )->delete_idle();
+		// Delete the slug from the previous scan.
+		delete_site_option( Core_Integrity::ISSUE_CHECKSUMS );
 
 		as_enqueue_async_action(
 			'defender/async_scan',

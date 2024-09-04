@@ -61,7 +61,6 @@ abstract class Two_Factor_Provider extends Component {
 	 */
 	abstract public function get_description();
 
-
 	/**
 	 * Checks if the provider is available for a specific user.
 	 *

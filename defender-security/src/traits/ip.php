@@ -8,6 +8,8 @@
 namespace WP_Defender\Traits;
 
 use WP_Defender\Component\Http\Remote_Address;
+use WP_Defender\Component\Smart_Ip_Detection;
+use WP_Defender\Model\Setting\Firewall;
 
 trait IP {
 
@@ -366,11 +368,37 @@ trait IP {
 	 * @return array
 	 */
 	public function get_user_ip(): array {
-
-		$remote_addr = wd_di()->get( Remote_Address::class );
-		$ips         = (array) $remote_addr->get_ip_address();
+		$service = wd_di()->get( Smart_Ip_Detection::class );
+		if ( $service->is_smart_ip_detection_enabled() ) {
+			$ip_detail = $service->get_smart_ip_detection_details();
+			$ips       = isset( $ip_detail[0] ) ? array( $ip_detail[0] ) : array();
+		} else {
+			$remote_addr = wd_di()->get( Remote_Address::class );
+			$ips         = (array) $remote_addr->get_ip_address();
+		}
 
 		return $this->filter_user_ips( $ips );
+	}
+
+	/**
+	 * Get user IP header.
+	 *
+	 * @return string
+	 */
+	public function get_user_ip_header(): string {
+		$ip_header = '';
+
+		$service = wd_di()->get( Smart_Ip_Detection::class );
+		if ( $service->is_smart_ip_detection_enabled() ) {
+			$ip_detail = $service->get_smart_ip_detection_details();
+			$ip_header = isset( $ip_detail[1] ) ? $ip_detail[1] : '';
+		} else {
+			$model       = wd_di()->get( Firewall::class );
+			$remote_addr = wd_di()->get( Remote_Address::class );
+			$ip_header   = $remote_addr->get_http_ip_header_value( esc_html( $model->http_ip_header ) );
+		}
+
+		return $ip_header;
 	}
 
 	/**
@@ -433,5 +461,16 @@ trait IP {
 		$ip_addr = defender_get_data_from_request( 'REMOTE_ADDR', 's' );
 
 		return ! empty( $ip_addr ) ? $ip_addr : $blocked_ip;
+	}
+
+	/**
+	 * Check if the given IP is a private IP.
+	 *
+	 * @param  string $ip  The IP address to check.
+	 *
+	 * @return bool True if the IP is a private IP, false otherwise.
+	 */
+	public function is_private_ip( string $ip ): bool {
+		return filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_RES_RANGE | FILTER_FLAG_NO_PRIV_RANGE ) === false;
 	}
 }

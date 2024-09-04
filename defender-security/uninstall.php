@@ -43,7 +43,7 @@ function defender_drop_custom_fk_constraint( string $table_name ): void {
 
 	if ( $results ) {
 		foreach ( $results as $fk ) {
-			$wpdb->query( "ALTER TABLE {$table_name} DROP FOREIGN KEY {$fk->CONSTRAINT_NAME}" );
+			$wpdb->query( "ALTER TABLE {$table_name} DROP FOREIGN KEY {$fk->CONSTRAINT_NAME}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		}
 	}
 }
@@ -104,6 +104,8 @@ if ( $uninstall_data ) {
 	wd_di()->get( \WP_Defender\Component\Backup_Settings::class )->clear_configs();
 	$advanced_tools->remove_data();
 	defender_drop_custom_tables();
+	delete_site_transient( \WP_Defender\Behavior\Scan\Plugin_Integrity::$org_slugs );
+	delete_site_transient( \WP_Defender\Behavior\Scan\Plugin_Integrity::$org_responses );
 }
 
 if ( class_exists( 'WP_Defender\Controller\Quarantine' ) ) {
@@ -118,8 +120,8 @@ if ( $uninstall_settings && $uninstall_data ) {
 	\WP_Defender\Component\Feature_Modal::delete_modal_key();
 	\WP_Defender\Controller\Data_Tracking::delete_modal_key();
 	\WP_Defender\Component\Rate::clean_up();
-	\WP_Defender\Controller\General_Notice::delete_slugs();
 	\WP_Defender\Component\Firewall::delete_slugs();
 }
 // Remains from old versions.
 delete_site_option( 'wd_audit_cached' );
+delete_site_option( 'wd_show_ip_detection_notice' );

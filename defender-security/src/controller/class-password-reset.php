@@ -333,8 +333,9 @@ class Password_Reset extends Event {
 	/**
 	 * Exports strings.
 	 *
-	 * @return void
+	 * @return array An array of strings.
 	 */
 	public function export_strings() {
+		return array();
 	}
 }

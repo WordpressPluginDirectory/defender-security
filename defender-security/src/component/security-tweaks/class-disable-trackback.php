@@ -49,7 +49,7 @@ class Disable_Trackback extends Component {
 	/**
 	 * This is for un-do stuff that has be done in @process.
 	 *
-	 * @return bool|WP_Error
+	 * @return bool
 	 */
 	public function revert() {
 		return $this->update_site_trackback( true );

@@ -21,7 +21,6 @@ use WP_Defender\Component\Feature_Modal;
 use WP_Defender\Controller\Data_Tracking;
 use WP_Defender\Component\Backup_Settings;
 use WP_Defender\Component\Legacy_Versions;
-use WP_Defender\Controller\General_Notice;
 use WP_Defender\Controller\Security_Tweaks;
 use WP_Defender\Model\Setting\Security_Headers;
 use WP_Defender\Model\Setting\Notfound_Lockout;
@@ -42,7 +41,9 @@ use WP_Defender\Component\Security_Tweaks\Security_Key;
 use WP_Defender\Model\Notification\Malware_Notification;
 use WP_Defender\Model\Notification\Firewall_Notification;
 use WP_Defender\Component\Two_Factor\Providers\Fallback_Email;
+use WP_Defender\Helper\Analytics\Firewall as Firewall_Analytics;
 use WP_Defender\Model\Setting\Blacklist_Lockout as Model_Blacklist_Lockout;
+use WP_Defender\Model\Setting\Firewall as Model_Firewall;
 use function WP_Filesystem;
 
 /**
@@ -383,9 +384,6 @@ class Upgrader {
 		if ( version_compare( $db_version, '4.2.0', '<' ) ) {
 			$this->upgrade_4_2_0();
 		}
-		if ( version_compare( $db_version, '4.4.2', '<' ) ) {
-			$this->upgrade_4_4_2();
-		}
 		if ( version_compare( $db_version, '4.5.1', '<' ) ) {
 			$this->upgrade_4_5_1();
 		}
@@ -397,6 +395,9 @@ class Upgrader {
 		}
 		if ( version_compare( $db_version, '4.8.2', '<' ) ) {
 			$this->upgrade_4_8_2();
+		}
+		if ( version_compare( $db_version, '4.9.0', '<' ) ) {
+			$this->upgrade_4_9_0();
 		}
 		// This is not a new installation. Make a mark.
 		defender_no_fresh_install();
@@ -1589,16 +1590,6 @@ Your temporary password is {{passcode}}. To finish logging in, copy and paste th
 	}
 
 	/**
-	 * Upgrade to 4.4.2.
-	 *
-	 * @return void
-	 */
-	private function upgrade_4_4_2(): void {
-		// Add the IP detection notice.
-		update_site_option( General_Notice::IP_DETECTION_SLUG, true );
-	}
-
-	/**
 	 * Upgrade to 4.5.1.
 	 *
 	 * @return void
@@ -1650,5 +1641,32 @@ To complete your login, copy and paste the temporary password into the Password 
 		) {
 			delete_site_option( Firewall::IP_DETECTION_XFF_SHOW_SLUG );
 		}
+	}
+
+	/**
+	 * Upgrade to 4.9.0.
+	 *
+	 * @return void
+	 */
+	private function upgrade_4_9_0(): void {
+		$model = wd_di()->get( Model_Firewall::class );
+
+		$model->ip_detection_type = 'manual';
+		$model->save();
+
+		// Add the "What's new" modal.
+		update_site_option( Feature_Modal::FEATURE_SLUG, true );
+		// Add tracking.
+		$model              = wd_di()->get( Model_Firewall::class );
+		$firewall_analytics = wd_di()->get( Firewall_Analytics::class );
+		$detection_method   = Firewall_Analytics::get_detection_method_label(
+			$model->ip_detection_type,
+			$model->http_ip_header
+		);
+
+		$firewall_analytics->track_feature(
+			Firewall_Analytics::EVENT_IP_DETECTION,
+			array( Firewall_Analytics::PROP_IP_DETECTION => $detection_method )
+		);
 	}
 }

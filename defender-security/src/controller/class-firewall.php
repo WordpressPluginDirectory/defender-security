@@ -31,11 +31,13 @@ use WP_Defender\Component\Config\Config_Hub_Helper;
 use WP_Defender\Model\Notification\Firewall_Report;
 use WP_Defender\Component\Firewall as Firewall_Service;
 use WP_Defender\Model\Notification\Firewall_Notification;
-use WP_Defender\Model\Setting\Firewall as Firewall_Settigs;
+use WP_Defender\Model\Setting\Firewall as Firewall_Settings;
 use WP_Defender\Component\User_Agent as User_Agent_Component;
 use WP_Defender\Model\Setting\Blacklist_Lockout as Blacklist_Model;
 use WP_Defender\Model\Setting\Login_Lockout as Login_Lockout_Model;
 use WP_Defender\Component\Trusted_Proxy_Preset\Trusted_Proxy_Preset;
+use WP_Defender\Component\Smart_Ip_Detection;
+use WP_Defender\Helper\Analytics\Firewall as Firewall_Analytics;
 
 /**
  * Handles IP lockouts, notifications, and settings related to the firewall features.
@@ -56,7 +58,7 @@ class Firewall extends Event {
 	/**
 	 * The model for handling the data.
 	 *
-	 * @var Firewall_Settigs
+	 * @var Firewall_Settings
 	 */
 	protected $model;
 
@@ -66,6 +68,13 @@ class Firewall extends Event {
 	 * @var Firewall_Service
 	 */
 	public $service;
+
+	/**
+	 * Service for handling Smart IP Detection.
+	 *
+	 * @var Smart_Ip_Detection
+	 */
+	public $service_sid;
 
 	/**
 	 * Initializes the model and service, registers routes, and sets up scheduled events if the model is active.
@@ -78,10 +87,11 @@ class Firewall extends Event {
 			array( &$this, 'main_view' ),
 			$this->parent_slug,
 			null,
-			$this->menu_title( $title )
+			$title
 		);
-		$this->model   = wd_di()->get( Firewall_Settigs::class );
-		$this->service = wd_di()->get( Firewall_Service::class );
+		$this->model       = wd_di()->get( Firewall_Settings::class );
+		$this->service     = wd_di()->get( Firewall_Service::class );
+		$this->service_sid = wd_di()->get( Smart_Ip_Detection::class );
 		$this->register_routes();
 		$this->maybe_show_demo_lockout();
 		$this->maybe_lockout_gathered_ips();
@@ -132,27 +142,15 @@ class Firewall extends Event {
 				'update_trusted_proxy_preset_ips',
 			)
 		);
-	}
 
-	/**
-	 * Get menu title.
-	 *
-	 * @param  string $title  The original menu title.
-	 *
-	 * @return string
-	 * @since 3.11.0
-	 */
-	protected function menu_title( string $title ): string {
-		$info = defender_white_label_status();
-		if ( ! $info['hide_doc_link'] ) {
-			$suffix = '<span style="padding: 2px 6px;border-radius: 9px;background-color: #17A8E3;color: #FFF;font-size: 8px;letter-spacing: -0.25px;text-transform: uppercase;vertical-align: middle;">' . esc_html__(
-				'NEW',
-				'defender-security'
-			) . '</span>';
-			$title .= ' ' . $suffix;
+		add_action( 'wp_ajax_' . Smart_Ip_Detection::ACTION_PING, array( $this, 'handle_detect_ip_header' ) );
+		add_action( 'wp_ajax_nopriv_' . Smart_Ip_Detection::ACTION_PING, array( $this, 'handle_detect_ip_header' ) );
+		if ( $this->service_sid->is_smart_ip_detection_enabled() ) {
+			if ( ! wp_next_scheduled( 'wpdef_smart_ip_detection_ping' ) ) {
+				wp_schedule_event( time(), 'weekly', 'wpdef_smart_ip_detection_ping' );
+			}
+			add_action( 'wpdef_smart_ip_detection_ping', array( $this, 'smart_ip_detection_ping' ) );
 		}
-
-		return $title;
 	}
 
 	/**
@@ -228,6 +226,16 @@ class Firewall extends Event {
 			$is_preset_update = true;
 		}
 
+		$is_ip_detection_type_changed = false;
+		if ( 'automatic' === $data['ip_detection_type'] && $this->model->ip_detection_type !== $data['ip_detection_type'] ) {
+			$is_ip_detection_type_changed = true;
+		}
+
+		$is_http_ip_header_changed = false;
+		if ( $this->model->http_ip_header !== $data['http_ip_header'] ) {
+			$is_http_ip_header_changed = true;
+		}
+
 		$this->model->import( $data );
 		if ( $this->model->validate() ) {
 			$this->service->update_cron_schedule_interval( $data['ip_blocklist_cleanup_interval'] );
@@ -236,6 +244,25 @@ class Firewall extends Event {
 			// Fetch trusted proxy ips.
 			if ( $is_preset_update ) {
 				$this->service->update_trusted_proxy_preset_ips();
+			}
+
+			if ( $is_ip_detection_type_changed ) {
+				$this->service_sid->smart_ip_detection_ping();
+			}
+			// Maybe track.
+			if ( ( $is_ip_detection_type_changed || $is_http_ip_header_changed )
+				&& ! defender_is_wp_cli()
+			) {
+				$firewall_analytics = wd_di()->get( Firewall_Analytics::class );
+				$detection_method   = Firewall_Analytics::get_detection_method_label(
+					$data['ip_detection_type'],
+					$data['http_ip_header']
+				);
+
+				$firewall_analytics->track_feature(
+					Firewall_Analytics::EVENT_IP_DETECTION,
+					array( Firewall_Analytics::PROP_IP_DETECTION => $detection_method )
+				);
 			}
 
 			return new Response(
@@ -727,7 +754,7 @@ class Firewall extends Event {
 		( new Login_Lockout_Model() )->delete();
 		( new Blacklist_Model() )->delete();
 		( new Notfound_Lockout() )->delete();
-		( new Firewall_Settigs() )->delete();
+		( new Firewall_Settings() )->delete();
 		( new User_Agent_Lockout() )->delete();
 		( new Global_Ip_Lockout() )->delete();
 	}
@@ -750,6 +777,7 @@ class Firewall extends Event {
 		}
 		// Remove Unlockouts.
 		Unlockout::truncate();
+		Smart_Ip_Detection::remove_header();
 	}
 
 	/**
@@ -758,12 +786,9 @@ class Firewall extends Event {
 	 * @return array An array of data for the frontend.
 	 */
 	public function data_frontend(): array {
-		$summary_data = $this->get_summary();
-
-		$user_ip = $this->get_user_ip();
-
-		$remote_addr          = wd_di()->get( Remote_Address::class );
-		$http_ip_header_value = $remote_addr->get_http_ip_header_value( esc_html( $this->model->http_ip_header ) );
+		$summary_data         = $this->get_summary();
+		$user_ip              = $this->get_user_ip();
+		$http_ip_header_value = $this->get_user_ip_header();
 
 		$data = array(
 			'login'                 => array(
@@ -1033,12 +1058,21 @@ class Firewall extends Event {
 	public function sync_ip_header( Request $request ): Response {
 		$data = $request->get_data();
 
-		$remote_addr = wd_di()->get( Remote_Address::class );
-		$remote_addr->set_http_ip_header( $data['selected_http_header'] );
+		if ( 'automatic' === $data['ip_detection_type'] ) {
+			$this->service_sid->smart_ip_detection_ping( true );
 
-		$user_ip        = $remote_addr->get_ip_address();
-		$user_ip_header = $remote_addr->get_http_ip_header_value( $data['selected_http_header'] );
-		$data           = array(
+			$ip_detail      = $this->service_sid->get_smart_ip_detection_details();
+			$user_ip        = isset( $ip_detail[0] ) ? $ip_detail[0] : '';
+			$user_ip_header = isset( $ip_detail[1] ) ? $ip_detail[1] : '';
+		} else {
+			$remote_addr = wd_di()->get( Remote_Address::class );
+			$remote_addr->set_http_ip_header( $data['selected_http_header'] );
+
+			$user_ip        = $remote_addr->get_ip_address();
+			$user_ip_header = $remote_addr->get_http_ip_header_value( $data['selected_http_header'] );
+		}
+
+		$data = array(
 			'user_ip'        => is_array( $user_ip ) ? implode( ', ', $user_ip ) : $user_ip,
 			'user_ip_header' => $user_ip_header,
 		);
@@ -1124,5 +1158,41 @@ class Firewall extends Event {
 	 */
 	public function update_trusted_proxy_preset_ips(): void {
 		$this->service->update_trusted_proxy_preset_ips();
+	}
+
+	/**
+	 * Handle the request to detect the IP header.
+	 *
+	 * @return void
+	 */
+	public function handle_detect_ip_header(): void {
+		$nonce     = defender_get_data_from_request( 'nonce', 'g' );
+		$nonce_ctx = Smart_Ip_Detection::get_nonce_context();
+
+		if ( empty( $nonce ) || get_transient( $nonce_ctx ) !== $nonce ) {
+			wp_send_json_error( __( 'Invalid nonce.', 'defender-security' ) );
+		}
+
+		delete_transient( $nonce_ctx );
+
+		$result = $this->service_sid->smart_ip_detect_header();
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( $result->get_error_message() );
+		} else {
+			wp_send_json_success(
+				isset( $result['message'] )
+					? $result['message']
+					: esc_html__( 'IP detection process completed.', 'defender-security' )
+			);
+		}
+	}
+
+	/**
+	 * Schedule to send request to the API for smart IP detection.
+	 *
+	 * @return void
+	 */
+	public function smart_ip_detection_ping(): void {
+		$this->service_sid->smart_ip_detection_ping();
 	}
 }

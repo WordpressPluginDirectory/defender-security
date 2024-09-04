@@ -303,7 +303,7 @@ class Firewall_Logs extends Controller {
 			$model->remove_from_list( $ip, $collection );
 			/* translators: 1: IP address, 2: IP address list, 3: IP address list, 4: URL for Defender > Firewall > IP Banning. */
 			$message = esc_html__(
-				'IP %1$s has been removed from your %2$s You can control your %3$s in %4$s.',
+				'IP %1$s has been removed from your %2$s. You can control your %3$s in %4$s.',
 				'defender-security'
 			);
 		} else {
@@ -319,7 +319,7 @@ class Firewall_Logs extends Controller {
 
 			/* translators: 1: IP address. 2: IP address list. 3: IP address list. 4: URL for Defender > Firewall > IP Banning. */
 			$message = esc_html__(
-				'IP %1$s has been added to your %2$s You can control your %3$s in %4$s.',
+				'IP %1$s has been added to your %2$s. You can control your %3$s in %4$s.',
 				'defender-security'
 			);
 		}
@@ -383,7 +383,7 @@ class Firewall_Logs extends Controller {
 	/**
 	 * Toggles a user agent to/from a specified list based on the given request data.
 	 *
-	 * @param  Request $request  The request object containing the data for toggling the user agent.
+	 * @param Request $request  The request object containing the data for toggling the user agent.
 	 *
 	 * @return Response The response object indicating the success or failure of the toggle operation.
 	 * @defender_route
@@ -416,7 +416,7 @@ class Firewall_Logs extends Controller {
 			$model->remove_from_list( $ua, $collection );
 			/* translators: 1: User agent. 2: User agent list. 3: User agent list. 4: URL for Defender > Firewall > User Agent Banning. */
 			$message = esc_html__(
-				'User agent %1$s has been removed from your %2$s You can control your %3$s in %4$s',
+				'User agent %1$s has been removed from your %2$s. You can control your %3$s in %4$s.',
 				'defender-security'
 			);
 		} elseif ( 'add' === $action ) {
@@ -433,7 +433,7 @@ class Firewall_Logs extends Controller {
 			}
 			/* translators: 1: User agent. 2: User agent list. 3: User agent list. 4: URL for Defender > Firewall > User Agent Banning. */
 			$message = esc_html__(
-				'User agent %1$s has been added to your %2$s You can control your %3$s in %4$s',
+				'User agent %1$s has been added to your %2$s. You can control your %3$s in %4$s.',
 				'defender-security'
 			);
 		} else {
@@ -503,7 +503,7 @@ class Firewall_Logs extends Controller {
 	/**
 	 * Query the logs and display on frontend.
 	 *
-	 * @param  Request $request  The request object containing filter parameters.
+	 * @param Request $request  The request object containing filter parameters.
 	 *
 	 * @return Response
 	 * @defender_route
@@ -725,9 +725,9 @@ class Firewall_Logs extends Controller {
 	 */
 	public function send_compact_logs_to_api(): void {
 		/**
-		 * Enable/disable sending FIrewall logs to API.
+		 * Enable/disable sending Firewall logs to API.
 		 *
-		 * @param  bool  $status  Status for sending logs. Send logs to API if true.
+		 * @param bool  $status  Status for sending logs. Send logs to API if true.
 		 *
 		 * @since 4.5.0
 		 */

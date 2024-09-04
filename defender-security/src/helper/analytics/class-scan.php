@@ -18,13 +18,10 @@ use WP_Defender\Model\Setting\Scan as Scan_Setting;
  */
 class Scan extends Event {
 
-	const EVENT_SCAN_FAILED = 'def_scan_failed_new';
-
-	const EVENT_SCAN_FAILED_PROP = 'Failure reason';
-
-	const EVENT_SCAN_FAILED_CANCEL = 'User Cancellation';
-
-	const EVENT_SCAN_FAILED_ERROR = 'Error';
+	public const EVENT_SCAN_FAILED        = 'def_scan_failed_new';
+	public const EVENT_SCAN_FAILED_PROP   = 'Failure reason';
+	public const EVENT_SCAN_FAILED_CANCEL = 'User Cancellation';
+	public const EVENT_SCAN_FAILED_ERROR  = 'Error';
 
 	// Mandatory empty methods.
 	// Start.

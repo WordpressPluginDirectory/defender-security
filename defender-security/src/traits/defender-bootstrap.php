@@ -30,8 +30,8 @@ use WP_Defender\Controller\Notification;
 use WP_Defender\Controller\Audit_Logging;
 use WP_Defender\Controller\Data_Tracking;
 use WP_Defender\Controller\Advanced_Tools;
-use WP_Defender\Controller\General_Notice;
 use WP_Defender\Controller\Password_Reset;
+use WP_Defender\Controller\Expert_Services;
 use WP_Defender\Controller\Security_Tweaks;
 use WP_Defender\Controller\Security_Headers;
 use WP_Defender\Controller\Blocklist_Monitor;
@@ -85,64 +85,60 @@ trait Defender_Bootstrap {
 	public function create_table_quarantine() {
 		global $wpdb;
 
+		// Define table names and charset.
 		$quarantine_table = $wpdb->base_prefix . $this->quarantine_table;
 		$scan_item_table  = $wpdb->base_prefix . $this->scan_item_table;
 		$charset_collate  = $wpdb->get_charset_collate();
+		$unique_id        = uniqid( $wpdb->prefix );
 
+		$common_columns = <<<SQL
+		`id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
+		`defender_scan_item_id` int UNSIGNED DEFAULT NULL,
+		`file_hash` char(53) NOT NULL,
+		`file_full_path` text NOT NULL,
+		`file_original_name` tinytext NOT NULL,
+		`file_extension` varchar(16) DEFAULT NULL,
+		`file_mime_type` varchar(64) DEFAULT NULL,
+		`file_rw_permission` smallint UNSIGNED DEFAULT NULL,
+		`file_owner` varchar(255) DEFAULT NULL,
+		`file_group` varchar(255) DEFAULT NULL,
+		`file_version` varchar(32) DEFAULT NULL,
+		`file_category` tinyint UNSIGNED DEFAULT 0,
+		`file_modified_time` datetime NOT NULL,
+		`source_slug` varchar(255) NOT NULL,
+		`created_time` datetime NOT NULL,
+		`created_by` bigint UNSIGNED DEFAULT NULL,
+		PRIMARY KEY (`id`)
+		SQL;
+
+		// Define key names.
+		$scan_item_key  = "{$unique_id}_defender_scan_item_id";
+		$created_by_key = "{$unique_id}_created_by";
+
+		// Build the SQL statement based on the storage engine.
 		if ( $this->is_quarantine_dependent_tables_innodb() ) {
 			$sql = <<<SQL
-				CREATE TABLE IF NOT EXISTs `{$quarantine_table}` (
-					`id` bigint unsigned NOT NULL AUTO_INCREMENT,
-					`defender_scan_item_id` int UNSIGNED DEFAULT NULL,
-					`file_hash` char(53) NOT NULL,
-					`file_full_path` text NOT NULL,
-					`file_original_name` tinytext NOT NULL,
-					`file_extension` varchar(16) DEFAULT NULL,
-					`file_mime_type` varchar(64) DEFAULT NULL,
-					`file_rw_permission` smallint UNSIGNED,
-					`file_owner` varchar(255) DEFAULT NULL,
-					`file_group` varchar(255) DEFAULT NULL,
-					`file_version` varchar(32) DEFAULT NULL,
-					`file_category` tinyint UNSIGNED DEFAULT 0,
-					`file_modified_time` datetime NOT NULL,
-					`source_slug` varchar(255) NOT NULL,
-					`created_time` datetime NOT NULL,
-					`created_by` bigint UNSIGNED DEFAULT NULL,
-					PRIMARY KEY (`id`),
-					CONSTRAINT `fk_defender_scan_item`
-						FOREIGN KEY (`defender_scan_item_id`) REFERENCES {$scan_item_table}(`id`)
-						ON UPDATE CASCADE ON DELETE SET NULL,
-					CONSTRAINT `fk_created_by`
-						FOREIGN KEY (`created_by`) REFERENCES {$wpdb->users}(`id`)
-						ON UPDATE CASCADE ON DELETE SET NULL
-				) {$charset_collate};
-SQL;
+			CREATE TABLE IF NOT EXISTS `{$quarantine_table}` (
+				$common_columns,
+				CONSTRAINT `{$scan_item_key}`
+				FOREIGN KEY (`defender_scan_item_id`) REFERENCES {$scan_item_table}(`id`)
+				ON UPDATE CASCADE ON DELETE SET NULL,
+				CONSTRAINT `{$created_by_key}`
+				FOREIGN KEY (`created_by`) REFERENCES {$wpdb->users}(`ID`)
+				ON UPDATE CASCADE ON DELETE SET NULL
+			) {$charset_collate};
+			SQL;
 		} else {
 			$sql = <<<SQL
-				CREATE TABLE IF NOT EXISTs `{$quarantine_table}` (
-					`id` bigint unsigned NOT NULL AUTO_INCREMENT,
-					`defender_scan_item_id` int UNSIGNED DEFAULT NULL,
-					`file_hash` char(53) NOT NULL,
-					`file_full_path` text NOT NULL,
-					`file_original_name` tinytext NOT NULL,
-					`file_extension` varchar(16) DEFAULT NULL,
-					`file_mime_type` varchar(64) DEFAULT NULL,
-					`file_rw_permission` smallint UNSIGNED,
-					`file_owner` varchar(255) DEFAULT NULL,
-					`file_group` varchar(255) DEFAULT NULL,
-					`file_version` varchar(32) DEFAULT NULL,
-					`file_category` tinyint UNSIGNED DEFAULT 0,
-					`file_modified_time` datetime NOT NULL,
-					`source_slug` varchar(255) NOT NULL,
-					`created_time` datetime NOT NULL,
-					`created_by` bigint UNSIGNED DEFAULT NULL,
-					PRIMARY KEY (`id`),
-					KEY `defender_scan_item_id` (`defender_scan_item_id`),
-					KEY `created_by` (`created_by`)
-				) {$charset_collate};
-SQL;
+			CREATE TABLE IF NOT EXISTS `{$quarantine_table}` (
+				$common_columns,
+				KEY `{$scan_item_key}` (`defender_scan_item_id`),
+				KEY `{$created_by_key}` (`created_by`)
+			) {$charset_collate};
+			SQL;
 		}
 
+		// Execute the SQL query.
 		$wpdb->query( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 	}
 
@@ -162,6 +158,8 @@ SQL;
 		$service = wd_di()->get( Firewall_Component::class );
 		$service->auto_switch_ip_detection_option();
 		$service->maybe_show_misconfigured_ip_detection_option_notice();
+		$service->maybe_dismiss_cf_notice();
+		wp_schedule_single_event( time() + 5, 'wpdef_smart_ip_detection_ping' );
 	}
 
 	/**
@@ -183,6 +181,7 @@ SQL;
 		wp_clear_scheduled_hook( 'wpdef_firewall_send_compact_logs_to_api' );
 		wp_clear_scheduled_hook( 'wpdef_firewall_fetch_trusted_proxy_preset_ips' );
 		wp_clear_scheduled_hook( 'wpdef_firewall_clean_up_unlockout' );
+		wp_clear_scheduled_hook( 'wpdef_smart_ip_detection_ping' );
 
 		// Remove old legacy cron jobs if they exist.
 		wp_clear_scheduled_hook( 'lockoutReportCron' );
@@ -380,12 +379,12 @@ SQL;
 		wd_di()->get( Password_Protection::class );
 		wd_di()->get( Password_Reset::class );
 		wd_di()->get( Webauthn::class );
+		wd_di()->get( Expert_Services::class );
 
 		if ( class_exists( 'WP_Defender\Controller\Quarantine' ) ) {
 			wd_di()->get( Quarantine::class );
 		}
 		wd_di()->get( Data_Tracking::class );
-		wd_di()->get( General_Notice::class );
 	}
 
 	/**
@@ -430,61 +429,65 @@ SQL;
 		$base_url     = WP_DEFENDER_BASE_URL;
 		$dependencies = array( 'def-vue', 'defender', 'wp-i18n' );
 		$js_files     = array(
-			'wpmudev-sui'        => array(
+			'wpmudev-sui'         => array(
 				$base_url . 'assets/js/shared-ui.js',
 			),
-			'defender'           => array(
+			'defender'            => array(
 				$base_url . 'assets/js/scripts.js',
 			),
-			'def-vue'            => array(
+			'def-vue'             => array(
 				$base_url . 'assets/js/vendor/vue.runtime.min.js',
 			),
-			'def-dashboard'      => array(
+			'def-dashboard'       => array(
 				$base_url . 'assets/app/dashboard.js',
 				$dependencies,
 			),
-			'def-securitytweaks' => array(
+			'def-securitytweaks'  => array(
 				$base_url . 'assets/app/security-tweak.js',
 				array_merge( $dependencies, array( 'clipboard', 'wpmudev-sui' ) ),
 			),
-			'def-scan'           => array(
+			'def-scan'            => array(
 				$base_url . 'assets/app/scan.js',
 				array_merge( $dependencies, array( 'clipboard', 'wpmudev-sui' ) ),
 			),
-			'def-audit'          => array(
+			'def-audit'           => array(
 				$base_url . 'assets/app/audit.js',
 				$dependencies,
 			),
-			'def-iplockout'      => array(
+			'def-iplockout'       => array(
 				$base_url . 'assets/app/ip-lockout.js',
 				array_merge( $dependencies, array( 'wpmudev-sui' ) ),
 			),
-			'def-advancedtools'  => array(
+			'def-advancedtools'   => array(
 				$base_url . 'assets/app/advanced-tools.js',
 				$dependencies,
 			),
-			'def-settings'       => array(
+			'def-settings'        => array(
 				$base_url . 'assets/app/settings.js',
 				$dependencies,
 			),
-			'def-2fa'            => array(
+			'def-2fa'             => array(
 				$base_url . 'assets/app/two-fa.js',
 				$dependencies,
 			),
-			'def-notification'   => array(
+			'def-notification'    => array(
 				$base_url . 'assets/app/notification.js',
 				$dependencies,
 			),
-			'def-waf'            => array(
+			'def-waf'             => array(
 				$base_url . 'assets/app/waf.js',
 				$dependencies,
 			),
-			'def-onboard'        => array(
+			'def-onboard'         => array(
 				$base_url . 'assets/app/onboard.js',
 				$dependencies,
 			),
-			'def-tutorial'       => array(
+			'def-tutorial'        => array(
 				$base_url . 'assets/app/tutorial.js',
+				$dependencies,
+			),
+			'def-expert-services' => array(
+				$base_url . '/assets/app/expert-services.js',
 				$dependencies,
 			),
 		);
@@ -514,13 +517,6 @@ SQL;
 			$misc = $data_tracking->get_tracking_modal();
 		}
 		$misc['high_contrast'] = defender_high_contrast();
-		$general_notice        = wd_di()->get( General_Notice::class );
-		if ( $general_notice->show_notice() ) {
-			$misc['general_notice']           = $general_notice->get_notice_data();
-			$misc['general_notice']['status'] = 'show';
-		} else {
-			$misc['general_notice']['status'] = 'hide';
-		}
 
 		wp_localize_script(
 			'def-vue',

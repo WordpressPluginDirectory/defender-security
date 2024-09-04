@@ -35,9 +35,9 @@ class Change_Admin extends Component {
 	}
 
 	/**
-	 * If the return is true, we add it to resolve list, WP_Error if any error.
+	 * If the return is true or Response, we add it to resolve list. WP_Error if any error.
 	 *
-	 * @return bool|WP_Error
+	 * @return bool|WP_Error|Response
 	 */
 	public function process() {
 		$username = HTTP::post( 'username' );

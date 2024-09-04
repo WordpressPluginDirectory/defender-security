@@ -14,6 +14,8 @@ use WP_Error;
  */
 class Apache {
 
+	public const CACHE_APACHE_VERSION = 'defender_apache_version';
+
 	/**
 	 * Exclude file paths.
 	 *
@@ -366,7 +368,7 @@ class Apache {
 			// The default support is 2.2.
 			$version        = '2.2';
 			$url            = home_url();
-			$apache_version = get_site_transient( 'defender_apache_version' );
+			$apache_version = get_site_transient( self::CACHE_APACHE_VERSION );
 
 			if ( ! is_array( $apache_version ) ) {
 				$apache_version = array();
@@ -391,7 +393,7 @@ class Apache {
 				}
 			}
 
-			set_site_transient( 'defender_apache_version', $apache_version, 3600 );
+			set_site_transient( self::CACHE_APACHE_VERSION, $apache_version, 3600 );
 		} else {
 			$version = apache_get_version();
 			$version = explode( '/', $version );

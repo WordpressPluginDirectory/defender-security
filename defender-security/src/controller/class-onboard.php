@@ -15,6 +15,8 @@ use WP_Defender\Model\Setting\Login_Lockout;
 use WP_Defender\Model\Setting\Notfound_Lockout;
 use WP_Defender\Model\Setting\User_Agent_Lockout;
 use WP_Defender\Model\Setting\Main_Setting as Model_Main_Setting;
+use WP_Defender\Model\Setting\Scan as Scan_Settings;
+use WP_Defender\Controller\Scan as Controller_Scan;
 
 /**
  * This class is only used once, after the activation on a fresh install.
@@ -77,6 +79,9 @@ class Onboard extends Event {
 
 		update_site_option( 'wp_defender_shown_activator', true );
 		delete_site_option( 'wp_defender_is_free_activated' );
+
+		$this->maybe_tracking( 'Activate & Configure' );
+		// Run plugin modules.
 		if ( $this->is_pro() ) {
 			$this->preset_audit();
 			$this->preset_blacklist_monitor();
@@ -84,8 +89,6 @@ class Onboard extends Event {
 		$this->preset_firewall();
 		$this->resolve_security_tweaks();
 		$this->preset_scanning();
-
-		$this->maybe_tracking( 'Activate & Configure' );
 		// @since 4.2.0 No display the Data Tracking after the Onboarding.
 		Data_Tracking::delete_modal_key();
 
@@ -122,13 +125,15 @@ class Onboard extends Event {
 	 * @return void
 	 */
 	private function preset_scanning() {
-		$model = new \WP_Defender\Model\Setting\Scan();
+		$model = new Scan_Settings();
 		$model->save();
 		// Create new scan.
 		$ret = \WP_Defender\Model\Scan::create();
-		if ( ! is_wp_error( $ret ) ) {
-			$scan_controller = wd_di()->get( Scan::class );
-
+		if ( is_object( $ret ) && ! is_wp_error( $ret ) ) {
+			if ( ! $this->is_tracking_active() ) {
+				wd_di()->get( Model_Main_Setting::class )->toggle_tracking( true );
+			}
+			$scan_controller = wd_di()->get( Controller_Scan::class );
 			$scan_controller->scan_started_analytics(
 				array(
 					'Triggered From' => 'Plugin',
@@ -278,9 +283,10 @@ class Onboard extends Event {
 	/**
 	 * Exports strings.
 	 *
-	 * @return void An array of strings.
+	 * @return array An array of strings.
 	 */
 	public function export_strings() {
+		return array();
 	}
 
 	/**

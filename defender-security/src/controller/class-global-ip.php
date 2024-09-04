@@ -131,6 +131,7 @@ class Global_Ip extends Controller {
 				'model' => $this->model->export(),
 				'misc'  => array(
 					'show_global_ips_disable'  => $this->wpmudev->is_disabled_hub_option(),
+					'is_wpmu_dev_admin'        => $this->wpmudev->is_wpmu_dev_admin(),
 					'module_name'              => Global_Ip_Lockout::get_module_name(),
 					'text_to_connect'          => esc_html__(
 						'Connect to a WPMU DEV account to activate Global IP Blocker.',

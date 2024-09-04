@@ -880,9 +880,8 @@ class Cli {
 		WP_CLI::success( sprintf( 'Firewall "%s" has been %s.', $submodule, $text ) );
 	}
 
-
 	/**
-	 * Renames a field to its original model field name.
+	 * Rename a field to its original model field name.
 	 *
 	 * @param  string $field  The field name to rename.
 	 *
@@ -897,7 +896,7 @@ class Cli {
 	}
 
 	/**
-	 * Checks if the specified field is related to country settings.
+	 * Check if the specified field is related to country settings.
 	 *
 	 * @param  string $field  The field to check.
 	 *

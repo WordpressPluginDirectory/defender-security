@@ -51,7 +51,7 @@ class Prevent_Enum_Users extends Component implements Security_Key_Const_Interfa
 	}
 
 	/**
-	 * Here is the code for processing, if the return is true, we add it to resolve list, WP_Error if any error.
+	 * Here is the code for processing.
 	 *
 	 * @return bool
 	 */

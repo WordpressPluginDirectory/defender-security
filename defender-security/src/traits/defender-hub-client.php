@@ -53,7 +53,7 @@ trait Defender_Hub_Client {
 	/**
 	 * Retrieves the endpoint URL based on the given scenario.
 	 *
-	 * @param  int $scenario  The scenario identifier.
+	 * @param string $scenario  The scenario identifier.
 	 *
 	 * @return string The endpoint URL.
 	 */

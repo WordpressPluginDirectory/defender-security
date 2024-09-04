@@ -226,7 +226,7 @@ if ( ! function_exists( 'login_header_otp' ) ) {
 				 *
 				 * @since 2.1.0
 				 */
-				echo wp_kses_post( sprintf( '<div id="login_error">%s</div>', apply_filters( 'login_errors', $errors ) ) );
+				echo wp_kses_post( sprintf( '<div id="login_error" class="notice notice-error">%s</div>', apply_filters( 'login_errors', $errors ) ) );
 			}
 			if ( ! empty( $messages ) ) {
 				/**

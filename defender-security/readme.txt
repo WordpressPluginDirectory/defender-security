@@ -1,13 +1,13 @@
 === Defender Security - Malware Scanner, Login Security & Firewall ===
 Plugin Name: Defender Security - Malware Scanner, Login Security & Firewall
-Version: 4.8.2
+Version: 4.9.0
 Author: WPMU DEV
 Author URI: https://wpmudev.com/
 Contributors: WPMUDEV
 Tags: security, malware, firewall, malware scanner, login security
 Requires at least: 5.2
-Tested up to: 6.6
-Stable tag: 4.8.2
+Tested up to: 6.6.1
+Stable tag: 4.9.0
 Requires PHP: 7.4
 License: GPL v2 - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 
@@ -242,6 +242,23 @@ Please open a new thread in Defender's [support forum](https://wordpress.org/sup
 
 == Changelog ==
 
+= 4.9.0 ( 2024-09-02 ) =
+
+- New: Smart IP Detection method
+- Enhance: Improved error handling of Malware Scan during checksum
+- Enhance: Improved scan logic to detect plugins from wp.org
+- Enhance: Mention Defender in Cloudflare and X-Forwarded-For IP detection notices
+- Enhance: Usage Tracking improvements
+- Fix: Google reCAPTCHA verification failure on WooCommerce my-account and checkout pages
+- Fix: Google reCAPTCHA V3 error in the console log
+- Fix: 2FA settings issue in WooCommerce
+- Fix: Issues when uploading Config
+- Fix: Getting 'ERROR: Something went wrong' when registering a new authenticator
+- Fix: Copy error in translations
+- Fix: Undefined array key in Audit logs
+- Fix: Foreign key getting duplicated
+- Fix: Broken error notice design in 2FA methods
+
 = 4.8.2 ( 2024-07-31 ) =
 
 - Fix: Incorrect IP header detection on WPMU DEV hosting
@@ -293,10 +310,6 @@ Please open a new thread in Defender's [support forum](https://wordpress.org/sup
 - Fix: Calendar displayed in blue when High contrast mode is enabled
 - Fix: Ban/unban IP from Firewall Logs not reflected on the IP Banning Tab
 - Fix: Mask URL is not working on the default WP recovery email when a site goes down
-
-= 4.7.1 ( 2024-05-01 ) =
-
-- Enhance: UI enhancements in the Malware Scanning screen
 
 [Changelog for previous versions](https://wpmudev.com/project/wp-defender/#view-changelog).
 

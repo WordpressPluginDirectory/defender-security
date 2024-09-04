@@ -823,8 +823,8 @@ class Security_Tweaks extends Event {
 
 		( new Model_Security_Tweaks() )->delete();
 
-		delete_site_transient( 'defender_current_server' );
-		delete_site_transient( 'defender_apache_version' );
+		delete_site_transient( Server::CACHE_CURRENT_SERVER );
+		delete_site_transient( \WP_Defender\Component\Security_Tweaks\Servers\Apache::CACHE_APACHE_VERSION );
 		wp_clear_scheduled_hook( 'wpdef_sec_key_gen' );
 	}
 

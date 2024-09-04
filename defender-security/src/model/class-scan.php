@@ -441,11 +441,12 @@ class Scan extends DB {
 		if ( ! in_array( $this->status, array( self::STATUS_ERROR, self::STATUS_FINISH, self::STATUS_IDLE ), true ) ) {
 
 			return array(
-				'status'      => $this->status,
-				'status_text' => $this->get_status_text(),
-				'percent'     => $this->percent,
+				'status'          => $this->status,
+				'status_text'     => $this->get_status_text(),
+				'percent'         => $this->percent,
+				'task_checkpoint' => $this->task_checkpoint,
 				// This only for hub, when a scan running.
-				'count'       => array( 'total' => 0 ),
+				'count'           => array( 'total' => 0 ),
 			);
 		} elseif ( in_array( $this->status, array( self::STATUS_FINISH, self::STATUS_IDLE ), true ) ) {
 			$total_filtered        = (int) $this->count( $type );
@@ -485,11 +486,11 @@ class Scan extends DB {
 				$scan_item_group_total[ Scan_Item::TYPE_VULNERABILITY ] : 0;
 
 			return array(
-				'status'        => $this->status,
-				'issues_items'  => $data['issues'],
-				'ignored_items' => $data['ignored'],
-				'last_scan'     => $this->format_date_time( $this->date_start ),
-				'count'         => array(
+				'status'          => $this->status,
+				'issues_items'    => $data['issues'],
+				'ignored_items'   => $data['ignored'],
+				'last_scan'       => $this->format_date_time( $this->date_start ),
+				'count'           => array(
 					'total'                 => is_array( $data['issues'] ) || $data['issues'] instanceof Countable ? count( $data['issues'] ) : 0,
 					'total_filtered'        => $total_filtered,
 					'issues_total'          => $count_issues,
@@ -499,7 +500,7 @@ class Scan extends DB {
 					'content'               => $count_malware,
 					'vuln'                  => $count_vuln,
 				),
-				'paging'        => array(
+				'paging'          => array(
 					'issue'    => array(
 						'paged'       => $paged,
 						'total_pages' => $total_issue_pages,
@@ -510,6 +511,7 @@ class Scan extends DB {
 					),
 					'per_page' => $per_page,
 				),
+				'task_checkpoint' => $this->task_checkpoint,
 			);
 		} else {
 			return array();
@@ -572,6 +574,19 @@ class Scan extends DB {
 
 		return $orm->get_repository( self::class )
 			->where( 'status', 'NOT IN', array( self::STATUS_FINISH, self::STATUS_ERROR, self::STATUS_IDLE ) )
+			->first();
+	}
+
+	/**
+	 * Check if the current state is Core integrity.
+	 *
+	 * @return self|null
+	 */
+	public static function get_core_check() {
+		$orm = self::get_orm();
+
+		return $orm->get_repository( self::class )
+			->where( 'status', self::STEP_CHECK_CORE )
 			->first();
 	}
 

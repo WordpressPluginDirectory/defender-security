@@ -25,6 +25,14 @@ class Firewall extends Setting {
 	protected $table = 'wd_lockdown_settings';
 
 	/**
+	 * IP Detection Type.
+	 *
+	 * @var string
+	 * @defender_property
+	 */
+	public $ip_detection_type = 'automatic';
+
+	/**
 	 * IP Blocklist Cleanup interval.
 	 *
 	 * @var string

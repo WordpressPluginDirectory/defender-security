@@ -10,6 +10,8 @@ namespace WP_Defender;
 use WP_Defender\Component\Rate;
 use WP_Defender\Behavior\WPMUDEV;
 use WP_Defender\Component\Firewall;
+use WP_Defender\Integrations\Dashboard_Whitelabel;
+use WP_Defender\Component\Config\Config_Hub_Helper;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	die();
@@ -78,14 +80,15 @@ class Admin {
 			);
 			// For submenu callout.
 			add_action( 'admin_head', array( $this, 'retarget_submenu_callout' ) );
-
-			add_submenu_page(
-				'wp-defender',
-				esc_html__( 'Upgrade For 80% Off!', 'defender-security' ),
-				esc_html__( 'Upgrade For 80% Off!', 'defender-security' ),
-				is_multisite() ? 'manage_network_options' : 'manage_options',
-				$this->get_link( 'upsell', 'defender_submenu_upsell' )
-			);
+			if ( ! wd_di()->get( WPMUDEV::class )->is_wpmu_hosting() ) {
+				add_submenu_page(
+					'wp-defender',
+					esc_html__( 'Upgrade For 80% Off!', 'defender-security' ),
+					esc_html__( 'Upgrade For 80% Off!', 'defender-security' ),
+					is_multisite() ? 'manage_network_options' : 'manage_options',
+					$this->get_link( 'upsell', 'defender_submenu_upsell' )
+				);
+			}
 		}
 		// Display IP detection notice.
 		if ( is_multisite() ) {
@@ -93,6 +96,32 @@ class Admin {
 		} else {
 			add_action( 'admin_notices', array( &$this, 'admin_notices' ) );
 		}
+	}
+
+	/**
+	 * Retrieves the display name of the plugin.
+	 *
+	 * @return string The display name of the plugin with a trailing hyphen.
+	 */
+	public function get_plugin_display_name(): string {
+		// Check if the plugin is the WordPress.org version (i.e., the free version) and set the label accordingly.
+		$plugin_label = $this->is_wp_org_version()
+										? esc_html__( 'Defender', 'defender-security' )
+										: esc_html__( 'Defender Pro', 'defender-security' );
+
+		// Instantiate the Dashboard_Whitelabel class only if necessary.
+		$whitelabel = new Dashboard_Whitelabel();
+
+		// If whitelabeling is enabled and a custom name is provided, use it.
+		if ( $whitelabel->can_whitelabel() ) {
+			$custom_label = $whitelabel->get_plugin_name( Config_Hub_Helper::WDP_ID );
+			if ( ! empty( $custom_label ) ) {
+				$plugin_label = $custom_label;
+			}
+		}
+
+		// Return the final plugin label with the appended dash.
+		return $plugin_label . ' - ';
 	}
 
 	/**
@@ -214,15 +243,17 @@ class Admin {
 		) . '">' . esc_html__( 'Docs', 'defender-security' ) . '</a>';
 		if ( ! $wpmu_dev->is_member() ) {
 			if ( WP_DEFENDER_PRO_PATH !== DEFENDER_PLUGIN_BASENAME ) {
-				$action_links['upgrade'] = '<a style="color: #8D00B1;" target="_blank" href="' . $this->get_link(
-					'plugin',
-					'defender_pluginlist_upgrade'
-				) . '" aria-label="' . esc_attr(
-					esc_html__(
-						'Upgrade to Defender Pro',
-						'defender-security'
-					)
-				) . '">' . esc_html__( 'Upgrade For 80% Off!', 'defender-security' ) . '</a>';
+				if ( ! wd_di()->get( WPMUDEV::class )->is_wpmu_hosting() ) {
+					$action_links['upgrade'] = '<a style="color: #8D00B1;" target="_blank" href="' . $this->get_link(
+						'plugin',
+						'defender_pluginlist_upgrade'
+					) . '" aria-label="' . esc_attr(
+						esc_html__(
+							'Upgrade to Defender Pro',
+							'defender-security'
+						)
+					) . '">' . esc_html__( 'Upgrade For 80% Off!', 'defender-security' ) . '</a>';
+				}
 			} elseif ( ! $wpmu_dev->is_hosted_site_connected_to_tfh() ) {
 				$action_links['renew'] = '<a style="color: #8D00B1;" target="_blank" href="' . $this->get_link(
 					'plugin',
@@ -366,19 +397,19 @@ class Admin {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
-
+		$header  = $this->get_plugin_display_name();
 		$is_show = '';
 		if ( Firewall::is_cf_notice_ready() ) {
 			$is_show      = 'cf';
 			$class_notice = 'notice-info';
-			$header       = esc_html__(
+			$header      .= esc_html__(
 				'Cloudflare Usage Detected: Switched to CF-Connecting-IP for Better Compatibility',
 				'defender-security'
 			);
 		} elseif ( Firewall::is_xff_notice_ready() ) {
 			$is_show      = 'xff';
 			$class_notice = 'notice-warning';
-			$header       = esc_html__(
+			$header      .= esc_html__(
 				'Improve IP Detection: We suggest Switching to X-Forward-For IP Detection Method',
 				'defender-security'
 			);
@@ -401,7 +432,7 @@ class Admin {
 							'We have switched to using the CF-Connecting-IP HTTP header for IP detection, offering enhanced compatibility for users behind Cloudflare Proxy. If you wish to change this setting, you can do so from %s.',
 							'defender-security'
 						),
-						'<a href="' . esc_url_raw( network_admin_url( 'admin.php?page=wdf-ip-lockout&view=settings#detect-ip-addresses' ) ) . '">' . esc_html__( 'here', 'defender-security' ) . '</a>'
+						'<a style="font-weight:bold;" href="' . esc_url_raw( network_admin_url( 'admin.php?page=wdf-ip-lockout&view=settings#detect-ip-addresses' ) ) . '">' . esc_html__( 'here', 'defender-security' ) . '</a>'
 					);
 					?>
 				</p>
@@ -425,7 +456,7 @@ class Admin {
 							'Based on your server configuration, we recommend switching to the X-Forwarded-For method for accurate IP detection and to prevent firewall blocks. Easily modify your settings %s.',
 							'defender-security'
 						),
-						'<a href="' . esc_url_raw( network_admin_url( 'admin.php?page=wdf-ip-lockout&view=settings#detect-ip-addresses' ) ) . '">' . esc_html__( 'here', 'defender-security' ) . '</a>'
+						'<a style="font-weight:bold;" href="' . esc_url_raw( network_admin_url( 'admin.php?page=wdf-ip-lockout&view=settings#detect-ip-addresses' ) ) . '">' . esc_html__( 'here', 'defender-security' ) . '</a>'
 					);
 					?>
 				</p>
@@ -436,7 +467,7 @@ class Admin {
 						<?php esc_html_e( 'Switch to X-Forwarded-For', 'defender-security' ); ?>
 					</button>
 					<a href="#" class="defender_ip_detection_action_hide"
-						style="margin-left: 11px; line-height: 16px; text-decoration: none;"
+						style="margin-left: 11px; line-height: 16px; text-decoration: none; font-weight: bold;"
 						data-prop="defender_ip_detection_notice_dismiss"><?php esc_html_e( 'Dismiss', 'defender-security' ); ?></a>
 				</p>
 			<?php } ?>

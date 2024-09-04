@@ -193,6 +193,8 @@ abstract class Audit_Event extends Component {
 					'>='  => $value >= $compare,
 					'<'   => $value < $compare,
 					'<='  => $value <= $compare,
+					'=='  => $value === $compare,
+					'!='  => $value !== $compare,
 				);
 			}
 

@@ -131,13 +131,13 @@ class Two_Factor extends Event {
 			} else {
 				if ( $is_jetpack_sso ) {
 					$this->compatibility_notices[] = esc_html__(
-						"We've detected a conflict with Jetpack's Wordpress.com Log In feature. Please disable it and return to this page to continue setup.",
+						'We`ve detected a conflict with Jetpack`s Wordpress.com Log In feature. Please disable it and return to this page to continue setup.',
 						'defender-security'
 					);
 				}
 				if ( $is_tml ) {
 					$this->compatibility_notices[] = esc_html__(
-						"We've detected a conflict with Theme my login. Please disable it and return to this page to continue setup.",
+						'We`ve detected a conflict with Theme my login. Please disable it and return to this page to continue setup.',
 						'defender-security'
 					);
 				}

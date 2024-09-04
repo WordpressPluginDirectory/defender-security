@@ -203,7 +203,6 @@ class User_Agent extends Component {
 	 * @return bool Returns true if the headers are considered bad, false otherwise.
 	 */
 	public function is_bad_post( $user_agent ): bool {
-
 		$server = defender_get_data_from_request( null, 's' );
 
 		return true === $this->model->empty_headers

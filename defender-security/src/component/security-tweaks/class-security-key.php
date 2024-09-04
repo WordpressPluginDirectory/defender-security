@@ -117,7 +117,7 @@ class Security_Key extends Component implements Security_Key_Const_Interface {
 	}
 
 	/**
-	 * Here is the code for processing, if the return is true, we add it to resolve list, WP_Error if any error.
+	 * Here is the code for processing. If the return is true or Response, we add it to resolve list. WP_Error if any error.
 	 *
 	 * @return bool|WP_Error|Response
 	 */

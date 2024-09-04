@@ -27,6 +27,20 @@ trait Plugin {
 	private $url_plugin_vcs_trunk = 'https://plugins.svn.wordpress.org/%s/trunk/%s';
 
 	/**
+	 * Key for org slugs transient.
+	 *
+	 * @var string
+	 */
+	public static string $org_slugs = 'wp-defender-org-slugs';
+
+	/**
+	 * Key for org responses transient.
+	 *
+	 * @var string
+	 */
+	public static string $org_responses = 'wp-defender-org-responses';
+
+	/**
 	 * Get all installed plugins.
 	 *
 	 * @return array
@@ -58,7 +72,7 @@ trait Plugin {
 	/**
 	 * Get plugin data by slug.
 	 *
-	 * @param  string $plugin_slug  Plugin slug.
+	 * @param string $plugin_slug Plugin slug.
 	 *
 	 * @return array
 	 */
@@ -86,15 +100,26 @@ trait Plugin {
 	}
 
 	/**
-	 * Does the plugin exist on wp.org?
+	 * Check if a plugin exists on WordPress.org repository.
 	 *
-	 * @param  string $slug  Plugin slug.
+	 * @param string $slug The slug of the plugin.
 	 *
 	 * @return array Index message: describes what happened.
+	 *               Index data: Plugin data from wp.org.
 	 *               Index success: true if plugin in WordPress plugin repository
 	 *               else false.
 	 */
-	public function check_plugin_on_wp_org( $slug ): array {
+	public function check_plugin_on_wp_org( string $slug ): array {
+		// Check if data exists in transient.
+		$transient = get_site_transient( self::$org_responses ) ?? array();
+		if ( isset( $transient[ $slug ] ) ) {
+			return array(
+				'message' => __( 'Plugin exists in WordPress repository.', 'defender-security' ),
+				'data'    => $transient[ $slug ],
+				'success' => true,
+			);
+		}
+
 		$url       = 'https://api.wordpress.org/plugins/info/1.0/' . $slug . '.json';
 		$http_args = array(
 			'timeout'    => 15,
@@ -124,34 +149,40 @@ trait Plugin {
 				'success' => false,
 			);
 		}
+		if ( ! empty( $results['closed'] ) ) {
+			return array(
+				'message' => $response['description'],
+				'success' => false,
+			);
+		}
+		// Cache the relevant data in the transient.
+		$filtered_results   = array_intersect_key( $results, array_flip( array( 'homepage', 'version', 'author' ) ) );
+		$transient[ $slug ] = $filtered_results;
+		set_site_transient( self::$org_responses, $transient, WEEK_IN_SECONDS );
 
 		return array(
-			'message' => esc_html__( 'Plugin exists in WordPress respository.', 'defender-security' ),
+			'message' => esc_html__( 'Plugin exists in WordPress repository.', 'defender-security' ),
+			'data'    => $results,
 			'success' => true,
 		);
 	}
 
 	/**
-	 * Check the resulting plugin slug against WordPress.org plugin rules.
+	 * Check for readme.txt or readme.md files.
+	 * Sometimes plugins from wp.org don't have readme.txt file, e.g. 'wp-crontrol'.
 	 *
-	 * @param  string $slug  Plugin folder name.
+	 * @param string $readme_file Path to readme.* file.
 	 *
 	 * @return bool
 	 */
-	public function is_likely_wporg_slug( $slug ): bool {
-		global $wp_filesystem;
-		// Initialize the WP filesystem, no more using 'file-put-contents' function.
-		if ( empty( $wp_filesystem ) ) {
-			require_once ABSPATH . '/wp-admin/includes/file.php';
-			WP_Filesystem();
-		}
-		if ( in_array( $slug, $this->get_known_wporg_slug(), true ) ) {
-			return true;
-		}
-
-		// Does file readme.txt exist?
-		$readme_file = $this->get_plugin_base_dir() . $slug . '/readme.txt';
+	public function check_by_readme_file( $readme_file ): bool {
 		if ( file_exists( $readme_file ) && is_readable( $readme_file ) ) {
+			global $wp_filesystem;
+			// Initialize the WP filesystem, no more using 'file-put-contents' function.
+			if ( empty( $wp_filesystem ) ) {
+				require_once ABSPATH . '/wp-admin/includes/file.php';
+				WP_Filesystem();
+			}
 			$contents = trim( (string) $wp_filesystem->get_contents( $readme_file ) );
 
 			if ( false !== strpos( $contents, '===' ) ) {
@@ -167,9 +198,53 @@ trait Plugin {
 	}
 
 	/**
+	 * Is this plugin likely to be a WordPress.org plugin?
+	 *
+	 * @param string|null $slug of the plugin.
+	 *
+	 * @return bool Return true if likely, else false.
+	 */
+	public function is_likely_wporg_slug( ?string $slug ): bool {
+		// Ensure slug is valid.
+		if ( empty( $slug ) || ! is_string( $slug ) ) {
+			return false;
+		}
+		// Check if data exists in transient.
+		$transient = get_site_transient( self::$org_slugs );
+		if ( ! is_array( $transient ) ) {
+			$transient = array();
+		}
+		if ( isset( $transient[ $slug ] ) ) {
+			return $transient[ $slug ];
+		}
+
+		// Check by readme.txt.
+		$readme_file = $this->get_plugin_base_dir() . $slug . '/readme.txt';
+		if ( $this->check_by_readme_file( $readme_file ) ) {
+			$transient[ $slug ] = true;
+			set_site_transient( self::$org_slugs, $transient, WEEK_IN_SECONDS );
+
+			return true;
+		}
+		// Check by readme.md.
+		$readme_file = $this->get_plugin_base_dir() . $slug . '/readme.md';
+		if ( $this->check_by_readme_file( $readme_file ) ) {
+				$transient[ $slug ] = true;
+				set_site_transient( self::$org_slugs, $transient, WEEK_IN_SECONDS );
+
+			return true;
+		}
+
+		$transient[ $slug ] = false;
+		set_site_transient( self::$org_slugs, $transient, WEEK_IN_SECONDS );
+
+		return false;
+	}
+
+	/**
 	 * Check if the plugin is active.
 	 *
-	 * @param  string $file_path  Absolute file path to the plugin file.
+	 * @param string $file_path  Absolute file path to the plugin file.
 	 *
 	 * @return bool
 	 */
@@ -195,7 +270,7 @@ trait Plugin {
 	/**
 	 * Get plugin header from any file of the plugin.
 	 *
-	 * @param  string $file_path  Absolute file path to the plugin file.
+	 * @param string $file_path Absolute file path to the plugin file.
 	 *
 	 * @return array Return plugin details as array.
 	 */
@@ -208,7 +283,7 @@ trait Plugin {
 	/**
 	 * Get plugin directory name.
 	 *
-	 * @param  string $file_path  Absolute file path to the plugin file.
+	 * @param string $file_path Absolute file path to the plugin file.
 	 *
 	 * @return string Return plugin directory name.
 	 */
@@ -219,14 +294,12 @@ trait Plugin {
 	/**
 	 * Get plugin relative path.
 	 *
-	 * @param  string $file_path  Absolute file path to the plugin file.
+	 * @param string $file_path Absolute file path to the plugin file.
 	 *
 	 * @return string Return plugin relative path.
 	 */
 	public function get_plugin_relative_path( $file_path ): string {
-		$file_path = str_replace( '\\', '/', $file_path );
-
-		strtok( plugin_basename( $file_path ), '/' );
+		strtok( plugin_basename( $file_path ), DIRECTORY_SEPARATOR );
 
 		return (string) strtok( '' );
 	}
@@ -234,7 +307,7 @@ trait Plugin {
 	/**
 	 * Check file exists at wp.org svn.
 	 *
-	 * @param  string $url  URL of the file.
+	 * @param string $url URL of the file.
 	 *
 	 * @return boolean Return true for file exists else false.
 	 */
@@ -306,7 +379,7 @@ trait Plugin {
 	/**
 	 * Retrieves the content of a URL by downloading it and reading the contents of the downloaded file.
 	 *
-	 * @param  string $url  The URL to download the content from.
+	 * @param string $url The URL to download the content from.
 	 *
 	 * @return string|WP_Error The content of the URL if successful, otherwise a WP_Error object.
 	 */
@@ -336,7 +409,7 @@ trait Plugin {
 	/**
 	 * Quarantine a plugin.
 	 *
-	 * @param  string $parent_action  Parent action.
+	 * @param string $parent_action  Parent action.
 	 *
 	 * @return array|WP_Error
 	 */
@@ -350,15 +423,13 @@ trait Plugin {
 
 		$quarantine_component = wd_di()->get( Quarantine_Component::class );
 
-		$action = $quarantine_component->quarantine_file( $this->owner, $parent_action );
-
-		return $action;
+		return $quarantine_component->quarantine_file( $this->owner, $parent_action );
 	}
 
 	/**
 	 * Detect if the plugin file is quarantinable.
 	 *
-	 * @param  string $file_path  File path.
+	 * @param string $file_path File path.
 	 *
 	 * @return bool Return true if file is in wp.org plugin else false.
 	 */
@@ -367,21 +438,6 @@ trait Plugin {
 			$this->get_plugin_directory_name(
 				$file_path
 			)
-		);
-	}
-
-
-	/**
-	 * Get the known WP.org slugs.
-	 * This is a list of plugins that are known to be in the WordPress.org repository which we can't programmatically
-	 * detect.
-	 *
-	 * @return array
-	 * @since 4.8.0
-	 */
-	public function get_known_wporg_slug(): array {
-		return array(
-			'wp-crontrol',
 		);
 	}
 }

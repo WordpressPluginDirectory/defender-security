@@ -243,16 +243,25 @@ class Main_Setting extends Event {
 			}
 		}
 
-		$link = ( new WPMUDEV() )->is_member()
-		? 'https://wpmudev.com/translate/projects/wpdef/'
-		: 'https://translate.wordpress.org/projects/wp-plugins/defender-security/';
-
+		$link         = ( new WPMUDEV() )->is_member()
+			? 'https://wpmudev.com/translate/projects/wpdef/'
+			: 'https://translate.wordpress.org/projects/wp-plugins/defender-security/';
+		$allowed_user = (array) get_option( 'wdp_un_general', array( 'limit_to_user' => array() ) )['limit_to_user'];
+		/**
+		 * Ignore WordPress.PHP.StrictInArray.MissingTrueStrict
+		 *
+		 * We're not using strict comparison. Here's why:
+		 * Initially, when the dashboard plugin is installed, the user ID is an integer.
+		 * However, after adding a new user, all user IDs become strings.
+		 * This can cause errors if users aren't updated in the permissions tab.
+		 */
 		return array_merge(
 			array(
 				'general'       => array(
-					'translate'        => $model->translate,
-					'usage_tracking'   => $model->usage_tracking,
-					'translation_link' => $link,
+					'translate'           => $model->translate,
+					'show_usage_tracking' => in_array( get_current_user_id(), $allowed_user ), // phpcs:ignore WordPress.PHP.StrictInArray.MissingTrueStrict
+					'usage_tracking'      => $model->usage_tracking,
+					'translation_link'    => $link,
 				),
 				'data_settings' => array(
 					'uninstall_settings'   => $model->uninstall_settings,
