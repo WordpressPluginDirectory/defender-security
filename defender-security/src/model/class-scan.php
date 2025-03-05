@@ -264,12 +264,10 @@ class Scan extends DB {
 				case Scan_Item::TYPE_PLUGIN_CHECK:
 					$model->attach_behavior( Plugin_Integrity::class, Plugin_Integrity::class );
 					break;
-				case Scan_Item::TYPE_SUSPICIOUS:
-					$model->attach_behavior( Malware_Result::class, Malware_Result::class );
-					break;
 				case Scan_Item::TYPE_VULNERABILITY:
-				default:
 					$model->attach_behavior( Vuln_Result::class, Vuln_Result::class );
+					break;
+				default:
 					break;
 			}
 			$models[ $key ] = $model;
@@ -347,7 +345,7 @@ class Scan extends DB {
 	 * Check if a slug is ignored, we use a global indexer, so we can check while
 	 * the active scan is running.
 	 *
-	 * @param  string $slug  path to file.
+	 * @param  string $slug The path to file.
 	 *
 	 * @return bool
 	 */
@@ -405,12 +403,10 @@ class Scan extends DB {
 				case Scan_Item::TYPE_PLUGIN_CHECK:
 					$model->attach_behavior( Plugin_Integrity::class, Plugin_Integrity::class );
 					break;
-				case Scan_Item::TYPE_SUSPICIOUS:
-					$model->attach_behavior( Malware_Result::class, Malware_Result::class );
-					break;
 				case Scan_Item::TYPE_VULNERABILITY:
-				default:
 					$model->attach_behavior( Vuln_Result::class, Vuln_Result::class );
+					break;
+				default:
 					break;
 			}
 		}
@@ -426,6 +422,35 @@ class Scan extends DB {
 	public function remove_issue( $id ) {
 		$orm = self::get_orm();
 		$orm->get_repository( Scan_Item::class )->delete( array( 'id' => $id ) );
+	}
+
+	/**
+	 * Remove other Scan issue(-s) for the same file.
+	 *
+	 * @param string $path The path to file.
+	 * @param string $type The type of scan issue.
+	 *
+	 * @return void
+	 */
+	public function remove_related_issue_by( string $path, string $type ) {
+		// No needs to separate check Scan_Item::TYPE_VULNERABILITY because we do not delete per file for that type.
+		$orm     = self::get_orm();
+		$builder = $orm->get_repository( Scan_Item::class )
+			->where( 'parent_id', $this->id );
+		if ( '' !== $path ) {
+			$builder->where( 'type', 'NOT IN', array( $type, Scan_Item::TYPE_VULNERABILITY ) );
+		} else {
+			$builder->where( 'type', 'NOT IN', array( Scan_Item::TYPE_VULNERABILITY ) );
+		}
+		$models = $builder->get();
+
+		if ( ! empty( $models ) ) {
+			foreach ( $models as $model ) {
+				if ( $model->raw_data['file'] === $path ) {
+					$this->remove_issue( $model->id );
+				}
+			}
+		}
 	}
 
 	/**
@@ -710,7 +735,7 @@ class Scan extends DB {
 	/**
 	 * Check if a slug is whitelisted.
 	 *
-	 * @param  string $slug  path to file.
+	 * @param  string $slug The path to file.
 	 *
 	 * @return bool
 	 */

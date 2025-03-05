@@ -1,13 +1,13 @@
 === Defender Security - Malware Scanner, Login Security & Firewall ===
 Plugin Name: Defender Security - Malware Scanner, Login Security & Firewall
-Version: 4.11.0
+Version: 5.1.1
 Author: WPMU DEV
 Author URI: https://wpmudev.com/
 Contributors: WPMUDEV
 Tags: security, malware, firewall, malware scanner, login security
-Requires at least: 5.2
-Tested up to: 6.7
-Stable tag: 4.11.0
+Requires at least: 6.4
+Tested up to: 6.7.2
+Stable tag: 5.1.1
 Requires PHP: 7.4
 License: GPL v2 - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 
@@ -18,6 +18,8 @@ WordPress security plugin with malware scanner, IP blocking, audit logs, antivir
 **Defender adds the best in WordPress plugin security to your website with just a few clicks, including malware scanner, firewall, and login security features. Stop brute force login attacks, SQL injections, cross-site scripting XSS, and other WordPress security vulnerabilities and hacks with Defender's malware scanner, providing antivirus scans, IP blocking, firewall, activity log, security log, and two-factor authentication (2FA) login security.**
 
 No more complex security settings, Defender's malware scanner, firewall, and login security features add all the hardening and security you need.
+
+Plus, connect for free to WPMU DEV’s AntiBot Global Firewall to block harmful IPs with data from over 500,000 sites.
 
 **Enjoy complete site protection from malware, vulnerabilities, and bot attacks from the start with [Defender Pro](https://wpmudev.com/project/wp-defender/?utm_source=wordpress.org&utm_medium=readme&utm_campaign=defender-readme-above-the-fold&utm_content=wp_defender_pro).**
 
@@ -32,6 +34,7 @@ Defender's one-click security hardening recommendations instantly adds layers of
 ### Enhance Security and Block Hackers At Every Level:
 
 * Malware scanner - scan WordPress core files for modifications and unexpected changes which may be caused by malware. Scan for malware and tighten up the security of your files
+* AntiBot Global Firewall - Connect for free to WPMU DEV to block harmful IPs with data from over 500,000 sites
 * WordPress Security Firewall - block or allowlist IPs, implement IP blocking, and Geo IP blocking, user agent banning and protect against brute force attacks
 * Two-factor authentication (2FA) - Easily set up better security with 2FA to prevent most login attacks such as brute force, App verification, backup codes, lost device email, WooCommerce 2FA, and Web Authentication
 * Login masking - change the location of WordPress's default login area to improve login security
@@ -242,70 +245,69 @@ Please open a new thread in Defender's [support forum](https://wordpress.org/sup
 
 == Changelog ==
 
-= 4.11.0 ( 2024-11-04 ) =
+= 5.1.1 ( 2025-03-03 ) =
 
-- Enhance: Compatibility with WordPress 6.7
-- Enhance: Malware signatures update
-- Enhance: Update SUI to the latest version
-- Fix: Optimize security recommendations flow
-- Fix: Malware Scanning can't detect the suspicious code
-- Fix: Max included file size in Malware Scanning isn't working
-- Fix: Detecting changes in files whose names match default folders
-- Fix: SEOPress plugin files are being falsely flagged as suspicious
+- Enhance: Improve cron events for AntiBot Global Firewall on multisite
+- Enhance: Remove manual "All headers" option and migrate to Automatic IP detection for improved compatibility and security
+- Enhance: Update User Agent logic with AntiBot service to better detect potential threats
 
-= 4.10.1 ( 2024-10-03 ) =
+= 5.1.0 ( 2025-02-26 ) =
 
-- Fix: Optimize XML-RPC traffic management
-
-= 4.10.0 ( 2024-10-01 ) =
-
-- Enhance: Update malware signatures to detect different infected files
-- Enhance: Display notice on the Malware Scanning page if a file is missing or unreadable
-- Enhance: Defender > Recommendations > Disable XML-RPC syncs with Hosting XML-RPC Protection
-- Enhance: Improvements in deleting and exporting IPs
+- New: Enforce strong password
+- Enhance: Manage all password-related settings in one place
+- Enhance: Improve lockout mechanism
+- Enhance: Upgrade plugin packages
+- Enhance: Support Unit server
 - Enhance: Translation improvements
-- Fix: False positive in Malware Scanning for Toolset plugin
-- Fix: Defender does not recognize phishing code
-- Fix: Malware Scanning gets stuck on fresh multisite
-- Fix: Text content not displayed in the Services upsell on the Malware Scanning page
-- Fix: Security keys not getting updated
-- Fix: Malware Scanning detects the old plugin file as modified
-- Fix: 404 Detection > Duration Unit disappears when changing the Firewall logs count to 100
+- Enhance: Improve IP Lockout redirect when user adds IP to Allowlist
+- Enhance: Create a new cookie to avoid Lockout caching in Hummingbird plugin
+- Enhance: Update minimum supported WordPress version
+- Enhance: Enable Plugin & Suspicious code scan by default on fresh installations
+- Enhance: Improve Malware_Result class
+- Enhance: Minor code improvements
+- Fix: Defender does not detect themes with vulnerabilities
+- Fix: Error while pfsockopen function is disabled
+- Fix: NaN is showing on AntiBot page when language is changed to German in the Dashboard plugin
+- Fix: Form does not submit if Google reCAPTCHA is enabled in both Defender and Forminator plugins
+- Fix: Malware Scanner highlights WordPress core files on IIS server
+- Fix: Database error related to AntiBot feature
+- Fix: Salt keys appear before open php tag
+- Fix: Google reCAPTCHA compact style is not working
 
-= 4.9.0 ( 2024-09-02 ) =
+= 5.0.2 ( 2025-02-14 ) =
 
-- New: Smart IP Detection method
-- Enhance: Improved error handling of Malware Scan during checksum
-- Enhance: Improved scan logic to detect plugins from wp.org
-- Enhance: Mention Defender in Cloudflare and X-Forwarded-For IP detection notices
+- Improvement: Update 404 logic with AntiBot service to better detect and mitigate potential threats
+- Improvement: Enhancing IP Detection in Defender to prevent blocking of server IPs
+
+= 5.0.1 ( 2025-01-31 ) =
+
+- Fix: AntiBot service sync issue
+- Fix: AntiBot toggle behavior is inconsistent when managed on the Hub
+- Fix: Usage Tracking improvements
+
+= 5.0.0 ( 2025-01-27 ) =
+
+- New: AntiBot Global Firewall
+- Enhance: Global IP Blocker renamed to Central IP List and located under Local Firewall
+- Enhance: Prevent execution of CREATE TABLE query on every page load
+- Enhance: Scan lines about suspicious code are displayed even after deleting files
+- Enhance: Update WPMU DEV IP management
+- Enhance: Show Vulnerability details for Pro plugin version
 - Enhance: Usage Tracking improvements
-- Fix: Google reCAPTCHA verification failure on WooCommerce my-account and checkout pages
-- Fix: Google reCAPTCHA V3 error in the console log
-- Fix: 2FA settings issue in WooCommerce
-- Fix: Issues when uploading Config
-- Fix: Getting 'ERROR: Something went wrong' when registering a new authenticator
-- Fix: Copy error in translations
-- Fix: Undefined array key in Audit logs
-- Fix: Foreign key getting duplicated
-- Fix: Broken error notice design in 2FA methods
+- Fix: Error while uninstalling Defender
+- Fix: Wrong usage of WPMU DEV Dashboard settings function
+- Fix: SUI Alert appears when trying to make any action to files detected by Malware Scanning
+- Fix: PHP notices appear in logs when running a malware scan
 
-= 4.8.2 ( 2024-07-31 ) =
+= 4.12.0 ( 2024-12-09 ) =
 
-- Fix: Incorrect IP header detection on WPMU DEV hosting
-- Fix: Malware Scanning is not working for specific timezones
-- Fix: Can not set notification schedule after changing the site language
-- Fix: Quarantine feature improvements
-
-= 4.8.1 ( 2024-07-23 ) =
-
-- Enhance: Improvements for Known vulnerabilities
-- Fix: Multiple redirects when Mask Login Redirect Traffic is set to custom/external URL
-
-= 4.8.0 ( 2024-07-15 ) =
-
-- Enhance: Compatibility with WordPress 6.6
-- Enhance: WPCS compliance
-- Fix: Editors can't close Cloudflare Usage notification
+- Enhance: Ability to scan malicious code in files in the site's root
+- Enhance: Optimize WAF traffic management
+- Enhance: Optimize XML-RPC traffic management
+- Enhance: Remove strict declarations for default WP filters
+- Fix: Notice for _load_textdomain_just_in_time called incorrectly
+- Fix: Update malware signature to avoid false positives
+- Fix: Undefined array key warning when creating a new subsite on multisite if Audit logging is enabled
 
 [Changelog for previous versions](https://wpmudev.com/project/wp-defender/#view-changelog).
 

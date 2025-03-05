@@ -979,13 +979,7 @@ class Two_Factor extends Event {
 		}
 		$headers = array( 'Content-Type: text/html; charset=UTF-8' );
 		if ( $sender ) {
-			$from_email = get_bloginfo( 'admin_email' );
-			$headers[]  = sprintf( 'From: %s <%s>', $sender, $from_email );
-			/**Todo: check
-			 * $headers[] = wd_di()->get( \WP_Defender\Component\Mail::class )->get_headers(
-			 * defender_noreply_email( 'wd_two_fa_totp_noreply_email' ),
-			 * 'totp'
-			 * );*/
+			$headers[] = sprintf( 'From: %s <%s>', $sender, get_bloginfo( 'admin_email' ) );
 		}
 		// Main email template.
 		$body = $this->render_partial(
@@ -1253,7 +1247,7 @@ class Two_Factor extends Event {
 	 *
 	 * @return string
 	 */
-	public function handle_woocommerce_login_redirect( string $redirect, WP_User $user ): string {
+	public function handle_woocommerce_login_redirect( string $redirect, WP_User $user ) {
 		// Is User role from common list checked?
 		if ( false === $this->service->is_auth_enable_for( $user, $this->model->user_roles ) ) {
 			return $redirect;
@@ -1363,7 +1357,7 @@ class Two_Factor extends Event {
 	 *
 	 * @return array The updated array of query variables.
 	 */
-	public function wp_defender_2fa_query_vars( $vars ): array {
+	public function wp_defender_2fa_query_vars( $vars ) {
 		$vars[] = $this->slug;
 
 		return $vars;
@@ -1377,7 +1371,7 @@ class Two_Factor extends Event {
 	 *
 	 * @return array The updated array of items with the new endpoint inserted.
 	 */
-	public function wp_defender_2fa_link_my_account( $items ): array {
+	public function wp_defender_2fa_link_my_account( $items ) {
 		$needed_place = is_array( $items ) && ! empty( $items ) ? ( count( $items ) - 1 ) : 0;
 
 		return array_slice( $items, 0, $needed_place, true )

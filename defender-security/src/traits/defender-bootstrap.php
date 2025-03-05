@@ -25,12 +25,14 @@ use WP_Defender\Controller\Recaptcha;
 use WP_Defender\Controller\Mask_Login;
 use WP_Defender\Controller\Quarantine;
 use WP_Defender\Controller\Two_Factor;
+use WP_Defender\Component\Hub_Connector;
 use WP_Defender\Controller\Main_Setting;
 use WP_Defender\Controller\Notification;
 use WP_Defender\Controller\Audit_Logging;
 use WP_Defender\Controller\Data_Tracking;
 use WP_Defender\Controller\Advanced_Tools;
 use WP_Defender\Controller\Password_Reset;
+use WP_Defender\Controller\Strong_Password;
 use WP_Defender\Controller\Expert_Services;
 use WP_Defender\Controller\Security_Tweaks;
 use WP_Defender\Controller\Security_Headers;
@@ -39,6 +41,7 @@ use WP_Defender\Controller\Password_Protection;
 use WP_Defender\Component\Logger\Rotation_Logger;
 use WP_Defender\Component\Firewall as Firewall_Component;
 use WP_Defender\Controller\Firewall as Firewall_Controller;
+use WP_Defender\Controller\Hub_Connector as Hub_Connector_Controller;
 use WP_Defender\Model\Onboard as Onboard_Model;
 
 trait Defender_Bootstrap {
@@ -181,7 +184,10 @@ trait Defender_Bootstrap {
 		wp_clear_scheduled_hook( 'wpdef_firewall_send_compact_logs_to_api' );
 		wp_clear_scheduled_hook( 'wpdef_firewall_fetch_trusted_proxy_preset_ips' );
 		wp_clear_scheduled_hook( 'wpdef_firewall_clean_up_unlockout' );
+		wp_clear_scheduled_hook( 'wpdef_antibot_global_firewall_fetch_blocklist' );
 		wp_clear_scheduled_hook( 'wpdef_smart_ip_detection_ping' );
+		wp_clear_scheduled_hook( 'wpdef_confirm_antibot_toggle_on_hosting' );
+		wp_clear_scheduled_hook( 'wpdef_firewall_whitelist_server_public_ip' );
 
 		// Remove old legacy cron jobs if they exist.
 		wp_clear_scheduled_hook( 'lockoutReportCron' );
@@ -217,6 +223,30 @@ trait Defender_Bootstrap {
 		   ) {$charset_collate};
 SQL;
 		$wpdb->query( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+	}
+
+	/**
+	 * Create blocklist table.
+	 *
+	 * @since 2.8.0
+	 * @return void
+	 */
+	public function create_table_blocklist(): void {
+		global $wpdb;
+
+		$charset_collate = $wpdb->get_charset_collate();
+
+		$sql = <<<SQL
+		CREATE TABLE IF NOT EXISTS {$wpdb->base_prefix}defender_antibot (
+			`id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+			`ip` varchar(45) NOT NULL,
+			`unlocked` tinyint(1) DEFAULT NULL,
+			`unlocked_at` int(11) DEFAULT NULL,
+			PRIMARY KEY  (`id`),
+			UNIQUE KEY ip (ip)
+		   ) {$charset_collate};
+SQL;
+			$wpdb->query( $sql ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
 	}
 
 	/**
@@ -336,6 +366,8 @@ SQL;
 		}
 		// Create Unlock table.
 		$this->create_table_unlockout();
+		// Create Blocklist table.
+		$this->create_table_blocklist();
 	}
 
 	/**
@@ -380,6 +412,8 @@ SQL;
 		wd_di()->get( Password_Reset::class );
 		wd_di()->get( Webauthn::class );
 		wd_di()->get( Expert_Services::class );
+		wd_di()->get( Hub_Connector_Controller::class );
+		wd_di()->get( Strong_Password::class );
 
 		if ( class_exists( 'WP_Defender\Controller\Quarantine' ) ) {
 			wd_di()->get( Quarantine::class );
@@ -394,7 +428,7 @@ SQL;
 	 *
 	 * @return string The modified body classes.
 	 */
-	public function add_sui_to_body( string $classes ): string {
+	public function add_sui_to_body( $classes ) {
 		if ( ! is_defender_page() ) {
 			return $classes;
 		}
@@ -535,11 +569,12 @@ SQL;
 				'wpmu_dev_url_action'         => $wpmu_dev->hide_wpmu_dev_urls() ? 'hide' : 'show',
 				'opcache_save_comments'       => $wp_defender_central->is_opcache_save_comments_disabled() ? 'disabled' : 'enabled',
 				'opcache_message'             => $wp_defender_central->display_opcache_message(),
-				'wpmudev_url'                 => 'https://wpmudev.com/docs/wpmu-dev-plugins/defender/',
+				'wpmudev_url'                 => WP_DEFENDER_DOCS_LINK,
 				'wpmudev_support_ticket_text' => defender_support_ticket_text(),
 				'wpmudev_api_base_url'        => $wpmu_dev->get_api_base_url(),
 				'upgrade_title'               => esc_html__( 'UPGRADE TO PRO', 'defender-security' ),
 				'tracking_modal'              => $is_tracking ? 'show' : 'hide',
+				'hosted'                      => $wpmu_dev->is_wpmu_hosting(),
 			)
 		);
 
@@ -555,13 +590,6 @@ SQL;
 		$this->localize_script();
 
 		do_action( 'defender_enqueue_assets' );
-	}
-
-	/**
-	 * Check and create tables if its aren't existed.
-	 */
-	public function check_if_table_exists(): void {
-		$this->create_database_tables();
 	}
 
 	/**
@@ -585,20 +613,19 @@ SQL;
 	 *
 	 * @return array The updated cron schedules.
 	 */
-	public function cron_schedules( array $schedules ): array {
+	public function cron_schedules( array $schedules ) {
 		return defender_cron_schedules( $schedules );
 	}
 
 	/**
-	 * Initializes the modules and registers the routes for the plugin. Also includes the admin class, adds WP-CLI
-	 * commands,
+	 * Initialize the modules and register the plugin routes. Also include the admin class, adds WP-CLI commands.
 	 *
 	 * @return void
 	 */
 	public function includes(): void {
 		// Initialize modules.
 		add_action(
-			'setup_theme',
+			'after_setup_theme',
 			function () {
 				add_filter( 'cron_schedules', array( $this, 'cron_schedules' ) );
 				$this->init_modules();
@@ -612,6 +639,8 @@ SQL;
 			},
 			9
 		);
+		// Registers the Hub Connector early to handle the auth callback during the admin init hook.
+		add_action( 'plugins_loaded', array( wd_di()->get( Hub_Connector::class ), 'init' ) );
 		// Include admin class. Don't use is_admin().
 		add_action( 'admin_init', array( ( new Admin() ), 'init' ) );
 		// Add WP-CLI commands.

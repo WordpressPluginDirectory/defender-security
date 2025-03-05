@@ -325,11 +325,11 @@ class Password_Protection extends Component {
 	 * @return WP_User|WP_Error         Return user object or error object.
 	 */
 	public function do_force_reset( $user, $password ) {
-		if ( ! is_wp_error( $user ) && wp_check_password(
-			$password,
-			$user->user_pass,
-			$user->ID
-		) && $this->is_force_reset( $user ) ) {
+		// The check for $user and $password was performed before the method was called.
+		if (
+			wp_check_password( $password, $user->user_pass, $user->ID )
+			&& $this->is_force_reset( $user )
+		) {
 			$action      = 'password_reset';
 			$cookie_name = 'display_reset_password_warning';
 
@@ -348,11 +348,11 @@ class Password_Protection extends Component {
 	 * @return WP_User|WP_Error         Return user object or error object.
 	 */
 	public function do_weak_reset( $user, $password ) {
-		if ( ! is_wp_error( $user ) && wp_check_password(
-			$password,
-			$user->user_pass,
-			$user->ID
-		) && $this->is_weak_password( $user, $password ) ) {
+		// The check for $user and $password was performed before the method was called.
+		if (
+			wp_check_password( $password, $user->user_pass, $user->ID )
+			&& $this->is_weak_password( $user, $password )
+		) {
 			$action      = 'password_protection';
 			$cookie_name = 'display_pwned_password_warning';
 
@@ -369,7 +369,7 @@ class Password_Protection extends Component {
 	 * @param  string           $action  Action query string name.
 	 * @param  string           $cookie_name  Cookie name.
 	 */
-	private function trigger_redirect( $user, $action, $cookie_name ) {
+	public function trigger_redirect( $user, $action, $cookie_name ) {
 		// Set cookie to check and display the warning notice on reset password page.
 		$this->set_cookie_notice( $cookie_name, true, time() + MINUTE_IN_SECONDS * 2 );
 		// Get the reset password URL.

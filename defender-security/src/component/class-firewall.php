@@ -49,6 +49,11 @@ class Firewall extends Component {
 	public const IP_DETECTION_XFF_DISMISS_SLUG = 'wd_dismiss_ip_detection_xff_notice';
 
 	/**
+	 * The option name for the whitelist server public IP.
+	 */
+	public const WHITELIST_SERVER_PUBLIC_IP_OPTION = 'wpdef_firewall_whitelist_server_public_ip';
+
+	/**
 	 * Check if the first commencing request is proper staff remote access.
 	 *
 	 * @param  array $access  The access details including key.
@@ -228,11 +233,29 @@ class Firewall extends Component {
 		$global_ip = wd_di()->get( IP\Global_IP::class );
 
 		if (
-			$global_ip->is_global_ip_enabled() &&
+			$global_ip->is_active() &&
 			$global_ip->is_ip_blocked( $ip )
 		) {
 			return array(
 				'reason' => 'global_ip',
+				'result' => true,
+			);
+		}
+
+		/**
+		 * Retrieve Antibot_Global_Firewall instance.
+		 *
+		 * @var IP\Antibot_Global_Firewall $antibot
+		 */
+		$antibot = wd_di()->get( IP\Antibot_Global_Firewall::class );
+
+		if (
+			$antibot->is_active() &&
+			$antibot->is_ip_blocked( $ip ) &&
+			'plugin' === $antibot->get_managed_by()
+		) {
+			return array(
+				'reason' => IP\Antibot_Global_Firewall::REASON_SLUG,
 				'result' => true,
 			);
 		}
@@ -283,8 +306,9 @@ class Firewall extends Component {
 	/**
 	 * Gather IP(s) from headers.
 	 *
-	 * @return array
 	 * @since 4.4.2
+	 * @deprecated 5.1.0 This method and the 'wpdef_firewall_gathered_ips' filter are no longer in use.
+	 * @return array
 	 */
 	public function gather_ips(): array {
 		$ip_headers = array(
@@ -320,8 +344,15 @@ class Firewall extends Component {
 		 * @param  array  $gathered_ips  IPs gathered from request headers.
 		 *
 		 * @since 4.5.1
+		 * @deprecated 5.1.0 No longer used and will be removed in a future version.
 		 */
-		$gathered_ips = (array) apply_filters( 'wpdef_firewall_gathered_ips', array_unique( $gathered_ips ) );
+		$gathered_ips = (array) apply_filters_deprecated(
+			'wpdef_firewall_gathered_ips',
+			array_unique( $gathered_ips ),
+			'5.1.0',
+			'',
+			'This filter will be removed in a future version. If you are using it, update your implementation.'
+		);
 
 		return $this->filter_user_ips( $gathered_ips );
 	}
@@ -524,5 +555,60 @@ class Firewall extends Component {
 		) {
 			update_site_option( self::IP_DETECTION_CF_DISMISS_SLUG, true );
 		}
+	}
+
+	/**
+	 * Is whitelist server public IP enabled.
+	 *
+	 * @return bool
+	 * @since 5.0.2
+	 */
+	public function is_whitelist_server_public_ip_enabled(): bool {
+		/**
+		 * Filter to enable/disable fetching server public IP.
+		 *
+		 * @param bool $enable True to enable whitelist server public IP, false otherwise.
+		 *
+		 * @since 5.0.2
+		 */
+		return (bool) apply_filters( 'wpdef_firewall_whitelist_server_public_ip_enabled', true );
+	}
+
+	/**
+	 * Set whitelist server public IP.
+	 *
+	 * @return bool
+	 * @since 5.0.2
+	 */
+	public function set_whitelist_server_public_ip(): bool {
+		if ( ! $this->is_whitelist_server_public_ip_enabled() ) {
+			return false;
+		}
+
+		$ip = wd_di()->get( Smart_Ip_Detection::class )->get_server_public_ip();
+		if ( empty( $ip ) ) {
+			$this->log( 'Failed to whitelist server public IP.', Firewall_Controller::FIREWALL_LOG );
+			return false;
+		}
+
+		$stored_ip = $this->get_whitelist_server_public_ip();
+		if ( $stored_ip !== $ip ) {
+			update_site_option( self::WHITELIST_SERVER_PUBLIC_IP_OPTION, $ip );
+		}
+
+		$this->log( 'Server public IP whitelisted successfully.', Firewall_Controller::FIREWALL_LOG );
+		return true;
+	}
+
+	/**
+	 * Get whitelist server public IP.
+	 *
+	 * @return string
+	 * @since 5.0.2
+	 */
+	public function get_whitelist_server_public_ip(): string {
+		return $this->is_whitelist_server_public_ip_enabled() ?
+			get_site_option( self::WHITELIST_SERVER_PUBLIC_IP_OPTION, '' ) :
+			'';
 	}
 }

@@ -20,6 +20,7 @@ use Safe\Exceptions\SodiumException;
 use WP_Defender\Component\Feature_Modal;
 use WP_Defender\Controller\Data_Tracking;
 use WP_Defender\Component\Backup_Settings;
+use WP_Defender\Traits\Defender_Bootstrap;
 use WP_Defender\Component\Legacy_Versions;
 use WP_Defender\Controller\Security_Tweaks;
 use WP_Defender\Model\Setting\Security_Headers;
@@ -54,6 +55,7 @@ class Upgrader {
 	use User;
 	use Webauthn_Trait;
 	use IO;
+	use Defender_Bootstrap;
 
 	/**
 	 * Migrate old security headers from security tweaks. Trigger it once time.
@@ -299,10 +301,7 @@ class Upgrader {
 		$db_version = get_site_option( 'wd_db_version' );
 		if ( empty( $db_version ) ) {
 			update_site_option( 'wd_db_version', DEFENDER_DB_VERSION );
-			// Add the "What's new" modal only for fresh Pro v3.11.0 install.
-			if ( defined( 'WP_DEFENDER_PRO' ) && WP_DEFENDER_PRO ) {
-				update_site_option( Feature_Modal::FEATURE_SLUG, true );
-			}
+			update_site_option( Feature_Modal::FEATURE_SLUG, true );
 
 			return;
 		}
@@ -310,7 +309,7 @@ class Upgrader {
 		if ( DEFENDER_DB_VERSION === $db_version ) {
 			return;
 		}
-
+		$this->create_database_tables();
 		$this->maybe_show_new_features( $db_version );
 		$this->migrate_configs( $db_version );
 
@@ -398,6 +397,18 @@ class Upgrader {
 		}
 		if ( version_compare( $db_version, '4.9.0', '<' ) ) {
 			$this->upgrade_4_9_0();
+		}
+		if ( version_compare( $db_version, '5.0.0', '<' ) ) {
+			$this->upgrade_5_0_0();
+		}
+		if ( version_compare( $db_version, '5.0.2', '<' ) ) {
+			$this->upgrade_5_0_2();
+		}
+		if ( version_compare( $db_version, '5.1.0', '<' ) ) {
+			$this->upgrade_5_1_0();
+		}
+		if ( version_compare( $db_version, '5.1.1', '<' ) ) {
+			$this->upgrade_5_1_1();
 		}
 		// This is not a new installation. Make a mark.
 		defender_no_fresh_install();
@@ -998,18 +1009,23 @@ Your temporary password is {{passcode}}. To finish logging in, copy and paste th
 		if ( is_multisite() ) {
 			$offset = 0;
 			$limit  = 100;
-			// Variable within condition is for comparison.
-			while ( $blogs = $wpdb->get_results( $wpdb->prepare( "SELECT {$wpdb->blogs} FROM {$wpdb->blogs} LIMIT %d, %d", $offset, $limit ), ARRAY_A ) ) { // phpcs:ignore WordPress.DB.DirectDatabaseQuery, Generic.CodeAnalysis.AssignmentInCondition.FoundInWhileCondition
-				if ( ! empty( $blogs ) && is_array( $blogs ) ) {
-					foreach ( $blogs as $blog ) {
-						switch_to_blog( $blog['blog_id'] );
+			$blogs  = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+				$wpdb->prepare( "SELECT blog_id FROM {$wpdb->blogs} LIMIT %d, %d", $offset, $limit ),
+				ARRAY_A
+			);
+			while ( ! empty( $blogs ) && is_array( $blogs ) ) {
+				foreach ( $blogs as $blog ) {
+					switch_to_blog( $blog['blog_id'] );
 
-						$this->update_webauthn_user_handle_core( $service );
+					$this->update_webauthn_user_handle_core( $service );
 
-						restore_current_blog();
-					}
+					restore_current_blog();
 				}
 				$offset += $limit;
+				$blogs   = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+					$wpdb->prepare( "SELECT blog_id FROM {$wpdb->blogs} LIMIT %d, %d", $offset, $limit ),
+					ARRAY_A
+				);
 			}
 		} else {
 			$this->update_webauthn_user_handle_core( $service );
@@ -1041,7 +1057,8 @@ Your temporary password is {{passcode}}. To finish logging in, copy and paste th
 
 			$user_credentials = array();
 			foreach ( $data as $key => $item ) {
-				$old_hash        = hash( 'sha256', $user->user_login . '-' . $user->display_name . '-' . AUTH_SALT );
+				$old_hash = hash( 'sha256', $user->user_login . '-' . $user->display_name . '-' . AUTH_SALT );
+				// This is not obfuscation. Just encode the hashed value into a base64 string.
 				$old_base64_hash = base64_encode( $old_hash ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
 				$old_base64_hash = preg_replace( '/\=+$/', '', $old_base64_hash );
 
@@ -1049,7 +1066,8 @@ Your temporary password is {{passcode}}. To finish logging in, copy and paste th
 					isset( $item['credential_source']['userHandle'] ) &&
 					$item['credential_source']['userHandle'] === $old_base64_hash
 				) {
-					$new_hash                                = $this->get_user_hash( $user->user_login );
+					$new_hash = $this->get_user_hash( $user->user_login );
+					// This is not obfuscation. Just encode the hashed value into a base64 string.
 					$new_base64_hash                         = base64_encode( $new_hash ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
 					$new_base64_hash                         = preg_replace( '/\=+$/', '', $new_base64_hash );
 					$item['user']                            = $new_hash;
@@ -1554,8 +1572,7 @@ Your temporary password is {{passcode}}. To finish logging in, copy and paste th
 			$main_site_id = get_main_site_id();
 			$offset       = 0;
 			$limit        = 100;
-			// Variable within condition is for comparison.
-			while ( $blogs = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery, Generic.CodeAnalysis.AssignmentInCondition.FoundInWhileCondition
+			$blogs        = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 				$wpdb->prepare(
 					"SELECT blog_id FROM {$wpdb->blogs} WHERE blog_id != %d LIMIT %d, %d",
 					$main_site_id,
@@ -1563,18 +1580,26 @@ Your temporary password is {{passcode}}. To finish logging in, copy and paste th
 					$limit
 				),
 				ARRAY_A
-			) ) {
-				if ( ! empty( $blogs ) && is_array( $blogs ) ) {
-					foreach ( $blogs as $blog ) {
-						switch_to_blog( $blog['blog_id'] );
+			);
+			while ( ! empty( $blogs ) && is_array( $blogs ) ) {
+				foreach ( $blogs as $blog ) {
+					switch_to_blog( $blog['blog_id'] );
 
-						$maxmind_dir = $this->get_tmp_path() . DIRECTORY_SEPARATOR . MaxMind_Geolocation::DB_DIRECTORY;
-						$wp_filesystem->delete( $maxmind_dir, true );
+					$maxmind_dir = $this->get_tmp_path() . DIRECTORY_SEPARATOR . MaxMind_Geolocation::DB_DIRECTORY;
+					$wp_filesystem->delete( $maxmind_dir, true );
 
-						restore_current_blog();
-					}
+					restore_current_blog();
 				}
 				$offset += $limit;
+				$blogs   = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+					$wpdb->prepare(
+						"SELECT blog_id FROM {$wpdb->blogs} WHERE blog_id != %d LIMIT %d, %d",
+						$main_site_id,
+						$offset,
+						$limit
+					),
+					ARRAY_A
+				);
 			}
 		}
 	}
@@ -1657,7 +1682,6 @@ To complete your login, copy and paste the temporary password into the Password 
 		// Add the "What's new" modal.
 		update_site_option( Feature_Modal::FEATURE_SLUG, true );
 		// Add tracking.
-		$model              = wd_di()->get( Model_Firewall::class );
 		$firewall_analytics = wd_di()->get( Firewall_Analytics::class );
 		$detection_method   = Firewall_Analytics::get_detection_method_label(
 			$model->ip_detection_type,
@@ -1668,5 +1692,57 @@ To complete your login, copy and paste the temporary password into the Password 
 			Firewall_Analytics::EVENT_IP_DETECTION,
 			array( Firewall_Analytics::PROP_IP_DETECTION => $detection_method )
 		);
+	}
+
+	/**
+	 * Upgrade.
+	 *
+	 * @return void
+	 */
+	private function upgrade_5_0_0(): void {
+		update_site_option( \WP_Defender\Component\IP\Antibot_Global_Firewall::NOTICE_SLUG, true );
+		update_site_option( Feature_Modal::FEATURE_SLUG, true );
+	}
+
+	/**
+	 * Upgrade to 5.0.2: Clear the blocklist count. Also set the whitelist server public IP.
+	 *
+	 * @return void
+	 */
+	private function upgrade_5_0_2(): void {
+		delete_site_transient( 'wpdef_antibot_global_firewall_db_blocklist_count' );
+		wd_di()->get( Firewall::class )->set_whitelist_server_public_ip();
+	}
+
+	/**
+	 * Upgrade to 5.1.0.
+	 *
+	 * @return void
+	 */
+	private function upgrade_5_1_0(): void {
+		update_site_option( Feature_Modal::FEATURE_SLUG, true );
+	}
+
+	/**
+	 * Upgrade to 5.1.1: Migrate IP detection option to Automatic from Manual > All headers.
+	 *
+	 * @return void
+	 */
+	private function upgrade_5_1_1(): void {
+		$model = wd_di()->get( Model_Firewall::class );
+		if ( 'manual' === $model->ip_detection_type && '' === $model->http_ip_header ) {
+			$model->ip_detection_type = 'automatic';
+			$model->http_ip_header    = 'REMOTE_ADDR';
+			$model->save();
+			wd_di()->get( \WP_Defender\Component\Smart_Ip_Detection::class )->smart_ip_detection_ping();
+			// Add tracking.
+			$firewall_analytics = wd_di()->get( Firewall_Analytics::class );
+			$detection_method   = Firewall_Analytics::get_detection_method_label( 'automatic', '' );
+
+			$firewall_analytics->track_feature(
+				Firewall_Analytics::EVENT_IP_DETECTION,
+				array( Firewall_Analytics::PROP_IP_DETECTION => $detection_method )
+			);
+		}
 	}
 }

@@ -84,7 +84,7 @@ class Gather_Fact extends Component {
 	}
 
 	/**
-	 * Gets core files and updates the cache.
+	 * Get core files and update the cache.
 	 *
 	 * @return array The array of core files.
 	 */
@@ -100,8 +100,8 @@ class Gather_Fact extends Component {
 			false,
 			array(
 				'dir' => array(
-					$abs_path . 'wp-admin/',
-					$abs_path . WPINC . '/',
+					$abs_path . 'wp-admin',
+					$abs_path . WPINC,
 				),
 			),
 			array(),
@@ -117,9 +117,9 @@ class Gather_Fact extends Component {
 			array(),
 			array(
 				'dir'      => array(
-					$abs_path . 'wp-content/',
-					$abs_path . 'wp-admin/',
-					$abs_path . WPINC . '/',
+					$abs_path . 'wp-content' . DIRECTORY_SEPARATOR,
+					$abs_path . 'wp-admin',
+					$abs_path . WPINC,
 				),
 				'filename' => array(
 					'wp-config.php',
@@ -139,9 +139,9 @@ class Gather_Fact extends Component {
 	}
 
 	/**
-	 * Gets content files and updates the cache.
+	 * Get various content files starting from the root and update the cache.
 	 *
-	 * @return array|void The array of content files, or void if cache exists.
+	 * @return array|void The array of content files if cache exists, or void if no files in cache.
 	 */
 	private function get_content_files() {
 		$cache = get_site_option( self::CACHE_CONTENT, false );
@@ -149,7 +149,7 @@ class Gather_Fact extends Component {
 			return $cache;
 		}
 		$content = new File(
-			WP_CONTENT_DIR,
+			defender_replace_line( ABSPATH ),
 			true,
 			false,
 			array(

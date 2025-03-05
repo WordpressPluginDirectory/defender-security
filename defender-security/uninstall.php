@@ -23,6 +23,7 @@ function defender_drop_custom_tables() {
 	$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}defender_lockout" );
 	$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}defender_audit_log" );
 	$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}defender_unlockout" );
+	$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}defender_antibot" );
 }
 
 /**
@@ -49,6 +50,8 @@ function defender_drop_custom_fk_constraint( string $table_name ): void {
 }
 
 require_once __DIR__ . DIRECTORY_SEPARATOR . 'wp-defender.php';
+require_once __DIR__ . DIRECTORY_SEPARATOR . 'extra/hub-connector/connector.php';
+\WPMUDEV\Hub\Connector::get();
 $settings           = wd_di()->get( \WP_Defender\Model\Setting\Main_Setting::class );
 $uninstall_data     = isset( $settings->uninstall_data ) && 'remove' === $settings->uninstall_data;
 $uninstall_settings = isset( $settings->uninstall_settings ) && 'reset' === $settings->uninstall_settings;
@@ -62,6 +65,7 @@ if ( $uninstall_settings || $uninstall_data ) {
 }
 // Only Settings.
 if ( $uninstall_settings ) {
+	// Remove all settings of Advanced Tools.
 	$advanced_tools->remove_settings();
 	wd_di()->get( \WP_Defender\Controller\Audit_Logging::class )->remove_settings();
 	wd_di()->get( \WP_Defender\Controller\Dashboard::class )->remove_settings();
@@ -70,12 +74,12 @@ if ( $uninstall_settings ) {
 	// Start of Firewall parent and submodules.
 	wd_di()->get( \WP_Defender\Controller\Firewall::class )->remove_settings();
 	// End.
-	wd_di()->get( \WP_Defender\Controller\Mask_Login::class )->remove_settings();
 	wd_di()->get( \WP_Defender\Controller\Tutorial::class )->remove_settings();
 	wd_di()->get( \WP_Defender\Controller\Notification::class )->remove_settings();
 	wd_di()->get( \WP_Defender\Controller\Two_Factor::class )->remove_settings();
 	wd_di()->get( \WP_Defender\Controller\Blocklist_Monitor::class )->remove_settings();
 	wd_di()->get( \WP_Defender\Controller\Main_Setting::class )->remove_settings();
+	wd_di()->get( \WP_Defender\Controller\Onboard::class )->remove_settings();
 	// Delete plugin options.
 	delete_option( 'wp_defender' );
 	delete_site_option( 'wp_defender' );
@@ -88,6 +92,7 @@ if ( $uninstall_settings ) {
 	// Because not call remove_settings from WAF and Onboard controllers.
 	delete_site_transient( 'def_waf_status' );
 	delete_site_option( 'wp_defender_is_activated' );
+	delete_site_transient( \WP_Defender\Component\Blacklist_Lockout::IP_LIST_KEY );
 }
 // Only Data.
 if ( $uninstall_data ) {
@@ -98,15 +103,16 @@ if ( $uninstall_data ) {
 	// Start of Firewall parent and submodules.
 	wd_di()->get( \WP_Defender\Controller\Firewall::class )->remove_data();
 	// End.
-	wd_di()->get( \WP_Defender\Controller\Mask_Login::class )->remove_data();
 	wd_di()->get( \WP_Defender\Controller\Notification::class )->remove_data();
 	wd_di()->get( \WP_Defender\Controller\Tutorial::class )->remove_data();
 	wd_di()->get( \WP_Defender\Controller\Two_Factor::class )->remove_data();
 	wd_di()->get( \WP_Defender\Component\Backup_Settings::class )->clear_configs();
+	// Remove all data of Advanced Tools.
 	$advanced_tools->remove_data();
 	defender_drop_custom_tables();
 	delete_site_transient( \WP_Defender\Behavior\Scan\Plugin_Integrity::$org_slugs );
 	delete_site_transient( \WP_Defender\Behavior\Scan\Plugin_Integrity::$org_responses );
+	delete_site_transient( \WP_Defender\Controller\Firewall_Logs::AKISMET_BLOCKED_IPS );
 }
 
 if ( class_exists( 'WP_Defender\Controller\Quarantine' ) ) {

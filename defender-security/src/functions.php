@@ -641,12 +641,7 @@ function defender_deprecated_function( string $function_name, string $version, s
 			$log_string .= $replacement ? " Use {$replacement} instead." : '';
 			wp_die( esc_html( $log_string ) );
 		} else {
-			/**
-			 * Ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-			 * Why?
-			 * This wrapper function doesn’t produce any output.
-			 */
-			_deprecated_function( $function_name, $version, $replacement );  // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			_deprecated_function( esc_html( $function_name ), esc_html( $version ), esc_html( $replacement ) );
 		}
 	}
 }
@@ -738,4 +733,21 @@ function defender_are_arrays_equal( $array1, $array2 ): bool {
 	sort( $array2 );
 
 	return $array1 === $array2;
+}
+
+/**
+ * Get a feature state on WPMU DEV hosting.
+ *
+ * @param string $feature_key  The feature key, e.g. xmlrpc_block, globaliplist or waf.
+ *
+ * @return bool|string True or false if the feature is enabled or disabled, or an empty string if the feature is not found.
+ */
+function defender_get_hosting_feature_state( string $feature_key ) {
+	if ( function_exists( 'wpmudev_hosting_features' ) ) {
+		$states = wpmudev_hosting_features();
+
+		return isset( $states[ $feature_key ] ) ? $states[ $feature_key ] : '';
+	}
+
+	return '';
 }
