@@ -3,6 +3,7 @@
 namespace WP_Defender;
 
 use WP_Defender\Traits\Defender_Bootstrap;
+use WP_Defender\Component\Rate;
 
 /**
  * Class Bootstrap
@@ -26,9 +27,13 @@ class Bootstrap {
 	 * @since 2.4
 	 */
 	protected function set_free_installation_timestamp(): void {
-		// It's for both cases because don’t have a Pro checking during plugin activation.
-		if ( empty( get_site_option( 'defender_free_install_date' ) ) ) {
-			update_site_option( 'defender_free_install_date', time() );
+		// Let's equate the plugin installation and postponed notice dates. This will simplify future checks.
+		$install_date = (int) get_site_option( Rate::SLUG_FREE_INSTALL_DATE, 0 );
+		if ( 0 === $install_date ) {
+			update_site_option( Rate::SLUG_FREE_INSTALL_DATE, time() );
+			update_site_option( Rate::SLUG_POSTPONED_NOTICE_DATE, time() );
+		} else {
+			update_site_option( Rate::SLUG_POSTPONED_NOTICE_DATE, $install_date );
 		}
 	}
 
@@ -48,12 +53,12 @@ class Bootstrap {
 		if ( file_exists( $file_path ) ) {
 			require_once $file_path;
 
-			add_filter( 'wdev_email_message_' . DEFENDER_PLUGIN_BASENAME, array( &$this, 'defender_ads_message' ) );
+			add_filter( 'wdev_email_message_' . DEFENDER_PLUGIN_BASENAME, array( $this, 'defender_ads_message' ) );
 
 			$screen_prefix = 'defender';
 			$screen_suffix = is_multisite() ? '-network' : '';
 
-			$free_install_date = get_site_option( 'defender_free_install_date', false );
+			$free_install_date = get_site_option( Rate::SLUG_FREE_INSTALL_DATE, false );
 
 			do_action(
 				'wpmudev_register_notices',
@@ -75,7 +80,6 @@ class Bootstrap {
 						$screen_prefix . '_page_wdf-advanced-tools' . $screen_suffix,
 						$screen_prefix . '_page_wdf-notification' . $screen_suffix,
 						$screen_prefix . '_page_wdf-setting' . $screen_suffix,
-						$screen_prefix . '_page_wdf-tutorial' . $screen_suffix,
 					),
 				)
 			);
@@ -83,11 +87,9 @@ class Bootstrap {
 	}
 
 	/**
-	 * @param string $message
-	 *
 	 * @return string
 	 */
-	public function defender_ads_message( string $message ): string {
+	public function defender_ads_message(): string {
 		return __( "You're awesome for installing Defender! Are you interested in how to make the most of this plugin? We've collected all the best security resources we know in a single email - just for users of Defender!", 'defender-security' );
 	}
 }
