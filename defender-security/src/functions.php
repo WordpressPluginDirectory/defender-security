@@ -237,9 +237,17 @@ if ( ! function_exists( 'sanitize_mask_url' ) ) {
 		$title = str_replace( '%', '', $title );
 		// Restore octets.
 		$title = preg_replace( '|---([a-fA-F0-9][a-fA-F0-9])---|', '%$1', $title );
-
-		if ( seems_utf8( $title ) ) {
-			$title = utf8_uri_encode( $title, 200 );
+		// Support for WordPress 6.9+ and older versions.
+		if ( function_exists( 'wp_is_valid_utf8' ) ) {
+			// New function since WP 6.9.0.
+			if ( wp_is_valid_utf8( $title ) ) {
+				$title = utf8_uri_encode( $title, 200 );
+			}
+		} elseif ( function_exists( 'seems_utf8' ) ) {
+			// Old method (before WP 6.9.0).
+			if ( seems_utf8( $title ) ) {
+				$title = utf8_uri_encode( $title, 200 );
+			}
 		}
 
 		// Kill entities.

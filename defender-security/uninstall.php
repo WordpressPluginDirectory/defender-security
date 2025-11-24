@@ -110,6 +110,7 @@ if ( $uninstall_settings || $uninstall_data ) {
 		$advanced_tools->remove_data();
 		defender_drop_custom_tables();
 		wd_di()->get( \WP_Defender\Component\Network_Cron_Manager::class )->remove_data();
+		wd_di()->get( \WP_Defender\Component\Breadcrumbs::class )->delete_meta_key();
 	}
 }
 

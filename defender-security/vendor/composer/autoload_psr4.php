@@ -12,7 +12,6 @@ return array(
     'Valitron\\' => array($vendorDir . '/vlucas/valitron/src/Valitron'),
     'Symfony\\Polyfill\\Php81\\' => array($vendorDir . '/symfony/polyfill-php81'),
     'Symfony\\Polyfill\\Php80\\' => array($vendorDir . '/symfony/polyfill-php80'),
-    'Symfony\\Polyfill\\Ctype\\' => array($vendorDir . '/symfony/polyfill-ctype'),
     'Symfony\\Component\\Process\\' => array($vendorDir . '/symfony/process'),
     'Safe\\' => array($vendorDir . '/thecodingmachine/safe/lib', $vendorDir . '/thecodingmachine/safe/deprecated', $vendorDir . '/thecodingmachine/safe/generated'),
     'Ramsey\\Uuid\\' => array($vendorDir . '/ramsey/uuid/src'),

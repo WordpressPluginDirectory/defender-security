@@ -184,11 +184,21 @@ class Audit extends Component {
 	public function audit_clean_up_logs() {
 		$audit_settings = wd_di()->get( Audit_Logging::class );
 		$interval       = $this->calculate_date_interval( $audit_settings->storage_days );
-		$date_from      = ( new DateTime() )->setTimezone( wp_timezone() )
-											->sub( new DateInterval( 'P1Y' ) )
-											->setTime( 0, 0, 0 );
-		$date_to        = ( new DateTime() )->setTimezone( wp_timezone() )
-											->sub( new DateInterval( $interval ) );
+		// Since v5.7.0.
+		$interval = (string) apply_filters( 'wpdef_audit_logs_store_backward', $interval );
+
+		try {
+			$interval_obj = new DateInterval( $interval );
+		} catch ( Exception ) {
+			// Fallback if the filter supplied an incorrect value.
+			$interval_obj = new DateInterval( 'P6M' );
+		}
+
+		$date_from = ( new DateTime() )->setTimezone( wp_timezone() )
+					->sub( new DateInterval( 'P1Y' ) )
+					->setTime( 0, 0, 0 );
+		$date_to   = ( new DateTime() )->setTimezone( wp_timezone() )
+					->sub( $interval_obj );
 
 		if ( $date_from < $date_to ) {
 			// Count the logs that should be deleted.

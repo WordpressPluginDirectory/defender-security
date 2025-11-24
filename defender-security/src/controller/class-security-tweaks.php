@@ -269,8 +269,9 @@ class Security_Tweaks extends Event {
 		$this->model->mark( self::STATUS_IGNORE, $slug );
 		// Track.
 		$this->track_tweak( $tweak->get_label(), 'Ignored' );
-
-		$this->security_key->cron_unschedule();
+		if ( 'security-key' === $slug ) {
+			$this->security_key->cron_unschedule();
+		}
 
 		$this->ajax_response( esc_html__( 'Security recommendation successfully ignored.', 'defender-security' ) );
 	}
@@ -305,8 +306,6 @@ class Security_Tweaks extends Event {
 		$this->track_tweak( $tweak->get_label(), 'Restored' );
 
 		if ( $this->security_key->get_is_autogenerate_keys() ) {
-			// Mandatory: cron_schedule method bypass scheduling if already a schedule for this job.
-			$this->security_key->cron_unschedule();
 			$this->security_key->cron_schedule();
 		}
 
@@ -402,9 +401,9 @@ class Security_Tweaks extends Event {
 		if ( update_site_option( 'defender_security_tweaks_' . $this->security_key->slug, $values ) ) {
 
 			if ( true === $is_autogen_flag ) {
-				// Mandatory: cron_schedule method bypass scheduling if already a schedule for this job.
-				$this->security_key->cron_unschedule();
 				$this->security_key->cron_schedule();
+			} else {
+				$this->security_key->cron_unschedule();
 			}
 
 			return new Response(
@@ -528,6 +527,8 @@ class Security_Tweaks extends Event {
 			'is_autogenerate_keys' => $this->security_key->get_is_autogenerate_keys(),
 			'reminder_frequencies' => $this->security_key->reminder_frequencies(),
 			'enabled_user_enums'   => $this->prevent_enum_users->get_enabled_user_enums(),
+			'hub_connector'        => wd_di()->get( Hub_Connector::class )->data_frontend(),
+			'antibot'              => wd_di()->get( Antibot_Global_Firewall::class )->data_frontend(),
 		);
 
 		return array_merge( $data, $this->dump_routes_and_nonces() );
@@ -808,7 +809,7 @@ class Security_Tweaks extends Event {
 
 		delete_site_transient( Server::CACHE_CURRENT_SERVER );
 		delete_site_transient( \WP_Defender\Component\Security_Tweaks\Servers\Apache::CACHE_APACHE_VERSION );
-		wp_clear_scheduled_hook( 'wpdef_sec_key_gen' );
+		$this->security_key->cron_unschedule();
 	}
 
 	/**

@@ -115,7 +115,9 @@ class Firewall extends Component {
 		}
 		$time_string = '-' . $storage_days . ' days';
 		$timestamp   = $this->local_to_utc( $time_string );
-		Lockout_Log::remove_logs( $timestamp, 50 );
+		// Since v5.7.0.
+		$delete_count = (int) apply_filters( 'wpdef_firewall_limit_deleted_logs', 50 );
+		Lockout_Log::remove_logs( $timestamp, $delete_count );
 	}
 
 	/**

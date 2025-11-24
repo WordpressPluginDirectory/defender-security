@@ -2,14 +2,14 @@
 /**
  * Plugin Name:  Defender
  * Plugin URI:   https://wpmudev.com/project/wp-defender/
- * Version:      5.6.1
+ * Version:      5.7.0
  * Description:  Get regular security scans, vulnerability reports, safety recommendations and customized hardening for your site in just a few clicks. Defender is the analyst and enforcer who never sleeps.
  * Author:       WPMU DEV
  * Author URI:   https://wpmudev.com/
  * License:      GNU General Public License (Version 2 - GPLv2)
  * Text Domain:  defender-security
  * Network:      true
- * Requires PHP: 7.4
+ * Requires PHP: 8.0.0
  * Requires at least: 6.4
  *
  * @package WP_Defender
@@ -37,10 +37,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 	die;
 }
 if ( ! defined( 'DEFENDER_VERSION' ) ) {
-	define( 'DEFENDER_VERSION', '5.6.1' );
+	define( 'DEFENDER_VERSION', '5.7.0' );
 }
 if ( ! defined( 'DEFENDER_DB_VERSION' ) ) {
-	define( 'DEFENDER_DB_VERSION', '5.6.1' );
+	define( 'DEFENDER_DB_VERSION', '5.7.0' );
 }
 if ( ! defined( 'DEFENDER_SUI' ) ) {
 	define( 'DEFENDER_SUI', '2-12-24' );
@@ -58,7 +58,7 @@ if ( ! defined( 'WP_DEFENDER_BASE_URL' ) ) {
 	define( 'WP_DEFENDER_BASE_URL', plugin_dir_url( WP_DEFENDER_FILE ) );
 }
 if ( ! defined( 'WP_DEFENDER_MIN_PHP_VERSION' ) ) {
-	define( 'WP_DEFENDER_MIN_PHP_VERSION', '7.4' );
+	define( 'WP_DEFENDER_MIN_PHP_VERSION', '8.0.0' );
 }
 if ( ! defined( 'WP_DEFENDER_PRO_PATH' ) ) {
 	define( 'WP_DEFENDER_PRO_PATH', 'wp-defender/wp-defender.php' );

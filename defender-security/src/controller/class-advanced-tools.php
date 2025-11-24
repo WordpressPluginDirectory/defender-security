@@ -47,7 +47,13 @@ class Advanced_Tools extends Event {
 			return;
 		}
 
-		$data = $this->dump_routes_and_nonces();
+		$data = array_merge(
+			array(
+				'hub_connector' => wd_di()->get( Hub_Connector::class )->data_frontend(),
+				'antibot'       => wd_di()->get( Antibot_Global_Firewall::class )->data_frontend(),
+			),
+			$this->dump_routes_and_nonces()
+		);
 		wp_enqueue_script( 'clipboard' );
 		$data = (array) apply_filters( 'wp_defender_advanced_tools_data', $data );
 		wp_localize_script( 'def-advancedtools', 'advanced_tools', $data );
@@ -70,7 +76,7 @@ class Advanced_Tools extends Event {
 		( new \WP_Defender\Model\Setting\Security_Headers() )->delete();
 		( new \WP_Defender\Model\Setting\Password_Protection() )->delete();
 		( new \WP_Defender\Model\Setting\Password_Reset() )->delete();
-		( new \WP_Defender\Model\Setting\Recaptcha() )->delete();
+		( new \WP_Defender\Model\Setting\Captcha() )->delete();
 		( new \WP_Defender\Model\Setting\Strong_Password() )->delete();
 		( new Model_Session_Protection() )->delete();
 	}
@@ -88,7 +94,7 @@ class Advanced_Tools extends Event {
 		wd_di()->get( \WP_Defender\Controller\Strong_Password::class )->remove_data();
 		wd_di()->get( \WP_Defender\Controller\Session_Protection::class )->remove_data();
 		// End.
-		wd_di()->get( \WP_Defender\Controller\Recaptcha::class )->remove_data();
+		wd_di()->get( \WP_Defender\Controller\Captcha::class )->remove_data();
 
 		global $wp_filesystem;
 		// Initialize the WP filesystem, no more using 'file-put-contents' function.
@@ -202,7 +208,7 @@ class Advanced_Tools extends Event {
 			'mask_login'         => wd_di()->get( Mask_Login::class )->data_frontend(),
 			'security_headers'   => wd_di()->get( Security_Headers::class )->data_frontend(),
 			'pwned_passwords'    => wd_di()->get( Password_Protection::class )->data_frontend(),
-			'recaptcha'          => wd_di()->get( Recaptcha::class )->data_frontend(),
+			'captcha'            => wd_di()->get( Recaptcha::class )->data_frontend(),
 			'strong_password'    => wd_di()->get( Strong_Password::class )->data_frontend(),
 			'session_protection' => wd_di()->get( Session_Protection::class )->data_frontend(),
 		);

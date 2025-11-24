@@ -1,14 +1,14 @@
 === Defender Security - Malware Scanner, Login Security & Firewall ===
 Plugin Name: Defender Security - Malware Scanner, Login Security & Firewall
-Version: 5.6.1
+Version: 5.7.0
 Author: WPMU DEV
 Author URI: https://wpmudev.com/
 Contributors: WPMUDEV
 Tags: security, malware, firewall, malware scanner, login security
 Requires at least: 6.4
-Tested up to: 6.8.3
-Stable tag: 5.6.1
-Requires PHP: 7.4
+Tested up to: 6.9
+Stable tag: 5.7.0
+Requires PHP: 8.0.0
 License: GPL v2 - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 
 WordPress security plugin with malware scanner, IP blocking, audit logs, antivirus scans, firewall, 2FA, brute force login security, and more.
@@ -55,6 +55,7 @@ Defender's one-click security hardening recommendations instantly adds layers of
 * **Prevent PHP Execution** - Defender bolsters security by automatically preventing any PHP code from being executed.
 * **Bulk Apply Security Recommendations** – Apply multiple recommended security improvements at once for quicker site hardening.
 * **Google reCAPTCHA Security** - Easy to add, stop fraud and abuse - including BuddyPress and WooCommerce.
+* **Cloudflare Turnstile** - Protect your site from spam and automated attacks without annoying captchas.
 * **Pwned Password Check** - Increase security by protecting against compromised passwords.
 * **Force Password Reset** - Force users with selected roles to reset passwords.
 * **Force Strong Passwords** – Ensure users create secure credentials by enforcing robust password requirements.
@@ -261,6 +262,29 @@ Please open a new thread in Defender's [support forum](https://wordpress.org/sup
 
 == Changelog ==
 
+= 5.7.0 ( 2025-11-18 ) =
+
+- New: Cloudflare Turnstile integration
+- Enhance: Compatibility with WordPress 6.9
+- Enhance: Redesigned CAPTCHA menu
+- Enhance: Optimize database performance on multisite
+- Enhance: Add additional widget IDs on Defender’s Dashboard page
+- Enhance: Add new hooks to simplify Audit testing and Firewall logs deletion
+- Enhance: Update minimum supported PHP version to 8.0
+- Enhance: Disable New Scan button until the background scan is complete
+- Enhance: Migrate Security Recommendations multisite events to the centralized Cron Manager system
+- Enhance: Migrate Malware Scanning multisite events to the centralized Cron Manager system
+- Enhance: Tracking improvements
+- Fix: Masking URL displays a notice when using a slug already assigned to another page
+- Fix: Defender not detecting some outdated plugins
+- Fix: Recommended PHP version appears as NULL on WP Engine hosting
+- Fix: Default Security Config name and description not saving properly
+- Fix: UI improvements
+
+= 5.6.2 ( 2025-11-20 ) =
+
+- Enhance: Miscellaneousness improvements
+
 = 5.6.1 ( 2025-10-21 ) =
 
 - Fix: Malicious Bot Detector blocking Facebook Sharing Debugger bot
@@ -335,10 +359,6 @@ Please open a new thread in Defender's [support forum](https://wordpress.org/sup
 - Fix: Unable to save secure password when Strong Passwords and Password Reset are both enabled
 - Fix: Documentation buttons are missing aria-hidden tag
 - Fix: Error when creating multisite and running Malware Scan
-
-= 5.3.1 ( 2025-06-12 ) =
-
-- Fix: Sync malicious IP count displayed in Defender and the Hub
 
 [Changelog for previous versions](https://wpmudev.com/project/wp-defender/#view-changelog).
 

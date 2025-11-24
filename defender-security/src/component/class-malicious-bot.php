@@ -187,6 +187,10 @@ class Malicious_Bot extends Component {
 	 * @return bool True if SmartCrawl is active, false otherwise.
 	 */
 	public function is_smartcrawl_active(): bool {
+		if ( ! function_exists( 'is_plugin_active' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		}
+
 		return class_exists( '\SmartCrawl\Modules\Advanced\Robots\Controller' ) ||
 				function_exists( 'smartcrawl_get_robots_url' ) ||
 				is_plugin_active( 'smartcrawl-seo/wpmu-dev-seo.php' );

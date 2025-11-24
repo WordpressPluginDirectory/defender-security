@@ -204,6 +204,7 @@ class Abandoned_Plugin extends Behavior {
 		return array(
 			'miniorange-malware-protection',
 			'admin-bar-user-switching',
+			'custom-post-template',
 		);
 	}
 
@@ -222,6 +223,10 @@ class Abandoned_Plugin extends Behavior {
 		) {
 			return true;
 		}
+		if ( $this->scan->is_issue_ignored( $slug ) ) {
+			$this->log( sprintf( 'skip %s because it is already ignored.', $slug ), Scan_Controller::SCAN_LOG );
+			return true;
+		}
 
 		$results = $this->handle_wp_org_response_by( $slug );
 		if ( ! $results['success'] ) {
@@ -236,7 +241,7 @@ class Abandoned_Plugin extends Behavior {
 				&& $plugin_details['Name'] !== $body_json['name']
 				&& ! in_array( $slug, $this->get_plugin_slugs_with_mismatched_names(), true )
 			) {
-				// This is premium plugin with the same slug as on wp.org but with another name value OR the plugin developer named the plugin differently on wp.org and inside the main file.
+				// This is a premium plugin with the same slug as on wp.org but with another name OR the plugin developer named the plugin differently on wp.org and inside the main file.
 				return false;
 			}
 

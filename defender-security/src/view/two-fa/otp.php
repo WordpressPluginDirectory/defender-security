@@ -247,7 +247,7 @@ $show_logo = WP_Defender\Model\Setting\Two_Fa::CUSTOM_GRAPHIC_TYPE_NO !== $custo
 if ( isset( $interim_login ) && 'success' === $interim_login ) {
 	login_header_otp( '', $message, $show_logo );
 
-	$modal_close_script = <<<END
+	$modal_close_script = <<<'END'
 		<script>
 		jQuery(function ($) {
 			$('.wp-auth-check-close', window.parent.document).trigger('click');

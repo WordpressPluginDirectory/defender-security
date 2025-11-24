@@ -59,10 +59,28 @@ class Abandoned_Result extends Behavior {
 	 * @return array An array with a message indicating successful ignore.
 	 */
 	public function ignore(): array {
-		$scan = Scan::get_last();
-		$scan->ignore_issue( $this->owner->id );
+		$scan       = Scan::get_last();
+		$data       = $this->owner->raw_data;
+		$issue_name = '<b>' . $data['name'] . '</b>';
+		$res        = $scan->ignore_issue( $this->owner->id );
+		if ( ! $res ) {
+			return array(
+				'type_notice' => 'error',
+				'message'     => sprintf(
+					/* translators: %s: Scan issue name. */
+					esc_html__( '%s is already marked as Ignored. It can’t be added to the Ignored list again.', 'defender-security' ),
+					$issue_name
+				),
+			);
+		}
 
-		return array( 'message' => esc_html__( 'The plugin has been successfully ignored.', 'defender-security' ) );
+		return array(
+			'message' => sprintf(
+				/* translators: %s: Scan issue name. */
+				esc_html__( 'You’ve successfully ignored the security issue related to %s.', 'defender-security' ),
+				$issue_name
+			),
+		);
 	}
 
 	/**

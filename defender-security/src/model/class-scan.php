@@ -385,30 +385,40 @@ class Scan extends DB {
 	}
 
 	/**
-	 * Ignore a specific issue by updating its status and adding it to the global ignore indexer.
+	 * Ignore a specific issue by updating its status and adding it to the global ignored indexer.
 	 *
 	 * @param int $id The ID of the issue to ignore.
 	 *
-	 * @return bool|void Returns false if the issue does not exist, otherwise void.
+	 * @return bool
 	 */
-	public function ignore_issue( $id ) {
+	public function ignore_issue( $id ): bool {
 		$issue = $this->get_issue( $id );
 		if ( ! is_object( $issue ) ) {
+			return false;
+		}
+		// Add this into a global ignored index.
+		$ignore_lists = get_site_option( self::IGNORE_INDEXER, array() );
+		$data         = $issue->raw_data;
+		// Check if the current issue already exists in the ignored list, there is no need to add a duplicate.
+		// 'file' means the file issue, 'slug' means the folder issue, e.g., plugin or theme.
+		if (
+			( isset( $data['file'] ) && in_array( $data['file'], $ignore_lists, true ) )
+			|| ( isset( $data['slug'] ) && in_array( $data['slug'], $ignore_lists, true ) )
+		) {
 			return false;
 		}
 
 		$issue->status = Scan_Item::STATUS_IGNORE;
 		$issue->save();
 
-		// Add this into global ignore index.
-		$ignore_lists = get_site_option( self::IGNORE_INDEXER, array() );
-		$data         = $issue->raw_data;
 		if ( isset( $data['file'] ) ) {
 			$ignore_lists[] = $data['file'];
 		} elseif ( isset( $data['slug'] ) ) {
 			$ignore_lists[] = $data['slug'];
 		}
 		$this->update_ignore_list( $ignore_lists );
+
+		return true;
 	}
 
 	/**

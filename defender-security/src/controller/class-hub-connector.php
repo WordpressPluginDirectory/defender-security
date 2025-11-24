@@ -97,13 +97,15 @@ class Hub_Connector extends Controller {
 				'is_dash_activated' => $this->is_dash_activated(),
 				'is_hub_connected'  => $this->is_site_connected_to_hub_via_hcm_or_dash(),
 				'hub_connector_url' => array(
-					'default'     => $this->service->get_url(),
-					'global-ip'   => $this->service->get_url( 'wdf-ip-lockout', 'global-ip' ),
-					'blocklist'   => $this->service->get_url( 'wdf-ip-lockout', 'blocklist' ),
-					'onboard'     => $this->service->get_url( 'wp-defender', 'onboard' ),
-					'dashboard'   => $this->service->get_url( 'wp-defender', 'dashboard' ),
+					'default'        => $this->service->get_url(),
+					'global-ip'      => $this->service->get_url( 'wdf-ip-lockout', 'global-ip' ),
+					'blocklist'      => $this->service->get_url( 'wdf-ip-lockout', 'blocklist' ),
+					'onboard'        => $this->service->get_url( 'wp-defender', 'onboard' ),
+					'dashboard'      => $this->service->get_url( 'wp-defender', 'dashboard' ),
 					// Custom one if a trigger is the Summary section.
-					'summary-box' => $this->service->get_url( 'wdf-ip-lockout', 'summary-box' ),
+					'summary-box'    => $this->service->get_url( 'wdf-ip-lockout', 'summary-box' ),
+					// Custom one for Antibot notice shown on all Defender pages.
+					'antibot-notice' => $this->service->get_url( 'wdf-ip-lockout', '', 'def_antibot_survey_notice', 'hub_connector' ),
 				),
 			),
 			$this->dump_routes_and_nonces()

@@ -263,7 +263,7 @@ class Dashboard extends Event {
 					'mask_login'         => wd_di()->get( Mask_Login::class )->dashboard_widget(),
 					'security_headers'   => wd_di()->get( Security_Headers::class )->dashboard_widget(),
 					'pwned_passwords'    => wd_di()->get( Password_Protection::class )->dashboard_widget(),
-					'recaptcha'          => wd_di()->get( Recaptcha::class )->dashboard_widget(),
+					'captcha'            => wd_di()->get( Captcha::class )->dashboard_widget(),
 					'strong_passwords'   => wd_di()->get( Strong_Password::class )->dashboard_widget(),
 					'session_protection' => wd_di()->get( Session_Protection::class )->export(),
 				),

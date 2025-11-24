@@ -274,6 +274,8 @@ class Main_Setting extends Event {
 					'privacy_link' => Model_Main_Setting::PRIVACY_LINK,
 				),
 				'configs'       => $configs,
+				'hub_connector' => wd_di()->get( Hub_Connector::class )->data_frontend(),
+				'antibot'       => wd_di()->get( Antibot_Global_Firewall::class )->data_frontend(),
 			),
 			$this->dump_routes_and_nonces()
 		);

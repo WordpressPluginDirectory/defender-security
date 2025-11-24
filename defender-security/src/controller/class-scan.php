@@ -8,7 +8,6 @@
 namespace WP_Defender\Controller;
 
 use ActionScheduler;
-use WP_Defender\Component\Breadcrumbs;
 use WP_Defender\Event;
 use Valitron\Validator;
 use Calotes\Component\Request;
@@ -20,6 +19,7 @@ use WP_Defender\Model\Scan_Item;
 use WP_Defender\Behavior\WPMUDEV;
 use WP_Defender\Model\Scan as Model_Scan;
 use WP_Defender\Behavior\Scan\Core_Integrity;
+use WP_Defender\Component\Network_Cron_Manager;
 use WP_Defender\Component\Scan as Scan_Component;
 use WP_Defender\Model\Setting\Scan as Scan_Settings;
 use WP_Defender\Model\Notification\Malware_Report;
@@ -111,11 +111,17 @@ class Scan extends Event {
 			$this->service->display_vulnerability_warnings();
 		}
 
-		// Schedule a time to clear completed action scheduler logs.
-		if ( ! wp_next_scheduled( 'wpdef_clear_scan_logs' ) ) {
-			wp_schedule_event( time(), 'weekly', 'wpdef_clear_scan_logs' );
-		}
-		add_action( 'wpdef_clear_scan_logs', array( $this, 'clear_scan_logs' ) );
+		/**
+		 * Schedule a time to clear completed action scheduler logs.
+		 *
+		 * @var Network_Cron_Manager $network_cron_manager
+		 */
+		$network_cron_manager = wd_di()->get( Network_Cron_Manager::class );
+		$network_cron_manager->register_callback(
+			'wpdef_clear_scan_logs',
+			array( $this, 'clear_scan_logs' ),
+			WEEK_IN_SECONDS
+		);
 
 		add_filter( 'heartbeat_nopriv_send', array( $this, 'nopriv_heartbeat' ), 10, 2 );
 
@@ -833,22 +839,24 @@ class Scan extends Event {
 
 		// Todo: add logic for deactivated scan settings. Maybe display some notice.
 		$data = array(
-			'scan'         => $scan,
-			'settings'     => $settings->export(),
-			'report'       => $report_text,
-			'active_tools' => array(
+			'scan'          => $scan,
+			'settings'      => $settings->export(),
+			'report'        => $report_text,
+			'active_tools'  => array(
 				'integrity_check'        => $settings->integrity_check,
 				'check_known_vuln'       => $settings->check_known_vuln,
 				'scan_malware'           => $settings->scan_malware,
 				'scheduled_scanning'     => $settings->scheduled_scanning,
 				'check_abandoned_plugin' => $settings->check_abandoned_plugin,
 			),
-			'notification' => $report->to_string(),
-			'next_run'     => $report->get_next_run_as_string(),
-			'misc'         => $misc,
-			'upsell'       => array(
+			'notification'  => $report->to_string(),
+			'next_run'      => $report->get_next_run_as_string(),
+			'misc'          => $misc,
+			'upsell'        => array(
 				'scan' => $this->get_scan_upsell( 'scan' ),
 			),
+			'hub_connector' => wd_di()->get( Hub_Connector::class )->data_frontend(),
+			'antibot'       => wd_di()->get( Antibot_Global_Firewall::class )->data_frontend(),
 		);
 
 		if ( class_exists( 'WP_Defender\Controller\Quarantine' ) ) {

@@ -492,18 +492,20 @@ class Audit_Logging extends Event {
 
 		return array_merge(
 			array(
-				'model'       => $this->model->export(),
-				'logs'        => $logs,
-				'events_type' => Audit_Log::allowed_events(),
-				'summary'     => array(
+				'model'         => $this->model->export(),
+				'logs'          => $logs,
+				'events_type'   => Audit_Log::allowed_events(),
+				'summary'       => array(
 					'count_7_days' => $count,
 					'report'       => wd_di()->get( Audit_Report::class )->to_string(),
 				),
-				'paging'      => array(
+				'paging'        => array(
 					'paged'       => 1,
 					'total_pages' => $total_page,
 					'count'       => $count,
 				),
+				'hub_connector' => wd_di()->get( Hub_Connector::class )->data_frontend(),
+				'antibot'       => wd_di()->get( Antibot_Global_Firewall::class )->data_frontend(),
 			),
 			$this->dump_routes_and_nonces()
 		);

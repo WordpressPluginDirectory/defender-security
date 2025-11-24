@@ -719,7 +719,7 @@ class Backup_Settings extends Component {
 			// Return array of objects if the module is IP Lockout.
 			if ( is_object( $controller ) || is_array( $controller ) ) {
 				foreach ( $module_data as &$value ) {
-					if ( ! is_array( $value ) && ! filter_var( $value, FILTER_VALIDATE_BOOLEAN ) ) {
+					if ( isset( $value ) && ! is_array( $value ) && ! filter_var( $value, FILTER_VALIDATE_BOOLEAN ) ) {
 						$value = str_replace( '{nl}', PHP_EOL, $value );
 					}
 				}

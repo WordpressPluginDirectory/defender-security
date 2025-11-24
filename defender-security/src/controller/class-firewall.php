@@ -47,7 +47,6 @@ use WP_Defender\Model\Antibot_Global_Firewall as Antibot_Global_Firewall_Model;
 use WP_Defender\Component\Altcha_Handler;
 use WP_Defender\Controller\Hub_Connector;
 use WP_Defender\Integrations\Main_Wp;
-use WP_Defender\Component\Breadcrumbs;
 
 /**
  * Handles IP lockouts, notifications, and settings related to the firewall features.
@@ -179,8 +178,6 @@ class Firewall extends Event {
 		$this->schedule_cleanup_blocklist_ips_event();
 		add_action( 'wp_ajax_' . Smart_Ip_Detection::ACTION_PING, array( $this, 'handle_detect_ip_header' ) );
 		add_action( 'wp_ajax_nopriv_' . Smart_Ip_Detection::ACTION_PING, array( $this, 'handle_detect_ip_header' ) );
-
-		add_action( 'admin_init', array( $this, 'mark_page_visited' ) );
 	}
 
 	/**
@@ -202,16 +199,7 @@ class Firewall extends Event {
 	 * @return string
 	 */
 	protected function menu_title( string $default_text ): string {
-		// Breadcrumbs are only for Pro features.
-		if ( ! $this->wpmudev->is_pro() ) {
-			return $default_text;
-		}
-		// Check if the user has already visited the feature page.
-		if ( wd_di()->get( Breadcrumbs::class )->get_meta_key() ) {
-			return $default_text;
-		}
-
-		return $default_text . '<span class="wd-new-feature-dot"></span>';
+		return $default_text;
 	}
 
 	/**
@@ -1349,26 +1337,5 @@ class Firewall extends Event {
 		$this->log( 'Captcha verification failed for IP(s): ' . implode( ', ', $user_ips ), Altcha_Handler::LOG_FILE_NAME );
 
 		return new Response( false, array( 'message' => esc_html__( 'Captcha verification failed. Please try again.', 'defender-security' ) ) );
-	}
-
-	/**
-	 * Mark the feature page as visited.
-	 *
-	 * @return void
-	 */
-	public function mark_page_visited(): void {
-		// Breadcrumbs are only for Pro features.
-		if ( ! $this->wpmudev->is_pro() ) {
-			return;
-		}
-		if ( 'wdf-ip-lockout' !== defender_get_current_page()
-			|| User_Agent_Lockout::get_module_slug() !== defender_get_data_from_request( 'view', 'g' )
-		) {
-			return;
-		}
-		// Only for activated UA module.
-		if ( wd_di()->get( User_Agent_Lockout::class )->enabled ) {
-			wd_di()->get( Breadcrumbs::class )->update_meta_key();
-		}
 	}
 }

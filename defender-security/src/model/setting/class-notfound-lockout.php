@@ -134,7 +134,7 @@ class Notfound_Lockout extends Setting {
 				'You have been locked out due to too many attempts to access a file that doesn`t exist.',
 				'defender-security'
 			),
-			'whitelist' => ".css\n.js\n.map",
+			'whitelist' => ".css\n.js\n.map\n/cdn-cgi/challenge-platform/",
 		);
 	}
 

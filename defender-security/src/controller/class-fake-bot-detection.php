@@ -11,7 +11,6 @@ use WP_Defender\Controller;
 use WP_Defender\Component\Blacklist_Lockout;
 use WP_Defender\Component\Fake_Bot_Detection as Fake_Bot_Detection_Component;
 use WP_Defender\Traits\IP;
-use WP_Defender\Component\Breadcrumbs;
 
 /**
  * Handles operations to detect whether the current HTTP request comes from a legitimate bot.
@@ -51,8 +50,6 @@ class Fake_Bot_Detection extends Controller {
 	 */
 	public function remove_data() {
 		delete_site_transient( Fake_Bot_Detection_Component::CACHE_KEY );
-		wd_di()->get( Breadcrumbs::class )->delete_meta_key();
-
 		$this->service->clear_fb_transients();
 	}
 

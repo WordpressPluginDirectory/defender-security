@@ -427,6 +427,9 @@ class Upgrader {
 		if ( version_compare( $db_version, '5.6.0', '<' ) ) {
 			$this->upgrade_5_6_0();
 		}
+		if ( version_compare( $db_version, '5.7.0', '<' ) ) {
+			$this->upgrade_5_7_0();
+		}
 		// This is not a new installation. Make a mark.
 		defender_no_fresh_install();
 		// Don't run any function below this line.
@@ -649,7 +652,7 @@ class Upgrader {
 	private function force_nf_lockout_exclusions(): void {
 		$nf_settings       = new Notfound_Lockout();
 		$allowlist         = $nf_settings->get_lockout_list( 'allowlist' );
-		$default_allowlist = array( '.css', '.js', '.map' );
+		$default_allowlist = array( '/cdn-cgi/challenge-platform/' );
 		$is_save           = false;
 		if ( ! empty( $allowlist ) ) {
 			foreach ( $default_allowlist as $item ) {
@@ -660,7 +663,7 @@ class Upgrader {
 			}
 			$nf_settings->whitelist = implode( "\n", $allowlist );
 		} else {
-			$nf_settings->whitelist = ".css\n.js\n.map";
+			$nf_settings->whitelist = ".css\n.js\n.map\n/cdn-cgi/challenge-platform/";
 			$is_save                = true;
 		}
 		// Save it.
@@ -1768,8 +1771,6 @@ To complete your login, copy and paste the temporary password into the Password 
 	 */
 	private function upgrade_5_2_0(): void {
 		$this->update_ua_blocklist();
-		// Remove the prev Breadcrumbs.
-		wd_di()->get( \WP_Defender\Controller\Strong_Password::class )->remove_data();
 		// Add the "What's new" modal.
 		update_site_option( Feature_Modal::FEATURE_SLUG, true );
 	}
@@ -1903,9 +1904,23 @@ To complete your login, copy and paste the temporary password into the Password 
 	 */
 	private function upgrade_5_6_0(): void {
 		$this->change_to_malicious_bot();
-		// Remove the prev Breadcrumbs.
-		wd_di()->get( \WP_Defender\Component\Breadcrumbs::class )->delete_previous_meta();
 		// Add the "What's new" modal.
 		update_site_option( Feature_Modal::FEATURE_SLUG, true );
+	}
+
+	/**
+	 * Upgrade to 5.7.0.
+	 *
+	 * @return void
+	 */
+	private function upgrade_5_7_0(): void {
+		// Remove old objects from ncm options.
+		wd_di()->get( \WP_Defender\Component\Network_Cron_Manager::class )->remove_data();
+		// Add the "What's new" modal.
+		update_site_option( Feature_Modal::FEATURE_SLUG, true );
+		// Add Cloudflare challenge-platform to 404 whitelist.
+		$this->force_nf_lockout_exclusions();
+		// Remove the prev Breadcrumbs.
+		wd_di()->get( \WP_Defender\Component\Breadcrumbs::class )->delete_previous_meta();
 	}
 }

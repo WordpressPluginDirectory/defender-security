@@ -26,7 +26,7 @@ class Network_Cron_Manager extends Component {
 	public const LOG_FILE_NAME = 'network-cron-manager';
 
 	/**
-	 * Array of registered callbacks.
+	 * Array of registered hook configurations.
 	 *
 	 * @var array
 	 */
@@ -59,14 +59,20 @@ class Network_Cron_Manager extends Component {
 	 * Initializes the cron manager and hooks into WordPress.
 	 */
 	public function __construct() {
+		if ( did_action( 'after_setup_theme' ) > 0 ) {
+			$this->load_callbacks();
+		}
+
 		add_action( 'shutdown', array( $this, 'check_and_execute_callbacks' ), PHP_INT_MAX );
 	}
 
 	/**
 	 * Load callbacks from network options.
 	 */
-	private function load_callbacks() {
-		$this->callbacks = get_network_option( get_main_network_id(), $this->callbacks_option, array() );
+	public function load_callbacks() {
+		if ( array() === $this->callbacks ) {
+			$this->callbacks = get_network_option( get_main_network_id(), $this->callbacks_option, array() );
+		}
 	}
 
 	/**
@@ -93,7 +99,7 @@ class Network_Cron_Manager extends Component {
 	 */
 	public function register_callback( string $hook_name, callable $callback, int $interval_seconds, $start_time = null, array $args = array() ) {
 		$hook_name = sanitize_key( $hook_name );
-		if ( empty( $hook_name ) || ! is_string( $hook_name ) ) {
+		if ( '' === $hook_name ) {
 			$this->log( 'Task registration failed: Invalid task name provided', self::LOG_FILE_NAME );
 			return false;
 		}
@@ -112,21 +118,23 @@ class Network_Cron_Manager extends Component {
 				$this->log( "Cleared existing WordPress cron event for '{$hook_name}' to prevent conflicts", self::LOG_FILE_NAME );
 			}
 
-			$this->callbacks[ $hook_name ] = array(
-				'callback'   => $callback,
-				'interval'   => $interval_seconds,
-				'start_time' => $start_time,
-				'args'       => $args,
-			);
-			$this->save_callbacks();
-		} else {
-			if ( ! wp_next_scheduled( $hook_name ) ) {
+			// Only save if this is a new callback.
+			if ( ! isset( $this->callbacks[ $hook_name ] ) || $this->callbacks[ $hook_name ]['interval'] !== $interval_seconds ) {
+				$this->callbacks[ $hook_name ] = array(
+					'interval'   => $interval_seconds,
+					'start_time' => $start_time,
+					'args'       => $args,
+				);
+				$this->save_callbacks();
+			}
+		} elseif ( ! wp_next_scheduled( $hook_name ) ) {
 				$start_timestamp = $this->calculate_start_time( $start_time );
 				$schedule        = $this->get_schedule_name( $interval_seconds );
 				wp_schedule_event( $start_timestamp, $schedule, $hook_name );
-			}
-			add_action( $hook_name, $callback );
 		}
+
+		// Add the action to the hook (applies to both multisite and single-site).
+		add_action( $hook_name, $callback );
 	}
 
 	/**
@@ -187,8 +195,11 @@ class Network_Cron_Manager extends Component {
 	 * Check and execute registered callbacks.
 	 */
 	public function check_and_execute_callbacks() {
-		$this->load_callbacks();
-		if ( empty( $this->callbacks ) ) {
+		// Early exit during plugin deletion/uninstall.
+		if ( defined( 'WP_UNINSTALL_PLUGIN' ) ) {
+			return;
+		}
+		if ( array() === $this->callbacks ) {
 			return;
 		}
 		foreach ( $this->callbacks as $hook_name => $config ) {
@@ -209,12 +220,11 @@ class Network_Cron_Manager extends Component {
 		if ( ! $this->acquire_lock( $hook_name ) ) {
 			return;
 		}
-		$start_time = defender_get_current_time();
+
 		try {
-			if ( is_callable( $config['callback'] ) ) {
-				call_user_func_array( $config['callback'], $config['args'] );
-				$this->update_last_run( $hook_name );
-			}
+			// Execute the hook with arguments.
+			do_action( $hook_name, ...$config['args'] );
+			$this->update_last_run( $hook_name );
 		} catch ( \Exception $exception ) {
 			$this->log( "Task '{$hook_name}' failed to run: " . $exception->getMessage(), self::LOG_FILE_NAME );
 		} finally {
@@ -344,5 +354,50 @@ class Network_Cron_Manager extends Component {
 				$this->lastrun_prefix . '%'
 			)
 		);
+	}
+
+	/**
+	 * Remove a specific callback.
+	 *
+	 * - For multisite: Remove the callback from the network option and release the lock.
+	 * - For single-site: Unschedule the task.
+	 *
+	 * @param string $hook_name The hook name.
+	 * @return bool Whether the callback was removed.
+	 */
+	public function remove_callback( string $hook_name ) {
+		$hook_name = sanitize_key( $hook_name );
+
+		if ( '' === $hook_name ) {
+			return false;
+		}
+
+		if ( is_multisite() ) {
+			// Ensure callbacks are loaded.
+			$this->load_callbacks();
+
+			if ( isset( $this->callbacks[ $hook_name ] ) ) {
+				unset( $this->callbacks[ $hook_name ] );
+				$this->save_callbacks();
+				$this->log( "Task '{$hook_name}' removed.", self::LOG_FILE_NAME );
+			}
+
+			// Cleanup hook history.
+			$last_run_key = $this->lastrun_prefix . $hook_name;
+			delete_network_option( get_main_network_id(), $last_run_key );
+
+			// Release the lock.
+			$this->release_lock( $hook_name );
+		} else {
+			// Unschedule the task.
+			$timestamp = wp_next_scheduled( $hook_name );
+
+			if ( $timestamp ) {
+				wp_unschedule_event( $timestamp, $hook_name );
+				$this->log( "Task '{$hook_name}' unscheduled.", self::LOG_FILE_NAME );
+			}
+		}
+
+		return true;
 	}
 }

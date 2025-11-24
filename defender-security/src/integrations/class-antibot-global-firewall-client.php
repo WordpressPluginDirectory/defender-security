@@ -27,7 +27,22 @@ class Antibot_Global_Firewall_Client {
 	 *
 	 * @var string
 	 */
-	private $base_url = 'https://api.blocklist-service.com';
+	private $base_url;
+
+	/**
+	 * Class construct.
+	 *
+	 * @param string|null $base_url Optional. If not provided, fallback to default or constant.
+	 */
+	public function __construct( ?string $base_url = null ) {
+		if ( $base_url ) {
+			$this->base_url = $base_url;
+		} elseif ( defined( 'ANTIBOT_GLOBAL_FIREWALL_CUSTOM_API_SERVER' ) && ANTIBOT_GLOBAL_FIREWALL_CUSTOM_API_SERVER ) {
+			$this->base_url = ANTIBOT_GLOBAL_FIREWALL_CUSTOM_API_SERVER;
+		} else {
+			$this->base_url = 'https://api.blocklist-service.com';
+		}
+	}
 
 	/**
 	 * Get the base URL of the AntiBot Global Firewall API service.
@@ -35,11 +50,7 @@ class Antibot_Global_Firewall_Client {
 	 * @return string
 	 */
 	private function get_base_url(): string {
-		$base_url = defined( 'ANTIBOT_GLOBAL_FIREWALL_CUSTOM_API_SERVER' ) && ANTIBOT_GLOBAL_FIREWALL_CUSTOM_API_SERVER
-			? ANTIBOT_GLOBAL_FIREWALL_CUSTOM_API_SERVER
-			: $this->base_url;
-
-		return $base_url . '/api';
+		return $this->base_url . '/api';
 	}
 
 	/**

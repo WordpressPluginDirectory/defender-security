@@ -259,8 +259,6 @@ class UA_Lockout extends Event {
 			'module_name'       => User_Agent_Lockout::get_module_name(),
 			'blocklist_presets' => User_Agent_Service::get_blocklist_presets(),
 			'script_presets'    => User_Agent_Service::get_script_presets(),
-			'show_feature_dot'  => wd_di()->get( \WP_Defender\Behavior\WPMUDEV::class )->is_pro()
-				&& ! (bool) wd_di()->get( \WP_Defender\Component\Breadcrumbs::class )->get_meta_key(),
 		);
 
 		return array_merge(

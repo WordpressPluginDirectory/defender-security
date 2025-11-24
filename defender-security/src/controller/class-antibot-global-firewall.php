@@ -98,6 +98,7 @@ class Antibot_Global_Firewall extends Event {
 			add_action( 'init', array( $this, 'sync_state' ) );
 		}
 		add_action( 'init', array( $this, 'handle_expired_membership' ) );
+		add_action( 'init', array( $this->service, 'maybe_set_notice_time' ) );
 	}
 
 	/**
@@ -111,17 +112,18 @@ class Antibot_Global_Firewall extends Event {
 	public function save_settings( Request $request ) {
 		$data = $request->get_data(
 			array(
-				'enabled'         => array( 'type' => 'bool' ),
-				'managed_by'      => array( 'type' => 'string' ),
+				'enabled'                  => array( 'type' => 'bool' ),
+				'managed_by'               => array( 'type' => 'string' ),
 				// Temporary property.
-				'module_title'    => array(
+				'module_title'             => array(
 					'type'     => 'string',
 					'sanitize' => 'sanitize_text_field',
 				),
-				'module_location' => array(
+				'module_location'          => array(
 					'type'     => 'string',
 					'sanitize' => 'sanitize_text_field',
 				),
+				'redirect_to_feature_page' => array( 'type' => 'bool' ),
 				// End.
 			)
 		);
@@ -183,6 +185,13 @@ class Antibot_Global_Firewall extends Event {
 					'<strong>' . Antibot_Global_Firewall_Setting::get_module_name() . '</strong>'
 				);
 			}
+
+			$data_frontend = $this->data_frontend();
+
+			if ( isset( $data['redirect_to_feature_page'] ) && $data['redirect_to_feature_page'] ) {
+				$data_frontend['redirect'] = network_admin_url( 'admin.php?page=wdf-ip-lockout' );
+			}
+
 			return new Response(
 				true,
 				array_merge(
@@ -190,7 +199,7 @@ class Antibot_Global_Firewall extends Event {
 						'message'    => $update_message,
 						'auto_close' => true,
 					),
-					$this->data_frontend()
+					$data_frontend
 				)
 			);
 		}
@@ -252,28 +261,29 @@ class Antibot_Global_Firewall extends Event {
 			array(
 				'model' => $model_export,
 				'misc'  => array(
-					'module_slug'           => Antibot_Global_Firewall_Setting::get_module_slug(),
-					'module_name'           => $module_name,
-					'show_notice'           => $is_reminder
+					'module_slug'               => Antibot_Global_Firewall_Setting::get_module_slug(),
+					'module_name'               => $module_name,
+					'show_notice'               => $is_reminder
 						&& (bool) get_site_option( Antibot_Global_Firewall_Component::NOTICE_SLUG, false ),
-					'sync_schedule'         => __( 'Twice Daily', 'defender-security' ),
-					'ips_count'             => $this->service->get_blocklisted_ip_count(),
-					'frontend_is_enabled'   => $this->service->frontend_is_enabled(),
-					'frontend_mode'         => $this->service->frontend_mode(),
-					'is_active'             => $this->service->is_active(),
-					'show_stats_button'     => ! $this->wpmudev->is_whitelabel_enabled(),
-					'show_checker'          => ! $this->wpmudev->is_wpmu_hosting()
+					'sync_schedule'             => __( 'Twice Daily', 'defender-security' ),
+					'ips_count'                 => $this->service->get_blocklisted_ip_count(),
+					'frontend_is_enabled'       => $this->service->frontend_is_enabled(),
+					'frontend_mode'             => $this->service->frontend_mode(),
+					'is_active'                 => $this->service->is_active(),
+					'show_stats_button'         => ! $this->wpmudev->is_whitelabel_enabled(),
+					'show_checker'              => ! $this->wpmudev->is_wpmu_hosting()
 						|| $this->wpmudev->is_wpmu_dev_admin()
 						|| ! ( $this->service->is_active_via_hosting() && $this->wpmudev->is_whitelabel_enabled() ),
-					'active_tooltip_text'   => __( 'List of exploit attempts detected and blocked across all connected sites by AntiBot Firewall.', 'defender-security' ),
-					'inactive_tooltip_text' => sprintf(
+					'active_tooltip_text'       => __( 'List of exploit attempts detected and blocked across all connected sites by AntiBot Firewall.', 'defender-security' ),
+					'inactive_tooltip_text'     => sprintf(
 						/* translators: %s: Module name. */
 						__( '%s is Inactive.', 'defender-security' ),
 						$module_name
 					),
-					'current_user'          => esc_html( wp_get_current_user()->display_name ?? __( 'User', 'defender-security' ) ),
-					'current_plan'          => $this->get_membership_type(),
-					'is_expired_membership' => $this->is_expired_membership_type(),
+					'current_user'              => esc_html( wp_get_current_user()->display_name ?? __( 'User', 'defender-security' ) ),
+					'current_plan'              => $this->get_membership_type(),
+					'is_expired_membership'     => $this->is_expired_membership_type(),
+					'should_show_global_notice' => $this->service->should_show_global_notice(),
 				),
 			),
 			$this->dump_routes_and_nonces()
@@ -366,6 +376,7 @@ class Antibot_Global_Firewall extends Event {
 
 		delete_site_option( Antibot_Global_Firewall_Component::NOTICE_SLUG );
 		delete_site_option( Antibot_Global_Firewall_Component::DOWNLOAD_SYNC_NEXT_RUN_OPTION );
+		delete_site_option( Antibot_Global_Firewall_Component::GLOBAL_NOTICE_TIME_OPTION );
 		delete_site_transient( Antibot_Global_Firewall_Component::BLOCKLIST_STATS_KEY . '_' . Antibot_Global_Firewall_Setting::MODE_BASIC );
 		delete_site_transient( Antibot_Global_Firewall_Component::BLOCKLIST_STATS_KEY . '_' . Antibot_Global_Firewall_Setting::MODE_STRICT );
 		delete_site_transient( Antibot_Global_Firewall_Component::IS_SWITCHING_TO_PLUGIN_IN_PROGRESS );
@@ -666,5 +677,67 @@ class Antibot_Global_Firewall extends Event {
 			$this->service->managed_by_plugin_action( false );
 			$this->log( 'AntiBot Global Firewall automatically disabled due to expired membership.', Antibot_Global_Firewall_Component::LOG_FILE_NAME );
 		}
+	}
+
+	/**
+	 * Handle request to send feedback.
+	 *
+	 * @param Request $request The request object.
+	 *
+	 * @defender_route
+	 * @return Response
+	 */
+	public function send_feedback( Request $request ) {
+		$data = $request->get_data(
+			array(
+				'feedback' => array( 'type' => 'string' ),
+			)
+		);
+		if ( '' !== $data['feedback'] ) {
+			// Send feedback.
+			$this->track_feature(
+				'Antibot Survey',
+				array(
+					'Notice Action' => 'Share feedback',
+					'Feedback'      => $data['feedback'],
+				)
+			);
+		}
+		// Dismiss the global notice.
+		$this->service->dismiss_global_notice();
+
+		$message = sprintf(
+			/* translators: 1: Open tag, 2: Close tag */
+			__( '%1$sThanks for your feedback!%2$s It helps us make Defender even better.', 'defender-security' ),
+			'<strong>',
+			'</strong>'
+		);
+
+		return new Response(
+			true,
+			array(
+				'message'    => $message,
+				'auto_close' => true,
+			)
+		);
+	}
+
+	/**
+	 * Dismiss the global notice.
+	 *
+	 * @defender_route
+	 * @return Response
+	 */
+	public function dismiss_global_notice(): Response {
+		$this->service->dismiss_global_notice();
+
+		return new Response(
+			true,
+			array(
+				'message'     => __( 'The global notice has been dismissed.', 'defender-security' ),
+				'success'     => true,
+				'show_notice' => false,
+			)
+		);
 	}
 }

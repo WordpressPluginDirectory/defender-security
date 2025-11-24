@@ -730,8 +730,9 @@ class Firewall_Logs extends Controller {
 	 * Exports strings.
 	 *
 	 * @param array $logs Prepared logs.
+	 * @param bool  $is_staging  Send logs to staging.
 	 */
-	private function maybe_send_reports( array $logs ): void {
+	private function maybe_send_reports( array $logs, bool $is_staging = false ): void {
 		$offset     = 0;
 		$length     = 1000;
 		$logs_chunk = array_slice( $logs, $offset, $length );
@@ -740,7 +741,11 @@ class Firewall_Logs extends Controller {
 				'logs' => $logs_chunk,
 			);
 
-			$response = $this->antibot_client->send_reports( $data );
+			$antibot_client = $this->antibot_client;
+			if ( $is_staging ) {
+				$antibot_client = new Antibot_Global_Firewall_Client( 'https://staging-api.blocklist-service.com' );
+			}
+			$response = $antibot_client->send_reports( $data );
 
 			if ( is_wp_error( $response ) ) {
 				$this->log(
@@ -810,8 +815,8 @@ class Firewall_Logs extends Controller {
 		update_site_option( 'wpdef_ip_blocklist_sync_last_run_time', time() );
 
 		$service = wd_di()->get( Firewall_Logs_Component::class );
-		$logs    = $service->get_compact_logs( $from );
 
+		$logs = $service->get_compact_logs( $from );
 		if ( ! empty( $logs ) ) {
 			$this->maybe_send_reports( $logs );
 		}
@@ -819,6 +824,11 @@ class Firewall_Logs extends Controller {
 		$logs = $service->get_akismet_auto_spam_comment_logs();
 		if ( ! empty( $logs ) ) {
 			$this->maybe_send_reports( $logs );
+		}
+
+		$logs = $service->get_404_intelligence_logs( $from );
+		if ( ! empty( $logs ) ) {
+			$this->maybe_send_reports( $logs, true );
 		}
 
 		// Release lock after execution.

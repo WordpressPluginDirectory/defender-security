@@ -1086,21 +1086,21 @@ class Cli {
 	}
 
 	/**
-	 * This is a helper for Google Recaptcha actions.
-	 * Syntax: wp defender google_recaptcha <command>
+	 * This is a helper for Captcha actions.
+	 * Syntax: wp defender captcha <command>
 	 * <command> activate|deactivate|clear
-	 * Example: wp defender google_recaptcha activate
+	 * Example: wp defender captcha activate
 	 *
 	 * @param  mixed $args  Command arguments.
 	 */
-	public function google_recaptcha( $args ) {
+	public function captcha( $args ) {
 		if ( empty( $args ) ) {
 			WP_CLI::error( 'Invalid command.' );
-			WP_CLI::runcommand( 'defender google_recaptcha --help' );
+			WP_CLI::runcommand( 'defender captcha --help' );
 
 			return;
 		}
-		$model       = wd_di()->get( \WP_Defender\Model\Setting\Recaptcha::class );
+		$model       = wd_di()->get( \WP_Defender\Model\Setting\Captcha::class );
 		[ $command ] = $args;
 		switch ( $command ) {
 			case 'activate':
@@ -1108,7 +1108,7 @@ class Cli {
 					$model->enabled = true;
 					$model->save();
 				}
-				WP_CLI::log( 'Google reCAPTCHA is activated.' );
+				WP_CLI::log( 'CAPTCHA is activated.' );
 				break;
 			case 'deactivate':
 				if ( false !== $model->enabled ) {
@@ -1116,12 +1116,13 @@ class Cli {
 					$model->save();
 				}
 				$model->save();
-				WP_CLI::log( 'Google reCAPTCHA is deactivated.' );
+				WP_CLI::log( 'CAPTCHA is deactivated.' );
 				break;
 			case 'clear':
 				$default_values                      = $model->get_default_values();
 				$model->message                      = $default_values['message'];
 				$model->language                     = 'automatic';
+				$model->provider                     = 'recaptcha';
 				$model->data_v2_checkbox             = array(
 					'key'    => '',
 					'secret' => '',
@@ -1137,6 +1138,14 @@ class Cli {
 					'secret'    => '',
 					'threshold' => '0.5',
 				);
+				$model->data_turnstile               = array(
+					'key'      => '',
+					'secret'   => '',
+					'size'     => 'normal',
+					'style'    => 'auto',
+					'message'  => $default_values['turnstile_message'],
+					'language' => 'auto',
+				);
 				$model->locations                    = array();
 				$model->detect_woo                   = false;
 				$model->woo_checked_locations        = array();
@@ -1145,11 +1154,11 @@ class Cli {
 				$model->disable_for_known_users      = true;
 				$model->save();
 
-				WP_CLI::log( 'Google reCAPTCHA is cleared.' );
+				WP_CLI::log( 'CAPTCHA is cleared.' );
 				break;
 			default:
 				WP_CLI::error( sprintf( 'Unknown command %s.', $command ) );
-				WP_CLI::runcommand( 'defender google_recaptcha --help' );
+				WP_CLI::runcommand( 'defender captcha --help' );
 				break;
 		}
 	}

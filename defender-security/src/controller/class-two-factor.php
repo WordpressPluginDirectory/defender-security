@@ -1135,6 +1135,8 @@ class Two_Factor extends Event {
 				// The multisite check is an isolated case now. If it will be needed for several modules, then a more global scope is needed.
 				'is_multisite'        => is_multisite(),
 				'module_name'         => Two_Fa::get_module_name(),
+				'hub_connector'       => wd_di()->get( Hub_Connector::class )->data_frontend(),
+				'antibot'             => wd_di()->get( Antibot_Global_Firewall::class )->data_frontend(),
 			),
 			$this->dump_routes_and_nonces()
 		);

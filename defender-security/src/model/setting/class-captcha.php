@@ -1,6 +1,6 @@
 <?php
 /**
- * Handle reCaptcha settings.
+ * Handle Captcha settings.
  *
  * @package WP_Defender\Model\Setting
  */
@@ -10,12 +10,13 @@ namespace WP_Defender\Model\Setting;
 use Calotes\Model\Setting;
 
 /**
- * Model for reCaptcha settings.
+ * Model for Captcha settings.
  */
-class Recaptcha extends Setting {
+class Captcha extends Setting {
 
 	/**
 	 * Option name.
+	 * We'll keep the current table for all Captcha for backward compatibility. There's no need to edit the table name to store settings in the database.
 	 *
 	 * @var string
 	 */
@@ -30,12 +31,20 @@ class Recaptcha extends Setting {
 	public $enabled = false;
 
 	/**
-	 * Active reCaptcha type.
+	 * Captcha Provider.
+	 *
+	 * @var string
+	 * @defender_property
+	 */
+	public $provider = 'recaptcha';
+
+	/**
+	 * Active Captcha type.
 	 *
 	 * @var string
 	 * @defender_property
 	 * @rule required
-	 * @rule in[v2_checkbox,v2_invisible,v3_recaptcha]
+	 * @rule in[v2_checkbox,v2_invisible,v3_recaptcha,turnstile]
 	 */
 	public $active_type = 'v2_checkbox';
 
@@ -64,7 +73,15 @@ class Recaptcha extends Setting {
 	public $data_v3_recaptcha;
 
 	/**
-	 * Language for reCaptcha.
+	 * Data for Cloudflare Turnstile.
+	 *
+	 * @var array
+	 * @defender_property
+	 */
+	public $data_turnstile;
+
+	/**
+	 * Language for Captcha.
 	 *
 	 * @var string
 	 * @defender_property
@@ -82,7 +99,7 @@ class Recaptcha extends Setting {
 	public $message = '';
 
 	/**
-	 * Locations for reCaptcha.
+	 * Locations for Captcha.
 	 *
 	 * @var array
 	 * @defender_property
@@ -125,7 +142,7 @@ class Recaptcha extends Setting {
 	public $buddypress_checked_locations = array();
 
 	/**
-	 * Flag to disable reCaptcha for known users.
+	 * Flag to disable Captcha for known users.
 	 *
 	 * @var bool
 	 * @defender_property
@@ -133,23 +150,24 @@ class Recaptcha extends Setting {
 	public $disable_for_known_users = true;
 
 	/**
-	 * Rules for validating the reCaptcha settings.
+	 * Rules for validating the Captcha settings.
 	 *
 	 * @var array
 	 */
 	protected $rules = array(
 		array( array( 'enabled', 'detect_woo', 'detect_buddypress' ), 'boolean' ),
-		array( array( 'active_type' ), 'in', array( 'v2_checkbox', 'v2_invisible', 'v3_recaptcha' ) ),
+		array( array( 'active_type' ), 'in', array( 'v2_checkbox', 'v2_invisible', 'v3_recaptcha', 'turnstile' ) ),
 	);
 
 	/**
-	 * Retrieves the default values for the reCAPTCHA settings.
+	 * Retrieves the default values for the Captcha settings.
 	 *
 	 * @return array An associative array containing the default values.
 	 */
 	public function get_default_values(): array {
 		return array(
-			'message' => esc_html__( 'reCAPTCHA verification failed. Please try again.', 'defender-security' ),
+			'message'           => esc_html__( 'reCAPTCHA verification failed. Please try again.', 'defender-security' ),
+			'turnstile_message' => esc_html__( 'Turnstile verification failed. Please try again.', 'defender-security' ),
 		);
 	}
 
@@ -160,6 +178,7 @@ class Recaptcha extends Setting {
 	 */
 	protected function before_load(): void {
 		$default_values          = $this->get_default_values();
+		$this->provider          = 'recaptcha';
 		$this->message           = $default_values['message'];
 		$this->language          = 'automatic';
 		$this->data_v2_checkbox  = array(
@@ -177,16 +196,24 @@ class Recaptcha extends Setting {
 			'secret'    => '',
 			'threshold' => '0.5',
 		);
+		$this->data_turnstile    = array(
+			'key'      => '',
+			'secret'   => '',
+			'size'     => 'normal',
+			'style'    => 'auto',
+			'message'  => $default_values['turnstile_message'],
+			'language' => 'auto',
+		);
 	}
 
 	/**
-	 * Checks if the given reCAPTCHA type is valid and has all the necessary data.
+	 * Checks if the given Captcha type is valid and has all the necessary data.
 	 *
-	 * @param  string $active_type  The reCAPTCHA type to check.
+	 * @param  string $active_type  The Captcha type to check.
 	 *
-	 * @return bool Returns true if the reCAPTCHA type is valid and has all the necessary data, false otherwise.
+	 * @return bool Returns true if the Captcha type is valid and has all the necessary data, false otherwise.
 	 */
-	private function check_recaptcha_type( string $active_type ): bool {
+	private function check_captcha_type( string $active_type ): bool {
 		if (
 			'v2_checkbox' === $active_type
 			&& '' !== $this->data_v2_checkbox['key']
@@ -204,24 +231,31 @@ class Recaptcha extends Setting {
 			&& '' !== $this->data_v3_recaptcha['key'] && '' !== $this->data_v3_recaptcha['secret']
 		) {
 			return true;
+		} elseif (
+			'turnstile' === $active_type &&
+			'' !== $this->data_turnstile['key'] &&
+			'' !== $this->data_turnstile['secret']
+		) {
+			return true;
 		} else {
 			return false;
 		}
 	}
 
 	/**
-	 * Checks if the reCAPTCHA is active.
+	 * Checks if the CAPTCHA is active.
 	 *
-	 * @return bool Returns true if the reCAPTCHA is active, false otherwise.
+	 * @return bool Returns true if the CAPTCHA is active, false otherwise.
 	 */
 	public function is_active(): bool {
+		$hook_name = 'turnstile' === $this->active_type ? 'wd_turnstile_enable' : 'wd_recaptcha_enable';
 		return (bool) apply_filters(
-			'wd_recaptcha_enable',
+			$hook_name,
 			$this->enabled
 			&& '' !== $this->active_type
 			&& '' !== $this->language
-			// For each Recaptcha type.
-			&& $this->check_recaptcha_type( $this->active_type )
+			// For each Captcha type.
+			&& $this->check_captcha_type( $this->active_type )
 		);
 	}
 
@@ -308,7 +342,7 @@ class Recaptcha extends Setting {
 	public function labels(): array {
 		return array(
 			'enabled'                 => self::get_module_name(),
-			'active_type'             => esc_html__( 'Configure reCaptcha', 'defender-security' ),
+			'active_type'             => esc_html__( 'Configure CAPTCHA', 'defender-security' ),
 			'v2_checkbox'             => esc_html__( 'V2 Checkbox', 'defender-security' ),
 			'v2_invisible'            => esc_html__( 'V2 Invisible', 'defender-security' ),
 			'v3_recaptcha'            => esc_html__( 'reCAPTCHA V3', 'defender-security' ),
@@ -357,7 +391,7 @@ class Recaptcha extends Setting {
 	 *
 	 * @return bool
 	 */
-	public function display_for_known_users() {
+	public function display_for_known_users(): bool {
 		return ! ( $this->disable_for_known_users && is_user_logged_in() );
 	}
 
@@ -367,6 +401,6 @@ class Recaptcha extends Setting {
 	 * @return string
 	 */
 	public static function get_module_name(): string {
-		return esc_html__( 'Google reCAPTCHA', 'defender-security' );
+		return esc_html__( 'CAPTCHA', 'defender-security' );
 	}
 }

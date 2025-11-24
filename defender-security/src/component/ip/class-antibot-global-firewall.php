@@ -40,6 +40,10 @@ class Antibot_Global_Firewall extends Component {
 
 	public const IS_SWITCHING_TO_PLUGIN_IN_PROGRESS = 'wpdef_antibot_global_firewall_switching_to_plugin_in_progress';
 
+	public const GLOBAL_NOTICE_TIME_OPTION = 'wpdef_antibot_global_firewall_global_notice_time';
+
+	public const GLOBAL_NOTICE_DELAY_DAYS_OPTION = 60;
+
 	/**
 	 * The AntiBot Global Firewall model for storing IPs.
 	 *
@@ -735,5 +739,62 @@ class Antibot_Global_Firewall extends Component {
 		delete_site_transient( self::BLOCKLIST_STATS_KEY . '_' . $this->get_mode() );
 		delete_site_transient( self::BLOCKLIST_STATS_KEY . '_' . $this->get_hosting_mode() );
 		$this->log( 'Antibot table cleared due to site disconnection.', self::LOG_FILE_NAME );
+	}
+
+	/**
+	 * Get the timestamp for when the notice should start showing.
+	 *
+	 * @return false|int The timestamp or false if not set.
+	 */
+	public function get_global_notice_time() {
+		return (int) get_site_option( self::GLOBAL_NOTICE_TIME_OPTION, 0 );
+	}
+
+	/**
+	 * Set a timestamp for when the notice should start showing.
+	 *
+	 * @return void
+	 */
+	public function maybe_set_notice_time(): void {
+		if ( 0 === $this->get_global_notice_time() ) {
+			$future = time() + ( DAY_IN_SECONDS * self::GLOBAL_NOTICE_DELAY_DAYS_OPTION );
+			update_site_option( self::GLOBAL_NOTICE_TIME_OPTION, $future );
+		}
+	}
+
+	/**
+	 * Disable the global notice.
+	 *
+	 * @return void
+	 */
+	public function dismiss_global_notice(): void {
+		update_site_option( self::GLOBAL_NOTICE_TIME_OPTION, -1 );
+	}
+
+	/**
+	 * Determine if the global notice should be shown.
+	 *
+	 * @return bool True if the notice should be shown, false otherwise.
+	 */
+	public function should_show_global_notice(): bool {
+		// Is FREE or PRO plugin?
+		if ( $this->wpmudev->is_pro() ) {
+			return false;
+		}
+
+		// Is AntiBot enabled?
+		if ( $this->frontend_is_enabled() ) {
+			return false;
+		}
+
+		// Has 60 days passed since installation?
+		$notice_time = $this->get_global_notice_time();
+
+		// No notice time or marked as dismissed (-1) or not yet reached the time.
+		if ( false === $notice_time || -1 === $notice_time || time() < $notice_time ) {
+			return false;
+		}
+
+		return true;
 	}
 }

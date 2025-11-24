@@ -43,6 +43,7 @@ class Bootstrap {
 	public function init_modules(): void {
 		$this->init_modules_common();
 		$this->init_free_dashboard();
+		$this->init_black_friday();
 	}
 
 	/**
@@ -83,6 +84,22 @@ class Bootstrap {
 					),
 				)
 			);
+		}
+	}
+
+	/**
+	 * Load the black friday module.
+	 *
+	 * @return void
+	 * @since 5.6.2
+	*/
+	public function init_black_friday(): void {
+		if ( ! class_exists( '\WPMUDEV\Modules\BlackFriday\Campaign' ) ) {
+			$file_path = defender_path( 'extra/wpmudev-black-friday/campaign.php' );
+			if ( file_exists( $file_path ) ) {
+				require_once $file_path;
+				new \WPMUDEV\Modules\BlackFriday\Campaign();
+			}
 		}
 	}
 

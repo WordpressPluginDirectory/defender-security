@@ -300,22 +300,38 @@ class User_Agent_Lockout extends Setting {
 	}
 
 	/**
-	 * Get list of blocklisted or allowlisted data.
+	 * Get a list of blocklisted or allowlisted data.
 	 *
-	 * @param  string $type  blocklist|allowlist.
+	 * @param  string $type   blocklist|allowlist.
 	 * @param  bool   $lower  Whether to convert the list to lowercase.
 	 *
 	 * @return array
 	 */
 	public function get_lockout_list( $type = 'blocklist', $lower = true ): array {
 		$data = 'blocklist' === $type ? $this->blacklist : $this->whitelist;
-		$arr  = array_filter( preg_split( "/\r\n|\n|\r/", $data ), 'boolval' );
-		$arr  = array_map( 'trim', $arr );
-		if ( $lower ) {
-			$arr = array_map( 'strtolower', $arr );
+		$data = trim( $data );
+
+		if ( '' === $data ) {
+			return array();
 		}
 
-		return $arr;
+		$arr = preg_split( "/\r\n|\n|\r/", $data );
+		if ( ! is_array( $arr ) ) {
+			return array();
+		}
+
+		if ( $lower ) {
+			$arr = array_map(
+				function ( $value ) {
+					return strtolower( trim( $value ) );
+				},
+				$arr
+			);
+		} else {
+			$arr = array_map( 'trim', $arr );
+		}
+
+		return array_unique( $arr );
 	}
 
 	/**
@@ -505,6 +521,21 @@ class User_Agent_Lockout extends Setting {
 		$arr   = array_unique( $arr );
 
 		return implode( PHP_EOL, $arr );
+	}
+
+	/**
+	 * Filter the UAs, as we use a textarea to submit, so it can contain some un-valid UAs.
+	 */
+	protected function after_validate(): void {
+		$lists = array(
+			'blacklist' => $this->get_lockout_list( 'blocklist' ),
+			'whitelist' => $this->get_lockout_list( 'allowlist' ),
+		);
+
+		foreach ( $lists as $key => &$collection ) {
+			// If UA collection is not valid, we should display an error message. We'll improve it by UA standard/pattern.
+			$this->$key = implode( PHP_EOL, array_filter( $collection, 'strlen' ) );
+		}
 	}
 
 	/**

@@ -807,6 +807,8 @@ class Notification extends Event {
 				),
 				'default_recipient' => $this->get_default_recipient(),
 			),
+			'hub_connector'          => wd_di()->get( Hub_Connector::class )->data_frontend(),
+			'antibot'                => wd_di()->get( Antibot_Global_Firewall::class )->data_frontend(),
 		);
 	}
 

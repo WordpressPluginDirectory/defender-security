@@ -20,7 +20,7 @@ use WP_Defender\Behavior\WPMUDEV;
 use WP_Defender\Controller\Onboard;
 use WP_Defender\Controller\Webauthn;
 use WP_Defender\Controller\Dashboard;
-use WP_Defender\Controller\Recaptcha;
+use WP_Defender\Controller\Captcha;
 use WP_Defender\Controller\Mask_Login;
 use WP_Defender\Controller\Quarantine;
 use WP_Defender\Controller\Two_Factor;
@@ -97,7 +97,7 @@ trait Defender_Bootstrap {
 		$charset_collate  = $wpdb->get_charset_collate();
 		$unique_id        = uniqid( $wpdb->prefix );
 
-		$common_columns = <<<SQL
+		$common_columns = <<<'SQL'
 		`id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
 		`defender_scan_item_id` int UNSIGNED DEFAULT NULL,
 		`file_hash` char(53) NOT NULL,
@@ -417,7 +417,7 @@ SQL;
 		wd_di()->get( Advanced_Tools::class );
 		wd_di()->get( Mask_Login::class );
 		wd_di()->get( Security_Headers::class );
-		wd_di()->get( Recaptcha::class );
+		wd_di()->get( Captcha::class );
 		wd_di()->get( Notification::class );
 		wd_di()->get( Main_Setting::class );
 		wd_di()->get( Blocklist_Monitor::class );
@@ -548,7 +548,12 @@ SQL;
 
 		foreach ( $js_files as $slug => $file ) {
 			if ( isset( $file[1] ) ) {
-				wp_register_script( $slug, $file[0], $file[1], DEFENDER_VERSION, true );
+				// This ensures that when JavaScript file changes,
+				// browsers will load the new version instead of
+				// serving a cached old version.
+				$file_path    = str_replace( $base_url, WP_DEFENDER_DIR, $file[0] );
+				$file_version = file_exists( $file_path ) ? filemtime( $file_path ) : DEFENDER_VERSION;
+				wp_register_script( $slug, $file[0], $file[1], $file_version, true );
 				wp_set_script_translations( $slug, 'defender-security' );
 			} else {
 				wp_register_script( $slug, $file[0], array( 'jquery' ), DEFENDER_VERSION, true );
