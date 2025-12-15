@@ -94,37 +94,35 @@ class Notfound_Lockout extends Component {
 
 		$xss_pattern = '#(?i)(<script|javascript:|onerror=|onload=|onmouseover=|onclick=|alert\s*\(|prompt\s*\(|confirm\s*\(|document\.cookie|document\.write|eval\s*\()#';
 		if ( preg_match( $xss_pattern, $uri ) || preg_match( $xss_pattern, $query ) ) {
-			// Detect it.
-			$model = Lockout_Ip::get( $ip );
-			$this->log_event( $ip, $uri, self::SCENARIO_404_INTELLIGENCE_XSS_ATTEMPT );
-
+			$slug         = $uri;
+			$attempt_type = self::SCENARIO_404_INTELLIGENCE_XSS_ATTEMPT;
 			$lockout_type = self::SCENARIO_404_INTELLIGENCE_XSS_LOCKOUT;
-			// Avoid the duplicate with the standard 404 case.
-			$this->is_intelligence = true;
 		} elseif ( preg_match( '#/wp-content/(plugins|themes)/([^/]+)/#i', $uri, $m ) ) {
 			// Looking for requests for plugins/themes.
 			$entity = strtolower( $m[1] );
 			$slug   = sanitize_file_name( $m[2] );
-			if ( 'themes' === $entity ) {
-				$attempt_type = self::SCENARIO_404_INTELLIGENCE_NON_EXISTENT_THEME_ATTEMPT;
-				$lockout_type = self::SCENARIO_404_INTELLIGENCE_NON_EXISTENT_THEME_LOCKOUT;
-				$path         = get_theme_root() . '/' . $slug;
-			} else {
-				$attempt_type = self::SCENARIO_404_INTELLIGENCE_NON_EXISTENT_PLUGIN_ATTEMPT;
-				$lockout_type = self::SCENARIO_404_INTELLIGENCE_NON_EXISTENT_PLUGIN_LOCKOUT;
-				$path         = WP_PLUGIN_DIR . '/' . $slug;
-			}
+			$path   = ( 'themes' === $entity ? get_theme_root() : WP_PLUGIN_DIR ) . '/' . $slug;
+
 			// Check for the existence of the specified file path. If it doesn't exist, only then continue working on the request.
 			if ( ! file_exists( $path ) ) {
-				// Detect it.
-				$model = Lockout_Ip::get( $ip );
-				$this->log_event( $ip, $slug, $attempt_type );
-				// Avoid the duplicate with the standard 404 case.
-				$this->is_intelligence = true;
+				if ( 'themes' === $entity ) {
+					$attempt_type = self::SCENARIO_404_INTELLIGENCE_NON_EXISTENT_THEME_ATTEMPT;
+					$lockout_type = self::SCENARIO_404_INTELLIGENCE_NON_EXISTENT_THEME_LOCKOUT;
+				} else {
+					$attempt_type = self::SCENARIO_404_INTELLIGENCE_NON_EXISTENT_PLUGIN_ATTEMPT;
+					$lockout_type = self::SCENARIO_404_INTELLIGENCE_NON_EXISTENT_PLUGIN_LOCKOUT;
+				}
 			}
 		}
 
 		if ( '' !== $lockout_type ) {
+			// Detect it.
+			$model = Lockout_Ip::get( $ip );
+			$this->log_event( $ip, $slug, $attempt_type );
+
+			// Avoid the duplicate with the standard 404 case.
+			$this->is_intelligence = true;
+
 			$model = $this->record_fail_attempt( $ip, $model );
 			// Count the attempt.
 			$window = strtotime( '- ' . $this->model->timeframe . ' seconds' );

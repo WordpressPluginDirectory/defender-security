@@ -76,8 +76,8 @@ class Admin {
 			if ( ! wd_di()->get( WPMUDEV::class )->is_wpmu_hosting() ) {
 				add_submenu_page(
 					'wp-defender',
-					esc_html__( 'Limited-time offer!', 'defender-security' ),
-					esc_html__( 'Limited-time offer!', 'defender-security' ),
+					esc_html__( 'Get Defender Pro', 'defender-security' ),
+					esc_html__( 'Get Defender Pro', 'defender-security' ),
 					is_multisite() ? 'manage_network_options' : 'manage_options',
 					$this->get_link( 'upsell', 'defender_submenu_upsell' )
 				);
@@ -246,7 +246,7 @@ class Admin {
 							'Upgrade to Defender Pro',
 							'defender-security'
 						)
-					) . '">' . esc_html__( 'Limited-time offer!', 'defender-security' ) . '</a>';
+					) . '">' . esc_html__( 'Get Defender Pro', 'defender-security' ) . '</a>';
 				}
 			} elseif ( ! $wpmu_dev->is_hosted_site_connected_to_tfh() ) {
 				$action_links['renew'] = '<a style="color: #8D00B1;" target="_blank" href="' . $this->get_link(

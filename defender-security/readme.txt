@@ -1,13 +1,13 @@
 === Defender Security - Malware Scanner, Login Security & Firewall ===
 Plugin Name: Defender Security - Malware Scanner, Login Security & Firewall
-Version: 5.7.0
+Version: 5.7.2
 Author: WPMU DEV
 Author URI: https://wpmudev.com/
 Contributors: WPMUDEV
 Tags: security, malware, firewall, malware scanner, login security
 Requires at least: 6.4
 Tested up to: 6.9
-Stable tag: 5.7.0
+Stable tag: 5.7.2
 Requires PHP: 8.0.0
 License: GPL v2 - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 
@@ -262,6 +262,14 @@ Please open a new thread in Defender's [support forum](https://wordpress.org/sup
 
 == Changelog ==
 
+= 5.7.2 ( 2025-12-15 ) =
+
+- Enhance: Miscellaneous improvements
+
+= 5.7.1 ( 2025-11-24 ) =
+
+- Fix: Improve 404 detection flow
+
 = 5.7.0 ( 2025-11-18 ) =
 
 - New: Cloudflare Turnstile integration
@@ -283,7 +291,7 @@ Please open a new thread in Defender's [support forum](https://wordpress.org/sup
 
 = 5.6.2 ( 2025-11-20 ) =
 
-- Enhance: Miscellaneousness improvements
+- Enhance: Miscellaneous improvements
 
 = 5.6.1 ( 2025-10-21 ) =
 
